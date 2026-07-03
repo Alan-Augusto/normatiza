@@ -4,11 +4,14 @@
   <aside 
     [class.w-60]="!isCollapsed()" 
     [class.w-14]="isCollapsed()" 
-    [class.sidebar-collapsed]="isCollapsed()"
     class="flex flex-col h-full bg-surface-0 dark:bg-surface-900 border-r border-surface-200 dark:border-surface-800 transition-[width] duration-200 ease-in-out select-none shrink-0"
   >
     <!-- Logo & Brand Header -->
-    <div class="flex items-center h-14 border-b border-surface-100 dark:border-surface-800/60 px-4 shrink-0 overflow-hidden logo-header">
+    <div 
+      [class.justify-center]="isCollapsed()" 
+      [class.px-4]="!isCollapsed()" 
+      class="flex items-center h-14 border-b border-surface-100 dark:border-surface-800/60 shrink-0 overflow-hidden"
+    >
       <div class="flex items-center gap-2.5">
         <div class="flex items-center justify-center w-7 h-7 rounded bg-primary text-primary-contrast font-semibold text-sm shrink-0">
           <i [class]="logoIcon()"></i>
@@ -26,15 +29,17 @@
       @for (item of menuItems(); track item.route) {
         <a
           [routerLink]="item.route"
-          routerLinkActive="active-link"
+          routerLinkActive="active-link bg-primary/8 dark:bg-primary/12 font-medium"
           [routerLinkActiveOptions]="{ exact: item.route === '' || item.route === '/' || item.route === '/app' || item.route === '/admin' }"
           [pTooltip]="isCollapsed() ? item.label : ''"
           tooltipPosition="right"
-          class="nav-link"
+          [class.justify-center]="isCollapsed()"
+          [class.px-3]="!isCollapsed()"
+          class="group flex items-center gap-3 py-2 rounded-md text-surface-600 dark:text-surface-400 hover:text-primary hover:bg-surface-50 dark:hover:bg-surface-800 transition-all duration-200 cursor-pointer relative"
         >
-          <i [class]="item.icon + ' nav-icon'"></i>
+          <i [class]="item.icon" class="text-md flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-[.active-link]:scale-105 group-[.active-link]:text-primary"></i>
           @if (!isCollapsed()) {
-            <span class="nav-text truncate">{{ item.label }}</span>
+            <span class="text-[0.928rem] transition-opacity duration-200 truncate group-[.active-link]:text-primary">{{ item.label }}</span>
           }
         </a>
       }
@@ -47,30 +52,36 @@
         (click)="toggleTheme()"
         [pTooltip]="isCollapsed() ? 'Alternar Tema' : ''"
         tooltipPosition="right"
-        class="theme-btn flex items-center justify-between w-full p-2 rounded border border-surface-200 dark:border-surface-800 text-surface-700 dark:text-surface-300 transition-colors cursor-pointer"
+        [class.justify-center]="isCollapsed()"
+        [class.px-2]="!isCollapsed()"
+        class="group flex items-center justify-between w-full p-2 rounded border border-surface-200 dark:border-surface-800 text-surface-700 dark:text-surface-300 hover:border-primary hover:bg-surface-50 dark:hover:bg-surface-800 transition-all duration-200 cursor-pointer"
       >
         <div class="flex items-center gap-2.5">
-          <i [class]="isDarkMode() ? 'pi pi-moon text-primary text-sm' : 'pi pi-sun text-yellow-500 text-sm'"></i>
+          <i [class]="isDarkMode() ? 'pi pi-moon text-primary text-sm' : 'pi pi-sun text-warning text-sm'" class="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"></i>
           @if (!isCollapsed()) {
-            <span class="text-[11px] font-medium transition-opacity duration-200">Tema {{ isDarkMode() ? 'Escuro' : 'Claro' }}</span>
+            <span class="text-[0.6875rem] font-medium transition-opacity duration-200">Tema {{ isDarkMode() ? 'Escuro' : 'Claro' }}</span>
           }
         </div>
         @if (!isCollapsed()) {
-          <i class="pi pi-sync text-[9px] text-muted-color"></i>
+          <i class="pi pi-sync text-[0.5625rem] text-muted-color"></i>
         }
       </button>
 
       <!-- User profile minimal metadata -->
-      <div class="flex items-center gap-2.5 p-1 rounded overflow-hidden profile-container">
-        <div class="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 uppercase select-none">
+      <div 
+        [class.justify-center]="isCollapsed()" 
+        [class.px-1]="!isCollapsed()" 
+        class="flex items-center gap-2.5 p-1 rounded overflow-hidden"
+      >
+        <div class="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[0.625rem] shrink-0 uppercase select-none">
           UA
         </div>
         @if (!isCollapsed()) {
           <div class="flex-1 min-w-0 transition-opacity duration-200">
-            <p class="text-[11px] font-semibold text-surface-900 dark:text-surface-0 truncate leading-none mb-0.5">Usuário</p>
-            <p class="text-[9px] text-muted-color truncate leading-none">usuario@normatiza.com</p>
+            <p class="text-[0.6875rem] font-semibold text-surface-900 dark:text-surface-0 truncate leading-none mb-0.5">Usuário</p>
+            <p class="text-[0.5625rem] text-muted-color truncate leading-none">usuario@normatiza.com</p>
           </div>
-          <button class="text-surface-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-surface-50 dark:hover:bg-surface-800/40 cursor-pointer" title="Sair">
+          <button class="text-surface-400 hover:text-danger transition-colors p-1 rounded hover:bg-surface-50 dark:hover:bg-surface-800/40 cursor-pointer" title="Sair">
             <i class="pi pi-power-off text-xs"></i>
           </button>
         }
@@ -82,17 +93,17 @@
   <div class="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-surface-50 dark:bg-surface-950 transition-colors duration-200">
     
     <!-- Top Header -->
-    <header class="h-14 border-b border-surface-200 dark:border-surface-800/60 bg-surface-0 dark:bg-surface-900 flex items-center justify-between px-6 shrink-0 transition-colors duration-200 select-none">
+    <header class="h-14 border-b border-surface-200 dark:border-surface-800/60 bg-surface-0 dark:bg-surface-900 flex items-center justify-between px-3 shrink-0 transition-colors duration-200 select-none">
       <div class="flex items-center gap-4">
         <!-- Collapse Sidebar Button -->
         <button 
           (click)="toggleCollapse()" 
-          class="toggle-btn text-surface-500 p-1.5 rounded cursor-pointer flex items-center justify-center"
+          class="group text-surface-500 hover:text-primary hover:bg-surface-50 dark:hover:bg-surface-800 p-1.5 rounded cursor-pointer flex items-center justify-center transition-all duration-200"
           [title]="isCollapsed() ? 'Expandir Menu' : 'Recolher Menu'"
         >
           <ng-icon 
             [name]="isCollapsed() ? 'lucideSidebarOpen' : 'lucideSidebarClose'" 
-            class="text-base flex items-center justify-center"
+            class="text-base flex items-center justify-center transition-transform duration-200 group-hover:scale-108"
           ></ng-icon>
         </button>
 
@@ -102,9 +113,9 @@
             [routerLink]="baseRoute()" 
             class="hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-surface-100 dark:hover:bg-surface-800 cursor-pointer"
           >
-            <i class="pi pi-home text-[13px]"></i>
+            <i class="pi pi-home text-[0.8125rem]"></i>
           </a>
-          <i class="pi pi-chevron-right text-[9px] text-surface-400"></i>
+          <i class="pi pi-chevron-right text-[0.5625rem] text-surface-400"></i>
           <span class="font-semibold text-surface-900 dark:text-surface-0">{{ activePageTitle() }}</span>
         </div>
       </div>
@@ -113,7 +124,7 @@
       <div class="flex items-center gap-3">
         @if (isCollapsed()) {
           <!-- Display Logout Icon here as fallback when sidebar is collapsed -->
-          <button class="text-surface-400 hover:text-red-500 transition-colors p-1.5 rounded hover:bg-surface-50 dark:hover:bg-surface-800/40 cursor-pointer flex items-center justify-center" title="Sair">
+          <button class="text-surface-400 hover:text-danger transition-colors p-1.5 rounded hover:bg-surface-50 dark:hover:bg-surface-800/40 cursor-pointer flex items-center justify-center" title="Sair">
             <i class="pi pi-power-off text-sm"></i>
           </button>
         }
@@ -121,7 +132,7 @@
     </header>
 
     <!-- Content Router Area -->
-    <main class="flex-1 overflow-y-auto p-6 md:p-8">
+    <main class="flex-1 overflow-y-auto p-6 md:p-4">
       <!-- Page Title Header -->
       <div class="mb-6 select-none">
         <h1 class="text-xl font-semibold tracking-tight text-surface-900 dark:text-surface-0">

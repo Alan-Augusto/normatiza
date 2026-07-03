@@ -43,6 +43,10 @@
 }
 
 
+html {
+  font-size: 87.5%; /* Escala base reduzida de 16px para 14px para um layout mais compacto (Design System) */
+}
+
 body {
   margin: 0;
   padding: 0;
