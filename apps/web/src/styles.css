@@ -1,0 +1,64 @@
+@layer theme, base, primeng;
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap');
+
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+@import "primeicons/primeicons.css";
+
+@custom-variant dark (&:where(.app-dark, .app-dark *));
+
+@theme {
+  /* Família de Fonte Geist */
+  --font-sans: "Geist", sans-serif;
+
+  /* Mapeamento de Border Radius em REM sincronizado com o PrimeNG */
+  --radius-xs: var(--p-border-radius-xs);
+  --radius-sm: var(--p-border-radius-sm);
+  --radius-md: var(--p-border-radius-md);
+  --radius-lg: var(--p-border-radius-lg);
+  --radius-xl: var(--p-border-radius-xl);
+
+  /* Cores de Status Semânticas vinculadas aos tokens do PrimeNG */
+  --color-success: var(--p-green-500);
+  --color-danger: var(--p-red-500);
+  --color-warning: var(--p-amber-500);
+  --color-info: var(--p-blue-500);
+
+  /* Variáveis de Espaçamento Estruturais do Layout */
+  --spacing-layout-padding: 1.5rem; /* 24px */
+  --spacing-sidebar-width: 18rem;   /* 288px */
+}
+
+@layer primeng-overrides {
+  :root {
+    /* Fonte do Sistema */
+    --p-font-family: "Geist", sans-serif;
+
+    /* Ajuste do Tooltip usando variáveis semânticas do tema */
+    --p-tooltip-border-radius: var(--p-border-radius-md);
+    --p-tooltip-background: var(--p-content-color);
+    --p-tooltip-color: var(--p-content-background);
+  }
+}
+
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Geist", sans-serif;
+  background-color: var(--p-content-background);
+  color: var(--p-content-color);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ======== COMPONENTES PRIMENG ============ */
+
+/* Tooltip */
+.p-tooltip {
+  font-size: .8rem;
+  .p-tooltip-text {
+    padding: .2rem .5rem;
+  }
+}
+

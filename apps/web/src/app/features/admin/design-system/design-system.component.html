@@ -1,0 +1,492 @@
+<div class="space-y-6">
+  <!-- Navegação de Abas -->
+  <div class="flex gap-1 border-b border-surface-200 dark:border-surface-800 pb-px">
+    <button 
+      (click)="activeTab.set('foundations')" 
+      [class]="activeTab() === 'foundations' ? 'border-b-2 border-primary text-primary px-4 py-2 font-medium flex items-center gap-2' : 'text-muted-color hover:text-surface-900 dark:hover:text-surface-0 px-4 py-2 font-medium flex items-center gap-2'">
+      <ng-icon name="lucidePalette" class="text-lg"></ng-icon>
+      Fundações
+    </button>
+    <button 
+      (click)="activeTab.set('inputs')" 
+      [class]="activeTab() === 'inputs' ? 'border-b-2 border-primary text-primary px-4 py-2 font-medium flex items-center gap-2' : 'text-muted-color hover:text-surface-900 dark:hover:text-surface-0 px-4 py-2 font-medium flex items-center gap-2'">
+      <ng-icon name="lucideSliders" class="text-lg"></ng-icon>
+      Ações & Inputs
+    </button>
+    <button 
+      (click)="activeTab.set('layout')" 
+      [class]="activeTab() === 'layout' ? 'border-b-2 border-primary text-primary px-4 py-2 font-medium flex items-center gap-2' : 'text-muted-color hover:text-surface-900 dark:hover:text-surface-0 px-4 py-2 font-medium flex items-center gap-2'">
+      <ng-icon name="lucideLayers" class="text-lg"></ng-icon>
+      Estrutura & Dados
+    </button>
+    <button 
+      (click)="activeTab.set('modals')" 
+      [class]="activeTab() === 'modals' ? 'border-b-2 border-primary text-primary px-4 py-2 font-medium flex items-center gap-2' : 'text-muted-color hover:text-surface-900 dark:hover:text-surface-0 px-4 py-2 font-medium flex items-center gap-2'">
+      <ng-icon name="lucideMessageSquare" class="text-lg"></ng-icon>
+      Modais & Overlays
+    </button>
+  </div>
+
+  <!-- CONTEÚDO DAS ABAS -->
+  
+  <!-- Aba 1: Fundações -->
+  <div *ngIf="activeTab() === 'foundations'" class="space-y-8">
+    
+    <!-- Seção de Cores -->
+    <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-6 shadow-sm">
+      <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">🎨 Cores Semânticas</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Brand Colors -->
+        <div class="space-y-3">
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">Marca (Destaque)</h4>
+          <div class="flex items-center gap-3 p-3 bg-surface-50 dark:bg-surface-950 rounded-lg">
+            <div class="w-10 h-10 rounded bg-primary"></div>
+            <div>
+              <p class="text-sm font-semibold text-surface-900 dark:text-surface-0">Primária</p>
+              <p class="text-xs text-muted-color">bg-primary</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-surface-50 dark:bg-surface-950 rounded-lg">
+            <div class="w-10 h-10 rounded bg-primary-hover"></div>
+            <div>
+              <p class="text-sm font-semibold text-surface-900 dark:text-surface-0">Hover Primário</p>
+              <p class="text-xs text-muted-color">bg-primary-hover</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Colors -->
+        <div class="space-y-3">
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">Status (Segurança)</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2 bg-surface-50 dark:bg-surface-950 rounded-lg flex items-center gap-2">
+              <div class="w-6 h-6 rounded bg-success"></div>
+              <div>
+                <p class="text-xs font-semibold text-surface-900 dark:text-surface-0">Success</p>
+                <p class="text-[10px] text-muted-color">bg-success</p>
+              </div>
+            </div>
+            <div class="p-2 bg-surface-50 dark:bg-surface-950 rounded-lg flex items-center gap-2">
+              <div class="w-6 h-6 rounded bg-danger"></div>
+              <div>
+                <p class="text-xs font-semibold text-surface-900 dark:text-surface-0">Danger</p>
+                <p class="text-[10px] text-muted-color">bg-danger</p>
+              </div>
+            </div>
+            <div class="p-2 bg-surface-50 dark:bg-surface-950 rounded-lg flex items-center gap-2">
+              <div class="w-6 h-6 rounded bg-warning"></div>
+              <div>
+                <p class="text-xs font-semibold text-surface-900 dark:text-surface-0">Warning</p>
+                <p class="text-[10px] text-muted-color">bg-warning</p>
+              </div>
+            </div>
+            <div class="p-2 bg-surface-50 dark:bg-surface-950 rounded-lg flex items-center gap-2">
+              <div class="w-6 h-6 rounded bg-info"></div>
+              <div>
+                <p class="text-xs font-semibold text-surface-900 dark:text-surface-0">Info</p>
+                <p class="text-[10px] text-muted-color">bg-info</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Surface Colors -->
+        <div class="space-y-3">
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">Superfícies Atuais</h4>
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-between items-center p-2 bg-surface-0 border border-surface-200 dark:border-surface-800 rounded">
+              <span class="text-xs font-medium text-surface-900 dark:text-surface-0">Card / Painel</span>
+              <span class="text-[10px] text-muted-color">bg-surface-0</span>
+            </div>
+            <div class="flex justify-between items-center p-2 bg-surface-50 dark:bg-surface-950 border border-surface-200 dark:border-surface-800 rounded">
+              <span class="text-xs font-medium text-surface-900 dark:text-surface-0">Fundo App</span>
+              <span class="text-[10px] text-muted-color">bg-surface-50</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tipografia -->
+    <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-6 shadow-sm">
+      <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">✍️ Tipografia e Hierarquia</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <h4 class="font-semibold text-surface-700 dark:text-surface-300">Tamanhos de Título</h4>
+          <div class="space-y-2">
+            <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">Título 1 (text-3xl font-bold)</h1>
+            <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Título 2 (text-2xl font-semibold)</h2>
+            <h3 class="text-xl font-medium text-surface-900 dark:text-surface-0">Título 3 (text-xl font-medium)</h3>
+            <h4 class="text-lg font-medium text-surface-900 dark:text-surface-0">Título 4 (text-lg font-medium)</h4>
+          </div>
+        </div>
+        
+        <div class="space-y-4">
+          <h4 class="font-semibold text-surface-700 dark:text-surface-300">Variantes de Cores de Texto</h4>
+          <div class="space-y-3">
+            <p class="text-base text-surface-900 dark:text-surface-0 font-medium">Texto de Destaque Principal (text-surface-900)</p>
+            <p class="text-base text-surface-700 dark:text-surface-300">Texto de Conteúdo Geral (text-surface-700)</p>
+            <p class="text-base text-muted-color">Texto Auxiliar ou Legenda (text-muted-color)</p>
+            <p class="text-base text-primary font-bold">Destaque de Marca (text-primary)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bordas e Sombras -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Bordas -->
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-4 shadow-sm">
+        <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">📐 Border Radius (Arredondamentos em REM)</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-50 dark:bg-surface-950 border border-surface-200 dark:border-surface-800 rounded-sm text-center">
+            <span class="text-xs font-semibold">XS (0.125rem)</span>
+          </div>
+          <div class="p-4 bg-surface-50 dark:bg-surface-950 border border-surface-200 dark:border-surface-800 rounded-md text-center">
+            <span class="text-xs font-semibold">MD (0.375rem)</span>
+          </div>
+          <div class="p-4 bg-surface-50 dark:bg-surface-950 border border-surface-200 dark:border-surface-800 rounded-lg text-center col-span-2">
+            <span class="text-xs font-semibold">LG (0.5rem - Padrão de Botões/Cards)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sombras -->
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-4 shadow-sm">
+        <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">🌫️ Sombras (Profundidades)</h3>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-4 bg-surface-0 dark:bg-surface-950 border border-surface-100 dark:border-surface-850 rounded shadow-sm text-center">
+            <span class="text-xs font-medium">shadow-sm</span>
+          </div>
+          <div class="p-4 bg-surface-0 dark:bg-surface-950 border border-surface-100 dark:border-surface-850 rounded shadow-md text-center">
+            <span class="text-xs font-medium">shadow-md</span>
+          </div>
+          <div class="p-4 bg-surface-0 dark:bg-surface-950 border border-surface-100 dark:border-surface-850 rounded shadow-lg text-center">
+            <span class="text-xs font-medium">shadow-lg</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aba 2: Controles e Ações -->
+  <div *ngIf="activeTab() === 'inputs'" class="space-y-6">
+    <!-- Botões -->
+    <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-6 shadow-sm">
+      <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">🖲️ Botões (PrimeNG)</h3>
+      
+      <div class="space-y-6">
+        <!-- Tamanho Pequeno -->
+        <div>
+          <h4 class="font-semibold text-surface-700 dark:text-surface-300 mb-2">Tamanho Pequeno (size="small")</h4>
+          <div class="flex flex-wrap gap-2 items-center">
+            <p-button label="Primário" severity="primary" size="small"></p-button>
+            <p-button label="Secundário" severity="secondary" size="small"></p-button>
+            <p-button label="Sucesso" severity="success" size="small"></p-button>
+            <p-button label="Alerta" severity="warn" size="small"></p-button>
+            <p-button label="Perigo" severity="danger" size="small"></p-button>
+            <p-button label="Informação" severity="info" size="small"></p-button>
+            <p-button label="Contraste" severity="contrast" size="small"></p-button>
+          </div>
+        </div>
+
+        <!-- Tamanho Padrão -->
+        <div>
+          <h4 class="font-semibold text-surface-700 dark:text-surface-300 mb-2">Tamanho Padrão (Customizado)</h4>
+          <div class="flex flex-wrap gap-2 items-center">
+            <p-button label="Primário" severity="primary"></p-button>
+            <p-button label="Secundário" severity="secondary"></p-button>
+            <p-button label="Sucesso" severity="success"></p-button>
+            <p-button label="Alerta" severity="warn"></p-button>
+            <p-button label="Perigo" severity="danger"></p-button>
+            <p-button label="Informação" severity="info"></p-button>
+            <p-button label="Contraste" severity="contrast"></p-button>
+          </div>
+        </div>
+
+        <!-- Tamanho Grande -->
+        <div>
+          <h4 class="font-semibold text-surface-700 dark:text-surface-300 mb-2">Tamanho Grande (size="large")</h4>
+          <div class="flex flex-wrap gap-2 items-center">
+            <p-button label="Primário" severity="primary" size="large"></p-button>
+            <p-button label="Secundário" severity="secondary" size="large"></p-button>
+            <p-button label="Sucesso" severity="success" size="large"></p-button>
+            <p-button label="Alerta" severity="warn" size="large"></p-button>
+            <p-button label="Perigo" severity="danger" size="large"></p-button>
+            <p-button label="Informação" severity="info" size="large"></p-button>
+            <p-button label="Contraste" severity="contrast" size="large"></p-button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3">
+          <div>
+            <h4 class="font-semibold text-surface-700 dark:text-surface-300 mb-2">Estilos Visuais</h4>
+            <div class="flex flex-wrap gap-2">
+              <p-button label="Raised" [raised]="true" size="small"></p-button>
+              <p-button label="Outlined" [outlined]="true" severity="secondary" size="small"></p-button>
+              <p-button label="Text Only" [text]="true" severity="primary" size="small"></p-button>
+              <p-button label="Redondo" [rounded]="true" severity="primary" size="small"></p-button>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-semibold text-surface-700 dark:text-surface-300 mb-2">Estados & Carregamento</h4>
+            <div class="flex flex-wrap gap-2">
+              <p-button label="Desabilitado" [disabled]="true" size="small"></p-button>
+              <p-button label="Salvando" [loading]="true" size="small"></p-button>
+              <p-button icon="pi pi-bell" [rounded]="true" [text]="true" severity="secondary" size="small"></p-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inputs -->
+    <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-6 shadow-sm">
+      <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">📝 Campos de Formulário</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Inputs de texto -->
+        <div class="space-y-4">
+          <h4 class="font-semibold text-surface-700 dark:text-surface-300">Campos de Texto</h4>
+          
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-surface-900 dark:text-surface-0">Input de Texto Comum</label>
+            <input pInputText type="text" [ngModel]="textValue()" (ngModelChange)="textValue.set($event)" placeholder="Digite algo..." class="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-surface-900 dark:text-surface-0">Senha</label>
+            <p-password [ngModel]="passwordValue()" (ngModelChange)="passwordValue.set($event)" [toggleMask]="true" [feedback]="false" styleClass="w-full" class="w-full"></p-password>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-surface-900 dark:text-surface-0">Textarea</label>
+            <textarea pTextarea rows="3" [ngModel]="textareaValue()" (ngModelChange)="textareaValue.set($event)" placeholder="Observações..." class="w-full"></textarea>
+          </div>
+        </div>
+
+        <!-- Seletores -->
+        <div class="space-y-6">
+          <h4 class="font-semibold text-surface-700 dark:text-surface-300">Seletores e Booleans</h4>
+          
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-surface-900 dark:text-surface-0">Select (Dropdown)</label>
+            <p-select 
+              [options]="selectOptions" 
+              [ngModel]="selectedOption()" 
+              (ngModelChange)="selectedOption.set($event)" 
+              optionLabel="label" 
+              optionValue="value"
+              class="w-full">
+            </p-select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 pt-2">
+            <!-- Checkbox -->
+            <div class="flex items-center gap-2">
+              <p-checkbox [binary]="true" [ngModel]="checkboxValue()" (ngModelChange)="checkboxValue.set($event)" inputId="chk"></p-checkbox>
+              <label for="chk" class="text-sm text-surface-900 dark:text-surface-0 font-medium">Aceito os termos</label>
+            </div>
+
+            <!-- Switch -->
+            <div class="flex items-center gap-2">
+              <p-toggleSwitch [ngModel]="switchValue()" (ngModelChange)="switchValue.set($event)" inputId="swt"></p-toggleSwitch>
+              <label for="swt" class="text-sm text-surface-900 dark:text-surface-0 font-medium">Receber alertas</label>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <label class="text-sm font-medium text-surface-900 dark:text-surface-0 block">Opção de Envio</label>
+            <div class="flex gap-4">
+              <div class="flex items-center gap-2">
+                <p-radioButton name="opts" value="op1" [ngModel]="radioValue()" (ngModelChange)="radioValue.set($event)" inputId="r1"></p-radioButton>
+                <label for="r1" class="text-sm text-surface-700 dark:text-surface-300">Opção 1</label>
+              </div>
+              <div class="flex items-center gap-2">
+                <p-radioButton name="opts" value="op2" [ngModel]="radioValue()" (ngModelChange)="radioValue.set($event)" inputId="r2"></p-radioButton>
+                <label for="r2" class="text-sm text-surface-700 dark:text-surface-300">Opção 2</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aba 3: Estrutura & Dados -->
+  <div *ngIf="activeTab() === 'layout'" class="space-y-6">
+    
+    <!-- Cards de Métrica -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-layout-padding flex justify-between items-start shadow-sm">
+        <div class="space-y-1">
+          <p class="text-xs font-semibold text-muted-color uppercase tracking-wider">Total de Assinaturas</p>
+          <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">1,248</p>
+          <div class="flex items-center gap-1 text-xs text-success">
+            <ng-icon name="lucideTrendingUp"></ng-icon>
+            <span>+12.4% este mês</span>
+          </div>
+        </div>
+        <div class="p-3 rounded-lg bg-primary/10 text-primary">
+          <ng-icon name="lucideFileText" class="text-xl"></ng-icon>
+        </div>
+      </div>
+
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-layout-padding flex justify-between items-start shadow-sm">
+        <div class="space-y-1">
+          <p class="text-xs font-semibold text-muted-color uppercase tracking-wider">Usuários Ativos</p>
+          <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">342</p>
+          <div class="flex items-center gap-1 text-xs text-success">
+            <ng-icon name="lucideTrendingUp"></ng-icon>
+            <span>+4.2% esta semana</span>
+          </div>
+        </div>
+        <div class="p-3 rounded-lg bg-info/10 text-info">
+          <ng-icon name="lucideActivity" class="text-xl"></ng-icon>
+        </div>
+      </div>
+
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-layout-padding flex justify-between items-start shadow-sm">
+        <div class="space-y-1">
+          <p class="text-xs font-semibold text-muted-color uppercase tracking-wider">Erros Registrados</p>
+          <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">2</p>
+          <div class="flex items-center gap-1 text-xs text-danger">
+            <span>Diminuição de 10%</span>
+          </div>
+        </div>
+        <div class="p-3 rounded-lg bg-danger/10 text-danger">
+          <ng-icon name="lucideAlertTriangle" class="text-xl"></ng-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela e Lista Lateral -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Tabela -->
+      <div class="lg:col-span-2 bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-4 shadow-sm">
+        <h3 class="text-lg font-bold text-surface-900 dark:text-surface-0">Tabela de Usuários (p-table)</h3>
+        
+        <p-table [value]="usersList" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '100%' }">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Perfil</th>
+              <th>Status</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-user>
+            <tr>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.role }}</td>
+              <td>
+                <span [class]="'px-2 py-0.5 rounded-full text-[10px] font-bold ' + 
+                  (user.status === 'Ativo' ? 'bg-success/15 text-success' : 
+                   user.status === 'Pendente' ? 'bg-warning/15 text-warning' : 'bg-surface-200 dark:bg-surface-800 text-muted-color')">
+                  {{ user.status }}
+                </span>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Lista Vertical -->
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-4 shadow-sm">
+        <h3 class="text-lg font-bold text-surface-900 dark:text-surface-0">Histórico de Atividades</h3>
+        
+        <div class="divide-y divide-surface-200 dark:divide-surface-800">
+          <div *ngFor="let act of activitiesList" class="py-3 first:pt-0 last:pb-0 flex items-start gap-3">
+            <div class="w-2 h-2 mt-2 rounded-full bg-primary"></div>
+            <div class="space-y-0.5">
+              <p class="text-sm font-semibold text-surface-900 dark:text-surface-0">{{ act.title }}</p>
+              <p class="text-xs text-muted-color">Por {{ act.user }} • {{ act.time }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aba 4: Modais e Overlays -->
+  <div *ngIf="activeTab() === 'modals'" class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Modais Triggers -->
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-6 shadow-sm">
+        <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">💬 Diálogos e Modais</h3>
+        
+        <div class="flex flex-wrap gap-3">
+          <!-- Triga Modal Normal -->
+          <p-button label="Abrir Modal Normal" icon="pi pi-external-link" (click)="displayNormalModal.set(true)"></p-button>
+          
+          <!-- Triga Modal Confirmação -->
+          <p-button label="Confirmar Exclusão" icon="pi pi-trash" severity="danger" (click)="confirmAction()"></p-button>
+        </div>
+      </div>
+
+      <!-- Tooltips e Badges -->
+      <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-6 shadow-sm">
+        <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0 border-b border-surface-200 dark:border-surface-800 pb-3">🏷️ Tooltips e Badges</h3>
+        
+        <div class="space-y-4">
+          <div>
+            <h4 class="font-semibold text-surface-700 dark:text-surface-300 mb-2">Hover Tooltips (Validando border-radius)</h4>
+            <div class="flex gap-2">
+              <button pButton pTooltip="Este tooltip tem border-radius de 6px (var(--p-border-radius-md))!" tooltipPosition="top" label="Passe o mouse (Top)" class="p-button-secondary"></button>
+              <button pButton pTooltip="Posicionamento à direita" tooltipPosition="right" label="Direita" class="p-button-secondary"></button>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-semibold text-surface-700 dark:text-surface-300 mb-2">Amostras de Status Badges</h4>
+            <div class="flex gap-2">
+              <span class="px-2 py-1 rounded text-xs font-bold bg-success/15 text-success">Sucesso / Ativo</span>
+              <span class="px-2 py-1 rounded text-xs font-bold bg-warning/15 text-warning">Aviso / Pendente</span>
+              <span class="px-2 py-1 rounded text-xs font-bold bg-danger/15 text-danger">Erro / Bloqueado</span>
+              <span class="px-2 py-1 rounded text-xs font-bold bg-info/15 text-info">Info / Destaque</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPONENTES GLOBAIS DE OVERLAY -->
+
+<!-- 1. Modal Normal (p-dialog) -->
+<p-dialog 
+  header="Criar Novo Usuário" 
+  [visible]="displayNormalModal()" 
+  (visibleChange)="displayNormalModal.set($event)"
+  [modal]="true" 
+  [style]="{ width: '400px' }" 
+  [draggable]="false" 
+  [resizable]="false">
+  
+  <div class="space-y-4 py-3">
+    <div class="flex flex-col gap-2">
+      <label for="modal-name" class="text-sm font-medium text-surface-900 dark:text-surface-0">Nome do Usuário</label>
+      <input pInputText id="modal-name" type="text" placeholder="Digite o nome completo" class="w-full" />
+    </div>
+    <div class="flex flex-col gap-2">
+      <label for="modal-email" class="text-sm font-medium text-surface-900 dark:text-surface-0">E-mail</label>
+      <input pInputText id="modal-email" type="email" placeholder="usuario@empresa.com" class="w-full" />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" [text]="true" severity="secondary" (click)="displayNormalModal.set(false)"></p-button>
+    <p-button label="Salvar Usuário" (click)="saveModalForm()"></p-button>
+  </ng-template>
+</p-dialog>
+
+<!-- 2. Modal de Confirmação e Toasts -->
+<p-confirmDialog></p-confirmDialog>
+<p-toast></p-toast>

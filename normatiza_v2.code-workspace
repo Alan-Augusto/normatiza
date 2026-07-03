@@ -1,0 +1,23 @@
+{
+  "folders": [
+    {
+      "name": "ROOT (Monorepo)",
+      "path": "."
+    },
+    {
+      "name": "WEB (Angular 22)",
+      "path": "apps/web"
+    },
+    {
+      "name": "MOBILE (Angular 20)",
+      "path": "apps/mobile"
+    },
+    {
+      "name": "SHARED (Biblioteca)",
+      "path": "packages/shared"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "node_modules/typescript/lib"
+  }
+}

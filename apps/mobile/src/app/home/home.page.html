@@ -1,0 +1,14 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      Mobile App
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding" *ngIf="helloData">
+  <div class="ion-text-center ion-margin-top">
+    <h1>{{ helloData.message }}</h1>
+    <p>Timestamp: {{ helloData.timestamp }}</p>
+  </div>
+</ion-content>

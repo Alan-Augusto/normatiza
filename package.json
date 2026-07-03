@@ -1,0 +1,17 @@
+{
+  "name": "normatiza-monorepo",
+  "version": "1.0.0",
+  "description": "Monorepo for Normatiza v2",
+  "private": true,
+  "scripts": {
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web start",
+    "dev:mobile": "pnpm --filter mobile start",
+    "build:all": "pnpm --filter api build && pnpm --filter web build && pnpm --filter mobile build",
+    "prisma:generate": "pnpm --filter api prisma:generate",
+    "prisma:migrate": "pnpm --filter api prisma:migrate"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
