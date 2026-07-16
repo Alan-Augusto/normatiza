@@ -1,0 +1,11 @@
+<header class="presentation-header">
+      <div class="logo">
+        <span class="logo-text">NORMATIZA</span>
+      </div>
+      <div class="actions">
+        <button class="lang-toggle" (click)="toggleLang()">
+          <span [class.active]="lang() === 'en'">EN</span> /
+          <span [class.active]="lang() === 'pt'">PT</span>
+        </button>
+      </div>
+    </header>

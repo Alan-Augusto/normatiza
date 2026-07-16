@@ -1,0 +1,29 @@
+<div class="slide-content premium-light">
+  <div class="inner">
+    <h2 class="section-title">{{ t().trust.title }}</h2>
+    
+    <div class="premium-stats">
+      <div class="stat-box glass-light">
+        <span class="num">{{ t().trust.stats.clients }}</span>
+        <span class="label">Clientes Corporativos</span>
+      </div>
+      <div class="stat-box glass-light">
+        <span class="num">{{ t().trust.stats.experts }}</span>
+        <span class="label">Time Multidisciplinar</span>
+      </div>
+      <div class="stat-box glass-light">
+        <span class="num">{{ t().trust.stats.speed }}</span>
+        <span class="label">Mais rápido com Software</span>
+      </div>
+    </div>
+    
+    <div class="diff-grid">
+      @for (diff of t().trust.differentials; track diff) {
+        <div class="diff-card">
+          <div class="diff-icon">✦</div>
+          <p>{{ diff }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

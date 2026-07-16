@@ -1,0 +1,20 @@
+<div class="slide-content premium-dark">
+  <div class="inner">
+    <div class="header-content">
+      <h2 class="section-title">{{ t().problem.title }}</h2>
+      <div class="line-decorator"></div>
+    </div>
+    
+    <div class="bento-grid">
+      @for (card of t().problem.cards; track card; let i = $index) {
+        <div class="glass-card" [style.animation-delay]="(i * 0.1) + 's'">
+          <div class="card-glow"></div>
+          <div class="icon-wrapper">
+             <div class="red-dot"></div>
+          </div>
+          <p>{{ card }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

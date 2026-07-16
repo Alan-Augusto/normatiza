@@ -1,0 +1,8 @@
+.slide-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; background: radial-gradient(circle at 50% 50%, #18181b 0%, #000 100%); }
+.bg-glow { position: absolute; top: -20vh; right: -10vw; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(0,0,0,0) 70%); z-index: 1; border-radius: 50%; }
+.bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 4rem 4rem; z-index: 1; mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%); }
+.inner { max-width: 1200px; width: 100%; text-align: center; position: relative; z-index: 10; padding: 0 2rem; }
+.badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 999px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #10b981; font-weight: 600; font-size: 0.875rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2rem; }
+.slide-title { font-size: 5rem; font-weight: 800; line-height: 1.1; margin-bottom: 2.5rem; letter-spacing: -0.04em; color: #fff; }
+.text-gradient { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide-subtitle { font-size: 1.5rem; color: #a1a1aa; font-weight: 400; max-width: 700px; margin: 0 auto; line-height: 1.5; }

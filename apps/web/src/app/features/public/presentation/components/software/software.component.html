@@ -1,0 +1,33 @@
+<div class="slide-content premium-light">
+  <div class="inner">
+    <div class="software-visual">
+      <div class="dashboard-mockup">
+         <!-- Abstraction of a dashboard -->
+         <div class="dash-sidebar"></div>
+         <div class="dash-content">
+            <div class="dash-header"></div>
+            <div class="dash-widgets">
+              <div class="widget wide"></div>
+              <div class="widget"></div>
+              <div class="widget"></div>
+            </div>
+         </div>
+      </div>
+      <div class="mobile-mockup"></div>
+    </div>
+
+    <div class="text-content">
+      <h2 class="section-title">{{ t().software.title }}</h2>
+      <p class="slide-subtitle">{{ t().software.subtitle }}</p>
+      
+      <div class="features-list">
+        @for (feat of t().software.features; track feat) {
+          <div class="feature-row">
+            <div class="check-icon">✓</div>
+            <p>{{ feat }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

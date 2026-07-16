@@ -1,0 +1,34 @@
+<div class="slide-content premium-dark-alt">
+  <div class="inner">
+    <h2 class="section-title">{{ t().timeline.title }}</h2>
+    
+    <div class="split-layout">
+      <!-- Left: Timeline -->
+      <div class="timeline-column">
+        <h3 class="column-header">O Processo</h3>
+        <div class="timeline-list">
+          @for (step of t().timeline.steps; track step; let i = $index) {
+            <div class="time-item glass-card">
+              <div class="circle"></div>
+              <p>{{ step }}</p>
+            </div>
+          }
+        </div>
+      </div>
+      
+      <!-- Right: Deliverables -->
+      <div class="deliverables-column">
+        <h3 class="column-header">Nossas Soluções</h3>
+        <div class="deliverables-grid">
+          @for (item of t().timeline.deliverables; track item) {
+            <div class="deliverable-card">
+              <div class="glow-edge"></div>
+              <span class="icon">✓</span>
+              <p>{{ item }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

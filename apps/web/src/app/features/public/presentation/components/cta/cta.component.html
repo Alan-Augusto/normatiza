@@ -1,0 +1,22 @@
+<div class="slide-content premium-dark">
+  <div class="bg-glow-center"></div>
+  <div class="inner centered">
+    <h2 class="section-title">{{ t().cta.title }}</h2>
+    
+    <div class="next-steps">
+      @for (step of t().cta.steps; track step; let i = $index) {
+        <div class="step-card glass-panel">
+          <div class="step-num">{{ i + 1 }}</div>
+          <p>{{ step }}</p>
+        </div>
+      }
+    </div>
+    
+    <div class="contact-info">
+      <div class="contact-pill">
+        <span class="mail-icon">✉</span>
+        {{ t().cta.contact }}
+      </div>
+    </div>
+  </div>
+</div>

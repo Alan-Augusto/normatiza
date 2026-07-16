@@ -1,0 +1,26 @@
+<section class="stats-section py-20 bg-slate-950 text-white border-y border-slate-800 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-20 [background-image:radial-gradient(circle,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:20px_20px]"></div>
+
+  <div class="max-w-7xl mx-auto px-6 relative z-10">
+    <div class="grid md:grid-cols-3 gap-10 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800/60">
+      <div class="reveal pt-4 md:pt-0">
+        <div class="text-4xl md:text-5xl font-medium tracking-tight mb-2 text-slate-100">
+          {{ stat1() }}%
+        </div>
+        <div class="text-xs text-slate-500 uppercase tracking-widest font-medium">Mais rápido na produção</div>
+      </div>
+      <div class="reveal delay-100 pt-10 md:pt-0">
+        <div class="text-4xl md:text-5xl font-medium tracking-tight mb-2 text-slate-100">
+          {{ stat2() }}%
+        </div>
+        <div class="text-xs text-slate-500 uppercase tracking-widest font-medium">Taxa de conclusão de análises</div>
+      </div>
+      <div class="reveal delay-200 pt-10 md:pt-0">
+        <div class="text-4xl md:text-5xl font-medium tracking-tight mb-2 text-slate-100">
+          {{ stat3() }}/5
+        </div>
+        <div class="text-xs text-slate-500 uppercase tracking-widest font-medium">Satisfação (CSAT)</div>
+      </div>
+    </div>
+  </div>
+</section>

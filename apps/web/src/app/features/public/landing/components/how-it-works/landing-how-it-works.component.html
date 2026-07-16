@@ -1,0 +1,37 @@
+<section class="py-24 bg-[#fafafa] border-y border-slate-100 relative">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-20 reveal">
+      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-slate-900 mb-4">
+        Comece a entregar em 4 passos
+      </h2>
+      <p class="text-lg text-slate-500 font-normal">O setup é rápido. A curva de aprendizado é mínima.</p>
+    </div>
+
+    <div class="relative max-w-5xl mx-auto">
+      <!-- Connector line desktop -->
+      <div class="hidden md:block absolute top-7 left-16 right-16 h-px bg-slate-200 z-0"></div>
+      <!-- Connector line mobile -->
+      <div class="md:hidden absolute top-6 bottom-6 left-[1.35rem] w-px bg-slate-200 z-0"></div>
+
+      <div class="grid md:grid-cols-4 gap-10 md:gap-6 relative z-10">
+        @for (step of steps; track step.number) {
+          <div class="flex md:flex-col items-start md:items-center text-left md:text-center gap-5 group reveal" [class]="step.delay">
+            @if (step.isFinal) {
+              <div class="w-14 h-14 shrink-0 rounded-full bg-[#5d0499] border-2 border-white text-white font-medium flex items-center justify-center shadow-lg shadow-[#5d0499]/30 relative z-10 group-hover:scale-110 transition-transform">
+                {{ step.number }}
+              </div>
+            } @else {
+              <div class="w-14 h-14 shrink-0 rounded-full bg-white border border-slate-200 text-slate-500 font-medium flex items-center justify-center shadow-sm relative z-10 group-hover:border-[#5d0499] group-hover:text-[#5d0499] transition-colors">
+                {{ step.number }}
+              </div>
+            }
+            <div>
+              <h4 class="text-base font-medium text-slate-900 mb-2">{{ step.title }}</h4>
+              <p class="text-sm text-slate-500 font-normal leading-relaxed">{{ step.description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,45 @@
+<section class="py-24 bg-white" id="faq">
+  <div class="max-w-3xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-slate-900 mb-4">
+        Perguntas frequentes
+      </h2>
+    </div>
+
+    <div class="space-y-4 reveal delay-100">
+      @for (item of items; track item.question; let i = $index) {
+        <div
+          class="border rounded-xl overflow-hidden transition-all duration-200"
+          [class.border-[#5d0499]/30]="openIndex() === i"
+          [class.border-slate-100]="openIndex() !== i"
+          [class.bg-white]="openIndex() === i"
+          [class.bg-slate-50/50]="openIndex() !== i"
+          [class.hover:border-slate-200]="openIndex() !== i"
+        >
+          <button
+            class="w-full flex items-center justify-between p-5 text-left cursor-pointer font-medium transition-colors"
+            [class.text-[#5d0499]]="openIndex() === i"
+            [class.text-slate-900]="openIndex() !== i"
+            (click)="toggle(i)"
+            type="button"
+          >
+            <span>{{ item.question }}</span>
+            <iconify-icon
+              icon="solar:add-circle-linear"
+              width="24"
+              class="shrink-0 transition-transform duration-300 text-slate-400"
+              [class.rotate-45]="openIndex() === i"
+              [class.text-[#5d0499]]="openIndex() === i"
+            ></iconify-icon>
+          </button>
+
+          @if (openIndex() === i) {
+            <div class="px-5 pb-5 text-sm text-slate-500 font-normal leading-relaxed border-t border-slate-100/50 pt-4">
+              {{ item.answer }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</section>
