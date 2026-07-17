@@ -42,6 +42,7 @@ export class PresentationComponent {
   public themeService = inject(ThemeService);
   currentSlide = signal(0);
   totalSlides = 10;
+  isFinalState = signal(false);
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {
@@ -55,16 +56,21 @@ export class PresentationComponent {
   nextSlide() {
     if (this.currentSlide() < this.totalSlides - 1) {
       this.currentSlide.update(v => v + 1);
+    } else if (this.currentSlide() === this.totalSlides - 1) {
+      this.isFinalState.set(true);
     }
   }
 
   prevSlide() {
-    if (this.currentSlide() > 0) {
+    if (this.isFinalState()) {
+      this.isFinalState.set(false);
+    } else if (this.currentSlide() > 0) {
       this.currentSlide.update(v => v - 1);
     }
   }
 
   setSlide(index: number) {
     this.currentSlide.set(index);
+    this.isFinalState.set(false);
   }
 }

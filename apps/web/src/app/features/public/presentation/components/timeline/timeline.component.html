@@ -1,4 +1,4 @@
-<div class="slide-content premium-dark-alt">
+<div class="slide-content premium-dark-alt" [class.is-visible]="isVisible">
   <div class="inner">
     <h2 class="section-title">{{ t().timeline.title }}</h2>
     
@@ -8,7 +8,7 @@
         <h3 class="column-header">{{ t().timeline.processHeader }}</h3>
         <div class="timeline-list">
           @for (step of t().timeline.steps; track step; let i = $index) {
-            <div class="time-item glass-card">
+            <div class="time-item glass-card step-anim-{{i}}">
               <div class="circle">
                 <ng-icon [name]="step.icon" size="18" class="step-icon"></ng-icon>
               </div>
@@ -22,12 +22,11 @@
       <div class="deliverables-column">
         <h3 class="column-header">{{ t().timeline.deliverablesHeader }}</h3>
         <div class="deliverables-grid">
-          @for (item of t().timeline.deliverables; track item) {
-            <div class="deliverable-card">
-              <div class="glow-edge"></div>
-              <span class="icon">
-                <ng-icon [name]="item.icon" size="24"></ng-icon>
-              </span>
+          @for (item of t().timeline.deliverables; track item; let i = $index) {
+            <div class="deliverable-card deliv-anim-{{i}}">
+              <div class="circle">
+                <ng-icon [name]="item.icon" size="18" class="step-icon"></ng-icon>
+              </div>
               <p>{{ item.text }}</p>
             </div>
           }

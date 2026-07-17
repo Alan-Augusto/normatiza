@@ -7,6 +7,9 @@
   font-family: var(--p-font-family, 'Inter', sans-serif);
   color: var(--p-content-color);
 }
+.final-bg { position: absolute; inset: 0; background: var(--p-primary-color); z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.8s cubic-bezier(0.8, 0, 0.2, 1); }
+.final-state .final-bg { opacity: 1; pointer-events: auto; }
+
 .bg-glow { position: absolute; top: -20vh; right: -10vw; width: 60vw; height: 60vw; background: radial-gradient(circle, color-mix(in srgb, var(--p-primary-color) 15%, transparent) 0%, transparent 70%); z-index: 0; border-radius: 50%; pointer-events: none; }
 .bg-grid { position: absolute; inset: 0; opacity: 0.35; background-image: linear-gradient(color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px); background-size: 4rem 4rem; z-index: 0; mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%); pointer-events: none; }
 
@@ -18,11 +21,22 @@
   top: 0; left: 0; right: 0;
   padding: 2rem 4rem;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end; /* Push actions to the right */
   align-items: center;
   z-index: 100;
 }
 .logo {
+  position: fixed;
+  top: 2rem;
+  left: 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.8s cubic-bezier(0.8, 0, 0.2, 1);
+  transform-origin: center center;
+  z-index: 101;
+}
+.logo-top {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -32,12 +46,60 @@
   background: var(--p-primary-color);
   border-radius: var(--p-border-radius-sm, 4px);
   box-shadow: 0 0 20px color-mix(in srgb, var(--p-primary-color) 40%, transparent);
+  transition: all 0.8s cubic-bezier(0.8, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo-mark img {
+  width: 100%; height: 100%; object-fit: contain;
+  transition: filter 0.8s;
 }
 .logo-text {
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: 4px;
   color: var(--p-content-color);
+  transition: all 0.8s cubic-bezier(0.8, 0, 0.2, 1);
+}
+.logo-subtitle {
+  font-size: 0.35rem; /* Will be scaled 3.5x */
+  color: #ffffff;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  white-space: nowrap;
+  letter-spacing: 1px;
+  position: absolute;
+  top: calc(100% + 4px);
+}
+
+/* Final State Transitions */
+.final-state .logo {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(3.5);
+}
+.final-state .logo-mark {
+  background: transparent;
+  box-shadow: none;
+}
+.final-state .logo-text {
+  color: #ffffff !important;
+}
+.final-state .logo-subtitle {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.4s;
+}
+
+/* Hide other elements during final state */
+.final-state .header-actions,
+.final-state .dots-nav,
+.final-state .nav-overlay {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
 }
 
 /* Lang Toggle */

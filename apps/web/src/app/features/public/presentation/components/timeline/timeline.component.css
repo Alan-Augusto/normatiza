@@ -1,18 +1,61 @@
+:host { display: block; width: 100%; height: 100%; }
 .slide-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--p-content-color) 3%, var(--p-content-background)); color: var(--p-content-color); }
 .inner { max-width: 1400px; width: 100%; padding: 0 4rem; display: flex; flex-direction: column; gap: 4rem; }
 .section-title { font-size: 3.5rem; font-weight: 800; letter-spacing: -0.02em; text-align: center; }
 .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; }
 .column-header { font-size: 1.5rem; font-weight: 700; color: var(--p-primary-color); margin-bottom: 2.5rem; text-transform: uppercase; letter-spacing: 2px; }
-.timeline-list { display: flex; flex-direction: column; gap: 1.5rem; position: relative; }
-.timeline-list::before { content: ''; position: absolute; left: 24px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--p-primary-color) 0%, transparent 100%); z-index: 0; }
-.time-item { display: flex; align-items: center; gap: 1.5rem; background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background)); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: var(--p-border-radius-xl, 16px); border: 1px solid var(--p-content-border-color); position: relative; z-index: 1; }
-.circle { width: 48px; height: 48px; background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); border: 2px solid var(--p-primary-color); border-radius: 50%; box-shadow: 0 0 10px color-mix(in srgb, var(--p-primary-color) 30%, transparent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.step-icon { color: var(--p-primary-color); }
-.time-item p { font-size: 1.3rem; font-weight: 500; color: var(--p-content-color); margin: 0; }
 
-.deliverables-grid { display: flex; flex-direction: column; gap: 1.5rem; }
-.deliverable-card { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); padding: 1.5rem 2rem; border-radius: var(--p-border-radius-xl, 16px); display: flex; align-items: center; gap: 1.5rem; position: relative; overflow: hidden; transition: background 0.3s; }
-.deliverable-card:hover { background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background)); }
-.glow-edge { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--p-primary-color); }
-.icon { color: var(--p-primary-color); display: flex; align-items: center; }
-.deliverable-card p { font-size: 1.3rem; margin: 0; color: var(--p-content-color); }
+/* Timeline List & Line */
+.timeline-list { display: flex; flex-direction: column; gap: 1rem; position: relative; }
+.timeline-list::before { content: ''; position: absolute; left: 33px; top: 20px; bottom: 20px; width: 2px; background: color-mix(in srgb, var(--p-content-color) 10%, transparent); z-index: 0; }
+.timeline-list::after { content: ''; position: absolute; left: 33px; top: 20px; bottom: 20px; width: 2px; background: var(--p-primary-color); z-index: 1; transform-origin: top; transform: scaleY(0); }
+
+/* Timeline Items (Steps) */
+/* Common Card Styles (Both Sides) */
+.time-item, .deliverable-card { 
+  display: flex; align-items: center; gap: 1rem; 
+  background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background)); 
+  backdrop-filter: blur(10px); padding: 1rem; 
+  border-radius: var(--p-border-radius-lg, 12px); 
+  border: 1px solid var(--p-content-border-color); 
+  position: relative; z-index: 2; 
+}
+.circle { width: 36px; height: 36px; background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); border: 2px solid var(--p-primary-color); border-radius: 50%; box-shadow: 0 0 10px color-mix(in srgb, var(--p-primary-color) 30%, transparent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.step-icon { color: var(--p-primary-color); }
+.time-item p, .deliverable-card p { font-size: 1.1rem; font-weight: 500; color: var(--p-content-color); margin: 0; }
+
+/* Left Cards Specific Initial State */
+.time-item { opacity: 0.3; filter: grayscale(100%); }
+
+/* Right Cards Specific Initial State */
+.deliverables-grid { display: flex; flex-direction: column; gap: 1rem; }
+.deliverable-card { opacity: 0; transform: translateX(30px); transition: background 0.3s; }
+.deliverable-card:hover { background: color-mix(in srgb, var(--p-content-color) 10%, var(--p-content-background)); }
+
+/* --- ANIMATIONS (Triggered by .is-visible) --- */
+/* Left side: Line grows over 4s */
+.is-visible .timeline-list::after { animation: lineGrow 4s linear forwards; }
+@keyframes lineGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+/* Left side: Light up sequentially (4 items spreading over 4s) */
+.is-visible .step-anim-0 { animation: lightUp 0.6s ease-out 0.5s forwards; }
+.is-visible .step-anim-1 { animation: lightUp 0.6s ease-out 1.5s forwards; }
+.is-visible .step-anim-2 { animation: lightUp 0.6s ease-out 2.5s forwards; }
+.is-visible .step-anim-3 { animation: lightUp 0.6s ease-out 3.5s forwards; }
+
+@keyframes lightUp { 
+  from { opacity: 0.3; filter: grayscale(100%); } 
+  to { opacity: 1; filter: grayscale(0%); } 
+}
+
+/* Right side: Appear only AFTER left side is done (> 4s) */
+/* They slide in and fade in with a nice spring-like cubic-bezier */
+.is-visible .deliv-anim-0 { animation: popInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 4.0s forwards; }
+.is-visible .deliv-anim-1 { animation: popInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 4.2s forwards; }
+.is-visible .deliv-anim-2 { animation: popInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 4.4s forwards; }
+.is-visible .deliv-anim-3 { animation: popInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 4.6s forwards; }
+
+@keyframes popInRight { 
+  from { opacity: 0; transform: translateX(30px); } 
+  to { opacity: 1; transform: translateX(0); } 
+}

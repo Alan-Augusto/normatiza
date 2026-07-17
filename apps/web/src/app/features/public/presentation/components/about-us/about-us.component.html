@@ -1,15 +1,18 @@
-<div class="slide-content premium-dark-alt">
+<div class="slide-content premium-dark-alt" [class.is-visible]="isVisible">
   <div class="bg-glow"></div>
   <div class="bg-grid"></div>
   <div class="inner">
     <div class="split-layout">
-      <div class="text-side">
+      <!-- Left side: Text -->
+      <div class="text-side anim-fade-left">
         <h2 class="section-title">{{ t().aboutUs.title }}</h2>
         <p class="section-subtitle">{{ t().aboutUs.subtitle }}</p>
       </div>
+      
+      <!-- Right side: Cards Grid -->
       <div class="highlights-grid">
-        @for (highlight of t().aboutUs.highlights; track highlight) {
-          <div class="highlight-card">
+        @for (highlight of t().aboutUs.highlights; track highlight; let i = $index) {
+          <div class="highlight-card anim-cascade-{{i}}">
             <div class="highlight-icon">
               <ng-icon [name]="highlight.icon" size="24"></ng-icon>
             </div>

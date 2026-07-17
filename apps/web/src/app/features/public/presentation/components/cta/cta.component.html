@@ -1,12 +1,14 @@
-<div class="slide-content premium-dark">
+<div class="slide-content premium-dark" [class.is-visible]="isVisible">
   <div class="bg-glow-center"></div>
   <div class="inner centered">
-    <h2 class="section-title">{{ t().cta.title }}</h2>
-    <p class="slide-subtitle">{{ t().cta.tagline }}</p>
+    <div class="header-anim">
+      <h2 class="section-title">{{ t().cta.title }}</h2>
+      <p class="slide-subtitle">{{ t().cta.tagline }}</p>
+    </div>
     
     <div class="next-steps">
       @for (step of t().cta.steps; track step; let i = $index) {
-        <div class="step-card glass-panel">
+        <div class="step-card glass-panel anim-cascade-{{i}}">
           <div class="step-num">
             <ng-icon [name]="step.icon" size="24"></ng-icon>
           </div>
@@ -15,7 +17,7 @@
       }
     </div>
     
-    <div class="contact-info">
+    <div class="contact-info anim-fade-up">
       <div class="contact-pill">
         <span class="mail-icon"><ng-icon name="lucideMail" size="20"></ng-icon></span>
         {{ t().cta.contact }}

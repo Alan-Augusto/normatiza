@@ -1,3 +1,5 @@
+:host { display: block; width: 100%; height: 100%; }
+
 /* ── Slide container ── */
 .slide-content {
   width: 100%;
@@ -16,29 +18,31 @@
 
 /* ── Inner wrapper ── */
 .inner {
-  max-width: 1400px;
+  max-width: 1200px;
   width: 100%;
   padding: 0 4rem;
   display: flex;
   flex-direction: column;
-  gap: 4.5rem;
+  justify-content: center;
+  align-items: center;
 }
 
 /* ── Section title ── */
 .section-title {
-  font-size: 4rem;
+  font-size: 4.5rem;
   font-weight: 800;
   text-align: center;
   letter-spacing: -0.03em;
   color: var(--p-content-color);
-  margin: 0 0 3rem 0;
+  margin: 0 0 4rem 0;
 }
 
 /* ── Stats row ── */
 .premium-stats {
   display: flex;
   justify-content: center;
-  gap: 2.5rem;
+  gap: 3rem;
+  width: 100%;
 }
 
 .stat-box {
@@ -46,31 +50,36 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--p-content-border-color);
-  padding: 2.5rem 3rem;
+  padding: 3.5rem 3rem;
   border-radius: 24px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   flex: 1;
   box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--p-content-color) 5%, transparent);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  
+  /* Initial State for Animation */
+  opacity: 0;
+  transform: translateY(30px);
 }
 
 .stat-box:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 40px -12px color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  transform: translateY(-10px) !important;
+  box-shadow: 0 20px 40px -12px color-mix(in srgb, var(--p-primary-color) 15%, transparent);
+  border-color: color-mix(in srgb, var(--p-primary-color) 50%, transparent);
 }
 
 .stat-icon {
   color: var(--p-primary-color);
-  margin-bottom: 0.25rem;
-  opacity: 0.7;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
 }
 
 .num {
-  font-size: 4rem;
+  font-size: 5rem;
   font-weight: 800;
   color: var(--p-primary-color);
   letter-spacing: -0.05em;
@@ -78,84 +87,19 @@
 }
 
 .label {
-  font-size: 0.95rem;
-  color: color-mix(in srgb, var(--p-content-color) 55%, transparent);
+  font-size: 1.1rem;
+  color: color-mix(in srgb, var(--p-content-color) 60%, transparent);
   text-transform: uppercase;
   letter-spacing: 2.5px;
   font-weight: 700;
 }
 
-/* ── Testimonials section ── */
-.testimonials-title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: -0.02em;
-  color: var(--p-content-color);
-  margin: 0 0 2.5rem 0;
-}
+/* --- ANIMATIONS --- */
+.is-visible .stat-anim-0 { animation: slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards; }
+.is-visible .stat-anim-1 { animation: slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s forwards; }
+.is-visible .stat-anim-2 { animation: slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.6s forwards; }
 
-.testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-}
-
-.testimonial-card {
-  background: color-mix(in srgb, var(--p-content-background) 92%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid color-mix(in srgb, var(--p-content-border-color) 70%, transparent);
-  border-radius: var(--p-border-radius-xl, 16px);
-  padding: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  position: relative;
-  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.testimonial-card:hover {
-  transform: translateY(-4px);
-  border-color: color-mix(in srgb, var(--p-primary-color) 35%, transparent);
-  box-shadow: 0 14px 36px -10px color-mix(in srgb, var(--p-primary-color) 8%, transparent);
-}
-
-.quote-icon {
-  color: color-mix(in srgb, var(--p-primary-color) 30%, transparent);
-  line-height: 1;
-}
-
-.quote-text {
-  font-size: 1.1rem;
-  font-style: italic;
-  line-height: 1.7;
-  color: color-mix(in srgb, var(--p-content-color) 80%, transparent);
-  margin: 0;
-  flex: 1;
-}
-
-.divider {
-  width: 48px;
-  height: 2px;
-  background: color-mix(in srgb, var(--p-primary-color) 25%, transparent);
-  border-radius: 2px;
-}
-
-.author {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.author-name {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--p-content-color);
-}
-
-.author-role {
-  font-size: 0.85rem;
-  color: color-mix(in srgb, var(--p-content-color) 50%, transparent);
-  font-weight: 500;
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -1,14 +1,76 @@
+:host { display: block; width: 100%; height: 100%; }
 .slide-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; background: color-mix(in srgb, var(--p-content-color) 3%, var(--p-content-background)); color: var(--p-content-color); overflow: hidden; }
-.bg-glow { position: absolute; top: 50%; left: 30%; transform: translate(-50%, -50%); width: 70vw; height: 70vh; background: radial-gradient(circle, color-mix(in srgb, var(--p-primary-color) 5%, transparent) 0%, transparent 65%); pointer-events: none; z-index: 1; }
+
+/* Animated pulse for background glow */
+.bg-glow { 
+  position: absolute; top: 50%; left: 30%; transform: translate(-50%, -50%); 
+  width: 70vw; height: 70vh; 
+  background: radial-gradient(circle, color-mix(in srgb, var(--p-primary-color) 7%, transparent) 0%, transparent 65%); 
+  pointer-events: none; z-index: 1; 
+  animation: pulseGlow 8s infinite alternate ease-in-out;
+}
+@keyframes pulseGlow {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
 .bg-grid { position: absolute; inset: 0; background-image: linear-gradient(color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 10%, transparent) 1px, transparent 1px); background-size: 4rem 4rem; z-index: 1; mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%); pointer-events: none; }
 .inner { max-width: 1400px; width: 100%; padding: 0 4rem; position: relative; z-index: 10; }
-.split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
-.text-side { display: flex; flex-direction: column; gap: 1.5rem; }
-.section-title { font-size: 4rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: var(--p-content-color); margin: 0; }
-.section-subtitle { font-size: 1.25rem; line-height: 1.7; color: color-mix(in srgb, var(--p-content-color) 55%, transparent); max-width: 500px; margin: 0; font-weight: 400; }
+.split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; }
+
+/* Initial states for animations */
+.text-side { display: flex; flex-direction: column; gap: 1.5rem; opacity: 0; transform: translateX(-30px); }
+.section-title { font-size: 4.5rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: var(--p-content-color); margin: 0; }
+.section-subtitle { font-size: 1.3rem; line-height: 1.8; color: color-mix(in srgb, var(--p-content-color) 65%, transparent); max-width: 500px; margin: 0; font-weight: 400; }
 .highlights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.highlight-card { background: color-mix(in srgb, var(--p-content-color) 5%, var(--p-content-background)); backdrop-filter: blur(12px); border: 1px solid color-mix(in srgb, var(--p-content-color) 8%, var(--p-content-background)); border-radius: var(--p-border-radius-xl, 16px); padding: 2rem 1.75rem; display: flex; flex-direction: column; gap: 0.75rem; transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
-.highlight-card:hover { transform: translateY(-5px); border-color: color-mix(in srgb, var(--p-primary-color) 40%, transparent); box-shadow: 0 15px 35px -10px color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
-.highlight-icon { width: 48px; height: 48px; border-radius: 50%; background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); border: 2px solid var(--p-primary-color); display: flex; align-items: center; justify-content: center; color: var(--p-primary-color); box-shadow: 0 0 12px color-mix(in srgb, var(--p-primary-color) 20%, transparent); flex-shrink: 0; }
-.highlight-title { font-size: 1.2rem; font-weight: 700; color: var(--p-content-color); margin: 0; }
-.highlight-text { font-size: 1rem; color: color-mix(in srgb, var(--p-content-color) 55%, transparent); margin: 0; line-height: 1.5; font-weight: 400; }
+
+.highlight-card { 
+  background: color-mix(in srgb, var(--p-content-color) 5%, var(--p-content-background)); 
+  backdrop-filter: blur(12px); 
+  border: 1px solid color-mix(in srgb, var(--p-content-color) 8%, var(--p-content-background)); 
+  border-radius: var(--p-border-radius-xl, 16px); 
+  padding: 2.5rem 2rem; 
+  display: flex; flex-direction: column; gap: 1rem; 
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s ease, box-shadow 0.3s ease; 
+  opacity: 0; transform: translateY(30px);
+}
+.highlight-card:hover { 
+  transform: translateY(-8px) scale(1.02); 
+  border-color: color-mix(in srgb, var(--p-primary-color) 40%, transparent); 
+  box-shadow: 0 15px 35px -10px color-mix(in srgb, var(--p-primary-color) 15%, transparent); 
+}
+.highlight-icon { 
+  width: 54px; height: 54px; 
+  border-radius: 50%; 
+  background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); 
+  border: 2px solid var(--p-primary-color); 
+  display: flex; align-items: center; justify-content: center; 
+  color: var(--p-primary-color); 
+  box-shadow: 0 0 12px color-mix(in srgb, var(--p-primary-color) 20%, transparent); 
+  flex-shrink: 0; 
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.highlight-card:hover .highlight-icon {
+  transform: scale(1.15);
+  box-shadow: 0 0 25px color-mix(in srgb, var(--p-primary-color) 40%, transparent); 
+}
+.highlight-title { font-size: 1.3rem; font-weight: 700; color: var(--p-content-color); margin: 0; }
+.highlight-text { font-size: 1.05rem; color: color-mix(in srgb, var(--p-content-color) 60%, transparent); margin: 0; line-height: 1.6; font-weight: 400; }
+
+/* --- ENTRANCE ANIMATIONS --- */
+.is-visible .anim-fade-left { animation: fadeLeft 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+.is-visible .anim-cascade-0 { animation: cascadeUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s forwards; }
+.is-visible .anim-cascade-1 { animation: cascadeUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.45s forwards; }
+.is-visible .anim-cascade-2 { animation: cascadeUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.6s forwards; }
+.is-visible .anim-cascade-3 { animation: cascadeUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.75s forwards; }
+
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cascadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
