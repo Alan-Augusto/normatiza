@@ -1,0 +1,164 @@
+:host { display: block; width: 100%; height: 100%; }
+.slide-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; background: color-mix(in srgb, var(--p-content-color) 3%, var(--p-content-background)); color: var(--p-content-color); overflow: hidden; }
+
+.bg-glow { 
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+  width: 80vw; height: 80vh; 
+  background: radial-gradient(circle, color-mix(in srgb, var(--p-primary-color) 8%, transparent) 0%, transparent 60%); 
+  pointer-events: none; z-index: 1; 
+  animation: pulseGlow 10s infinite alternate ease-in-out;
+}
+@keyframes pulseGlow {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
+.bg-grid { position: absolute; inset: 0; background-image: linear-gradient(color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 10%, transparent) 1px, transparent 1px); background-size: 4rem 4rem; z-index: 1; mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%); pointer-events: none; }
+
+.inner { max-width: 1400px; width: 100%; padding: 0 2rem; position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+
+.section-title { font-size: 4rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin: 0; text-align: center; color: var(--p-content-color); }
+
+.universe-container {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  height: 450px; /* Reduced vertical footprint */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px; /* Enable 3D depth */
+  margin-top: 1rem;
+}
+
+.solar-system {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotateX(65deg); /* Tilted 3D plane */
+  transform-style: preserve-3d;
+  width: 0; height: 0;
+}
+
+/* Core Mission */
+.core-mission {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotateX(-65deg); /* Stand upright against the tilt */
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.core-glow-layer-1 {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, color-mix(in srgb, var(--p-primary-color) 40%, transparent), transparent);
+  animation: spin 15s linear infinite;
+}
+.core-glow-layer-2 {
+  position: absolute; inset: 2px; border-radius: 50%;
+  background: color-mix(in srgb, var(--p-content-background) 85%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid color-mix(in srgb, var(--p-primary-color) 30%, transparent);
+  box-shadow: inset 0 0 30px color-mix(in srgb, var(--p-primary-color) 20%, transparent), 0 0 40px color-mix(in srgb, var(--p-primary-color) 20%, transparent);
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.core-content {
+  position: relative; z-index: 10; display: flex; flex-direction: column; gap: 0.8rem;
+}
+.core-content h3 { font-size: 1.3rem; color: var(--p-primary-color); margin: 0; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+.core-content p { font-size: 0.9rem; line-height: 1.4; color: color-mix(in srgb, var(--p-content-color) 90%, transparent); margin: 0; font-weight: 500; }
+
+/* Orbits */
+.orbit-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(var(--radius) * 2);
+  height: calc(var(--radius) * 2);
+  border: 1.5px dashed color-mix(in srgb, var(--p-primary-color) 25%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.orbit-arm {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: var(--radius);
+  height: 0;
+  transform-origin: 0 50%;
+  animation-name: orbit;
+  animation-duration: var(--duration);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-delay: var(--delay);
+  transform-style: preserve-3d;
+}
+
+.node-wrapper {
+  position: absolute;
+  right: 0; top: 0;
+  transform: translate(50%, -50%);
+  transform-style: preserve-3d;
+}
+
+.node-counter-rotate {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  animation-name: counterOrbit;
+  animation-duration: var(--duration);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-delay: var(--delay);
+  transform-style: preserve-3d;
+}
+
+.node-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: color-mix(in srgb, var(--p-content-color) 5%, var(--p-content-background));
+  border: 1px solid color-mix(in srgb, var(--p-primary-color) 60%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--p-primary-color);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--p-primary-color) 40%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.node-text {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  animation-name: flipText;
+  animation-duration: var(--duration);
+  animation-timing-function: step-end;
+  animation-iteration-count: infinite;
+  animation-delay: var(--delay);
+  white-space: nowrap;
+  
+  font-weight: 600; font-size: 1rem; color: var(--p-content-color);
+  background: color-mix(in srgb, var(--p-content-color) 5%, var(--p-content-background));
+  padding: 0.4rem 0.8rem; border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--p-content-color) 15%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+@keyframes orbit {
+  0% { transform: rotateZ(0deg); }
+  100% { transform: rotateZ(360deg); }
+}
+
+@keyframes counterOrbit {
+  0% { transform: rotateZ(0deg) rotateX(-65deg); }
+  100% { transform: rotateZ(-360deg) rotateX(-65deg); }
+}
+
+@keyframes flipText {
+  0% { left: 55px; right: auto; text-align: left; }
+  25% { left: auto; right: 55px; text-align: right; }
+  75% { left: 55px; right: auto; text-align: left; }
+  100% { left: 55px; right: auto; text-align: left; }
+}

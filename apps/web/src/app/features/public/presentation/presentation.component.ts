@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { PresentationI18nService } from './services/presentation-i18n.service';
 
 import { HeroComponent } from './components/hero/hero.component';
+import { MissionValuesComponent } from './components/mission-values/mission-values.component';
 import { ProblemComponent } from './components/problem/problem.component';
 import { CostComponent } from './components/cost/cost.component';
 import { SolutionComponent } from './components/solution/solution.component';
@@ -24,6 +25,7 @@ import { CtaComponent } from './components/cta/cta.component';
     CommonModule,
     NgIconComponent,
     HeroComponent,
+    MissionValuesComponent,
     ProblemComponent,
     CostComponent,
     SolutionComponent,
@@ -41,7 +43,7 @@ export class PresentationComponent {
   public i18n = inject(PresentationI18nService);
   public themeService = inject(ThemeService);
   currentSlide = signal(0);
-  totalSlides = 10;
+  totalSlides = 11;
   isFinalState = signal(false);
 
   @HostListener('window:keydown', ['$event'])

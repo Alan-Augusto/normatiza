@@ -10,6 +10,19 @@ const TRANSLATIONS = {
       titleLine2: 'NR-12 compliant',
       subtitle: 'Multidisciplinary engineering + proprietary technology to ensure industrial compliance.'
     },
+    missionValues: {
+      title: 'Our Purpose',
+      missionTitle: 'Mission',
+      missionText: 'To be the reference in intelligent NR-12 management, transforming legal compliance into a competitive advantage with innovation, engineering, and a commitment to people\'s safety.',
+      valuesTitle: 'Values',
+      values: [
+        { text: 'Safety as a value', icon: 'lucideShield' },
+        { text: 'Technical excellence', icon: 'lucideAward' },
+        { text: 'Commitment to results', icon: 'lucideTarget' },
+        { text: 'Ethics and transparency', icon: 'lucideEye' },
+        { text: 'Continuous innovation', icon: 'lucideLightbulb' }
+      ]
+    },
     problem: {
       title: 'The Current Industrial Scenario',
       cards: [
@@ -30,7 +43,7 @@ const TRANSLATIONS = {
     },
     solution: {
       title: 'A Paradigm Shift',
-      subtitle: 'We eliminate chaos by unifying multidisciplinary engineering with a proprietary management platform.',
+      subtitle: 'We simplify management by combining multidisciplinary engineering with a proprietary platform for machines and equipment.',
       imgAlt: 'Normatiza Platform',
       animation: {
         syncing: 'Syncing...',
@@ -141,6 +154,19 @@ const TRANSLATIONS = {
       titleLine2: 'conforme à NR-12',
       subtitle: 'Engenharia multidisciplinar + tecnologia proprietária para garantir a conformidade industrial.'
     },
+    missionValues: {
+      title: 'Nosso Propósito',
+      missionTitle: 'Missão',
+      missionText: 'Ser a referência em gestão inteligente da NR-12, transformando a conformidade legal em um diferencial competitivo, com inovação, engenharia e compromisso com a segurança das pessoas.',
+      valuesTitle: 'Valores',
+      values: [
+        { text: 'Segurança como valor', icon: 'lucideShield' },
+        { text: 'Excelência técnica', icon: 'lucideAward' },
+        { text: 'Compromisso com os resultados', icon: 'lucideTarget' },
+        { text: 'Ética e transparência', icon: 'lucideEye' },
+        { text: 'Inovação contínua', icon: 'lucideLightbulb' }
+      ]
+    },
     problem: {
       title: 'O cenário industrial atual',
       cards: [
@@ -161,7 +187,7 @@ const TRANSLATIONS = {
     },
     solution: {
       title: 'Uma Mudança de Paradigma',
-      subtitle: 'Eliminamos o caos unindo engenharia multidisciplinar a uma plataforma proprietária de gestão.',
+      subtitle: 'Simplificamos a gestão ao unir engenharia multidisciplinar a uma plataforma proprietária para máquinas e equipamentos.',
       imgAlt: 'Plataforma Normatiza',
       animation: {
         syncing: 'Sincronizando...',

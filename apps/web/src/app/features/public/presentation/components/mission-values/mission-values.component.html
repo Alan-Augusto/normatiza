@@ -1,0 +1,47 @@
+<div class="slide-content premium-dark-alt">
+  <div class="bg-glow"></div>
+  <div class="bg-grid"></div>
+  
+  <div class="inner">
+    <h2 class="section-title text-center">{{ t().missionValues.title }}</h2>
+
+    <div class="universe-container">
+      <div class="solar-system">
+        
+        <!-- Central Core: Mission -->
+        <div class="core-mission">
+          <div class="core-glow-layer-1"></div>
+          <div class="core-glow-layer-2"></div>
+          <div class="core-content">
+            <h3>{{ t().missionValues.missionTitle }}</h3>
+            <p>{{ t().missionValues.missionText }}</p>
+          </div>
+        </div>
+
+        <!-- Orbiting/Surrounding Items: Values -->
+        @for (val of t().missionValues.values; track val; let i = $index) {
+          <!-- Dashed Orbit Ring -->
+          <div class="orbit-ring" [style.--radius]="160 + (i * 60) + 'px'"></div>
+
+          <!-- Orbit Arm -->
+          <div class="orbit-arm" 
+               [style.--radius]="160 + (i * 60) + 'px'"
+               [style.--duration]="100 + (i * 20) + 's'"
+               [style.--delay]="-(i * 67) + 's'">
+            <div class="node-wrapper">
+              <div class="node-counter-rotate">
+                <div class="node-icon">
+                  <ng-icon [name]="val.icon" size="24"></ng-icon>
+                </div>
+                <div class="node-text">
+                  <span>{{ val.text }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+</div>
