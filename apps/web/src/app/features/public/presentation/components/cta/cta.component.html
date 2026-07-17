@@ -2,20 +2,27 @@
   <div class="bg-glow-center"></div>
   <div class="inner centered">
     <h2 class="section-title">{{ t().cta.title }}</h2>
+    <p class="slide-subtitle">{{ t().cta.tagline }}</p>
     
     <div class="next-steps">
       @for (step of t().cta.steps; track step; let i = $index) {
         <div class="step-card glass-panel">
-          <div class="step-num">{{ i + 1 }}</div>
-          <p>{{ step }}</p>
+          <div class="step-num">
+            <ng-icon [name]="step.icon" size="24"></ng-icon>
+          </div>
+          <p>{{ step.text }}</p>
         </div>
       }
     </div>
     
     <div class="contact-info">
       <div class="contact-pill">
-        <span class="mail-icon">✉</span>
+        <span class="mail-icon"><ng-icon name="lucideMail" size="20"></ng-icon></span>
         {{ t().cta.contact }}
+      </div>
+      <div class="contact-pill whatsapp-pill">
+        <span class="mail-icon whatsapp-icon"><ng-icon name="lucideMessageCircle" size="20"></ng-icon></span>
+        {{ t().cta.whatsapp }}
       </div>
     </div>
   </div>

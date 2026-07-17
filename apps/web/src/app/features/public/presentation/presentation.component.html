@@ -1,24 +1,33 @@
 <div class="deck-container">
   
   <!-- Premium Header -->
-  <header class="deck-header" [class.dark-text]="isLightSlide()">
+  <header class="deck-header">
     <div class="logo">
-      <div class="logo-mark"></div>
+      <div class="logo-mark">
+        <img src="assets/logo.png" alt="Logo Mark" />
+      </div>
       <span class="logo-text">NORMATIZA</span>
     </div>
     
-    <!-- Language Toggle -->
-    <div class="lang-toggle" (click)="i18n.toggleLanguage()">
-      <span [class.active]="i18n.currentLang() === 'pt'">PT</span>
-      <div class="switch">
-        <div class="knob" [class.is-en]="i18n.currentLang() === 'en'"></div>
+    <div class="header-actions">
+      <!-- Theme Toggle -->
+      <div class="theme-toggle" (click)="themeService.toggleTheme()">
+        <ng-icon [name]="themeService.isDarkMode() ? 'lucideMoon' : 'lucideSun'" size="20"></ng-icon>
       </div>
-      <span [class.active]="i18n.currentLang() === 'en'">EN</span>
+      
+      <!-- Language Toggle -->
+      <div class="lang-toggle" (click)="i18n.toggleLanguage()">
+        <span [class.active]="i18n.currentLang() === 'pt'">PT</span>
+        <div class="switch">
+          <div class="knob" [class.is-en]="i18n.currentLang() === 'en'"></div>
+        </div>
+        <span [class.active]="i18n.currentLang() === 'en'">EN</span>
+      </div>
     </div>
   </header>
 
   <!-- Navigation Dots (Premium feature) -->
-  <div class="dots-nav" [class.dark-text]="isLightSlide()">
+  <div class="dots-nav">
     @for (item of [].constructor(totalSlides); track $index) {
       <div class="dot" 
            [class.active]="currentSlide() === $index"
@@ -31,15 +40,18 @@
   <div class="slides-track" [style.transform]="'translateX(-' + (currentSlide() * 100) + 'vw)'">
     <div class="slide"><app-presentation-hero></app-presentation-hero></div>
     <div class="slide"><app-presentation-problem></app-presentation-problem></div>
+    <div class="slide"><app-presentation-cost></app-presentation-cost></div>
     <div class="slide"><app-presentation-solution></app-presentation-solution></div>
     <div class="slide"><app-presentation-software></app-presentation-software></div>
-    <div class="slide"><app-presentation-trust></app-presentation-trust></div>
+    <div class="slide"><app-presentation-services></app-presentation-services></div>
     <div class="slide"><app-presentation-timeline></app-presentation-timeline></div>
+    <div class="slide"><app-presentation-social-proof></app-presentation-social-proof></div>
+    <div class="slide"><app-presentation-about-us></app-presentation-about-us></div>
     <div class="slide"><app-presentation-cta></app-presentation-cta></div>
   </div>
   
   <!-- Slide Navigation Overlay -->
-  <div class="nav-overlay" [class.dark-text]="isLightSlide()">
+  <div class="nav-overlay">
     <button (click)="prevSlide()" [disabled]="currentSlide() === 0" class="glass-btn">←</button>
     <button (click)="nextSlide()" [disabled]="currentSlide() === totalSlides - 1" class="glass-btn">→</button>
   </div>

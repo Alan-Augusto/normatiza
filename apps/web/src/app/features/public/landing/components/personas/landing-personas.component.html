@@ -1,25 +1,25 @@
-<section class="py-24 bg-[#fafafa]">
+<section class="py-24 bg-surface-50">
   <div class="max-w-7xl mx-auto px-6">
     <div class="text-center max-w-2xl mx-auto mb-16 reveal">
-      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-slate-900 mb-4">
+      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-surface-900 mb-4">
         Feita para quem vive NR-12
       </h2>
     </div>
 
     <div class="grid md:grid-cols-3 gap-6">
       @for (persona of personas; track persona.title) {
-        <div class="bg-white border border-slate-200 rounded-2xl p-8 hover:-translate-y-2 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative reveal group" [class]="persona.delay">
+        <div class="bg-surface-0 border border-surface-200 rounded-2xl p-8 hover:-translate-y-2 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative reveal group" [class]="persona.delay">
           @if (persona.badge) {
-            <div class="absolute top-0 right-8 -translate-y-1/2 bg-slate-800 text-white text-[10px] font-medium px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+            <div class="absolute top-0 right-8 -translate-y-1/2 bg-surface-800 text-white text-[10px] font-medium px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
               {{ persona.badge }}
             </div>
           }
-          <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-[#5d0499]/5 transition-colors">
-            <iconify-icon [attr.icon]="persona.icon" class="text-slate-400 group-hover:text-[#5d0499] text-2xl transition-colors"></iconify-icon>
+          <div class="w-12 h-12 rounded-full bg-surface-50 flex items-center justify-center mb-6 group-hover:bg-primary/5 transition-colors">
+            <ng-icon [name]="persona.icon" class="text-slate-400 group-hover:text-primary text-2xl transition-colors"></ng-icon>
           </div>
-          <h3 class="text-lg font-medium tracking-tight text-slate-900 mb-1">{{ persona.title }}</h3>
-          <div class="text-xs font-normal text-[#5d0499] mb-4">{{ persona.subtitle }}</div>
-          <p class="text-sm text-slate-500 font-normal leading-relaxed">{{ persona.description }}</p>
+          <h3 class="text-lg font-medium tracking-tight text-surface-900 mb-1">{{ persona.title }}</h3>
+          <div class="text-xs font-normal text-primary mb-4">{{ persona.subtitle }}</div>
+          <p class="text-sm text-muted-color font-normal leading-relaxed">{{ persona.description }}</p>
         </div>
       }
     </div>

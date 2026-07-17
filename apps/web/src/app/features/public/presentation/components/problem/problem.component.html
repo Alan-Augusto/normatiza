@@ -10,9 +10,9 @@
         <div class="glass-card" [style.animation-delay]="(i * 0.1) + 's'">
           <div class="card-glow"></div>
           <div class="icon-wrapper">
-             <div class="red-dot"></div>
+             <ng-icon [name]="card.icon" size="32" class="red-icon"></ng-icon>
           </div>
-          <p>{{ card }}</p>
+          <p>{{ card.text }}</p>
         </div>
       }
     </div>

@@ -5,12 +5,14 @@
     <div class="split-layout">
       <!-- Left: Timeline -->
       <div class="timeline-column">
-        <h3 class="column-header">O Processo</h3>
+        <h3 class="column-header">{{ t().timeline.processHeader }}</h3>
         <div class="timeline-list">
           @for (step of t().timeline.steps; track step; let i = $index) {
             <div class="time-item glass-card">
-              <div class="circle"></div>
-              <p>{{ step }}</p>
+              <div class="circle">
+                <ng-icon [name]="step.icon" size="18" class="step-icon"></ng-icon>
+              </div>
+              <p>{{ step.text }}</p>
             </div>
           }
         </div>
@@ -18,13 +20,15 @@
       
       <!-- Right: Deliverables -->
       <div class="deliverables-column">
-        <h3 class="column-header">Nossas Soluções</h3>
+        <h3 class="column-header">{{ t().timeline.deliverablesHeader }}</h3>
         <div class="deliverables-grid">
           @for (item of t().timeline.deliverables; track item) {
             <div class="deliverable-card">
               <div class="glow-edge"></div>
-              <span class="icon">✓</span>
-              <p>{{ item }}</p>
+              <span class="icon">
+                <ng-icon [name]="item.icon" size="24"></ng-icon>
+              </span>
+              <p>{{ item.text }}</p>
             </div>
           }
         </div>

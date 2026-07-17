@@ -2,8 +2,18 @@
   <div class="inner centered">
     <h2 class="section-title">{{ t().solution.title }}</h2>
     <p class="slide-subtitle">{{ t().solution.subtitle }}</p>
-    <div class="mockup-placeholder">
-      [ PLATAFORMA NORMATIZA ]
+    <img src="assets/analises.png" class="mockup-img" [alt]="t().solution.imgAlt">
+    
+    <div class="pillars">
+      @for (pillar of t().solution.pillars; track pillar) {
+        <div class="pillar-card">
+          <div class="pillar-icon">
+            <ng-icon [name]="pillar.icon" size="24"></ng-icon>
+          </div>
+          <h3>{{ pillar.title }}</h3>
+          <p>{{ pillar.text }}</p>
+        </div>
+      }
     </div>
   </div>
 </div>

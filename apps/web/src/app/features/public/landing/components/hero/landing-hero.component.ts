@@ -1,8 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, ViewChild, afterNextRender } from '@angular/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideArrowRight, lucideCheck, lucideAlertTriangle, lucideClock, lucideCheckCircle, lucideUsers } from '@ng-icons/lucide';
+
 
 @Component({
   selector: 'app-landing-hero',
   standalone: true,
+  imports: [NgIconComponent],
+  providers: [provideIcons({ lucideArrowRight, lucideCheck, lucideAlertTriangle, lucideClock, lucideCheckCircle, lucideUsers })],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './landing-hero.component.html',
   styleUrl: './landing-hero.component.scss',

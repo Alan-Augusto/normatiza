@@ -1,8 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideFolderX, lucideRefreshCw, lucideEyeOff } from '@ng-icons/lucide';
+
 
 @Component({
   selector: 'app-landing-problem',
   standalone: true,
+  imports: [NgIconComponent],
+  providers: [provideIcons({ lucideFolderX, lucideRefreshCw, lucideEyeOff })],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './landing-problem.component.html',
   styleUrl: './landing-problem.component.scss',
@@ -10,7 +15,7 @@ import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 export class LandingProblemComponent {
   readonly problems = [
     {
-      icon: 'solar:folder-error-linear',
+      icon: 'lucideFolderX',
       iconBg: 'bg-red-50',
       iconColor: 'text-red-500',
       hoverBorder: 'hover:border-red-100',
@@ -20,7 +25,7 @@ export class LandingProblemComponent {
       delay: 'delay-100',
     },
     {
-      icon: 'solar:refresh-circle-linear',
+      icon: 'lucideRefreshCw',
       iconBg: 'bg-orange-50',
       iconColor: 'text-orange-500',
       hoverBorder: 'hover:border-orange-100',
@@ -30,7 +35,7 @@ export class LandingProblemComponent {
       delay: 'delay-200',
     },
     {
-      icon: 'solar:eye-closed-linear',
+      icon: 'lucideEyeOff',
       iconBg: 'bg-slate-200',
       iconColor: 'text-slate-600',
       hoverBorder: 'hover:border-slate-200',

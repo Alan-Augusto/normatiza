@@ -1,0 +1,53 @@
+<div class="slide-content premium-light">
+  <div class="inner">
+    <!-- Stats Section -->
+    <div class="stats-section">
+      <h2 class="section-title">{{ t().socialProof.title }}</h2>
+
+      <div class="premium-stats">
+        <div class="stat-box glass-light">
+          <div class="stat-icon">
+            <ng-icon name="lucideUsers" size="28"></ng-icon>
+          </div>
+          <span class="num">{{ t().socialProof.stats.clients.value }}</span>
+          <span class="label">{{ t().socialProof.stats.clients.label }}</span>
+        </div>
+        <div class="stat-box glass-light">
+          <div class="stat-icon">
+            <ng-icon name="lucideGlobe" size="28"></ng-icon>
+          </div>
+          <span class="num">{{ t().socialProof.stats.team.value }}</span>
+          <span class="label">{{ t().socialProof.stats.team.label }}</span>
+        </div>
+        <div class="stat-box glass-light">
+          <div class="stat-icon">
+            <ng-icon name="lucideZap" size="28"></ng-icon>
+          </div>
+          <span class="num">{{ t().socialProof.stats.speed.value }}</span>
+          <span class="label">{{ t().socialProof.stats.speed.label }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <div class="testimonials-section">
+      <h3 class="testimonials-title">{{ t().socialProof.testimonialsTitle }}</h3>
+
+      <div class="testimonials-grid">
+        @for (testimonial of t().socialProof.testimonials; track testimonial.name) {
+          <div class="testimonial-card">
+            <div class="quote-icon">
+              <ng-icon name="lucideQuote" size="36"></ng-icon>
+            </div>
+            <p class="quote-text">{{ testimonial.quote }}</p>
+            <div class="divider"></div>
+            <div class="author">
+              <span class="author-name">{{ testimonial.name }}</span>
+              <span class="author-role">{{ testimonial.role }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

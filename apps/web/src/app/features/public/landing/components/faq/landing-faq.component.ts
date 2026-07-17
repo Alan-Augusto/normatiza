@@ -1,5 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucidePlusCircle } from '@ng-icons/lucide';
+
 
 interface FaqItem {
   question: string;
@@ -9,6 +12,8 @@ interface FaqItem {
 @Component({
   selector: 'app-landing-faq',
   standalone: true,
+  imports: [NgIconComponent],
+  providers: [provideIcons({ lucidePlusCircle })],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './landing-faq.component.html',
   styleUrl: './landing-faq.component.scss',

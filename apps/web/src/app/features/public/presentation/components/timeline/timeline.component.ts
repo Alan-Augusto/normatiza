@@ -1,11 +1,12 @@
 import { Component, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgIconComponent } from '@ng-icons/core';
 import { PresentationI18nService } from '../../services/presentation-i18n.service';
 
 @Component({
   selector: 'app-presentation-timeline',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgIconComponent],
   templateUrl: './timeline.component.html',
   styleUrl: './timeline.component.css'
 })

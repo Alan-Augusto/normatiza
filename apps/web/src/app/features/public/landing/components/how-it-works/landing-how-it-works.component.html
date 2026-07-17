@@ -1,10 +1,10 @@
-<section class="py-24 bg-[#fafafa] border-y border-slate-100 relative">
+<section class="py-24 bg-surface-50 border-y border-surface-200 relative">
   <div class="max-w-7xl mx-auto px-6">
     <div class="text-center max-w-2xl mx-auto mb-20 reveal">
-      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-slate-900 mb-4">
+      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-surface-900 mb-4">
         Comece a entregar em 4 passos
       </h2>
-      <p class="text-lg text-slate-500 font-normal">O setup é rápido. A curva de aprendizado é mínima.</p>
+      <p class="text-lg text-muted-color font-normal">O setup é rápido. A curva de aprendizado é mínima.</p>
     </div>
 
     <div class="relative max-w-5xl mx-auto">
@@ -17,17 +17,17 @@
         @for (step of steps; track step.number) {
           <div class="flex md:flex-col items-start md:items-center text-left md:text-center gap-5 group reveal" [class]="step.delay">
             @if (step.isFinal) {
-              <div class="w-14 h-14 shrink-0 rounded-full bg-[#5d0499] border-2 border-white text-white font-medium flex items-center justify-center shadow-lg shadow-[#5d0499]/30 relative z-10 group-hover:scale-110 transition-transform">
+              <div class="w-14 h-14 shrink-0 rounded-full bg-primary border-2 border-white text-white font-medium flex items-center justify-center shadow-lg shadow-primary/30 relative z-10 group-hover:scale-110 transition-transform">
                 {{ step.number }}
               </div>
             } @else {
-              <div class="w-14 h-14 shrink-0 rounded-full bg-white border border-slate-200 text-slate-500 font-medium flex items-center justify-center shadow-sm relative z-10 group-hover:border-[#5d0499] group-hover:text-[#5d0499] transition-colors">
+              <div class="w-14 h-14 shrink-0 rounded-full bg-surface-0 border border-surface-200 text-muted-color font-medium flex items-center justify-center shadow-sm relative z-10 group-hover:border-primary group-hover:text-primary transition-colors">
                 {{ step.number }}
               </div>
             }
             <div>
-              <h4 class="text-base font-medium text-slate-900 mb-2">{{ step.title }}</h4>
-              <p class="text-sm text-slate-500 font-normal leading-relaxed">{{ step.description }}</p>
+              <h4 class="text-base font-medium text-surface-900 mb-2">{{ step.title }}</h4>
+              <p class="text-sm text-muted-color font-normal leading-relaxed">{{ step.description }}</p>
             </div>
           </div>
         }

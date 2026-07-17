@@ -1,4 +1,4 @@
-<section class="py-10 border-y border-slate-100 bg-slate-50/50 overflow-hidden relative">
+<section class="py-10 border-y border-surface-200 bg-surface-50/50 overflow-hidden relative">
   <!-- Fade edges -->
   <div class="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none"></div>
   <div class="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none"></div>
@@ -14,14 +14,14 @@
       <!-- Group 1 -->
       @for (logo of logos; track logo.name) {
         <div class="text-xl font-medium tracking-tight text-slate-300 mx-10 flex items-center gap-2 hover:text-slate-400 transition-all cursor-default">
-          <iconify-icon [attr.icon]="logo.icon" width="24"></iconify-icon>
+          <ng-icon [name]="logo.icon" width="24"></ng-icon>
           {{ logo.name }}
         </div>
       }
       <!-- Group 2 (clone for seamless loop) -->
       @for (logo of logos; track logo.name + '-clone') {
         <div class="text-xl font-medium tracking-tight text-slate-300 mx-10 flex items-center gap-2 hover:text-slate-400 transition-all cursor-default">
-          <iconify-icon [attr.icon]="logo.icon" width="24"></iconify-icon>
+          <ng-icon [name]="logo.icon" width="24"></ng-icon>
           {{ logo.name }}
         </div>
       }

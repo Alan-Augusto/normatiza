@@ -2,10 +2,10 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #000;
+  background: var(--p-content-background);
   position: relative;
-  font-family: 'Inter', system-ui, sans-serif;
-  color: white;
+  font-family: var(--p-font-family, 'Inter', sans-serif);
+  color: var(--p-content-color);
 }
 .deck-header {
   position: absolute;
@@ -23,15 +23,15 @@
 }
 .logo-mark {
   width: 24px; height: 24px;
-  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-  border-radius: 4px;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  background: var(--p-primary-color);
+  border-radius: var(--p-border-radius-sm, 4px);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--p-primary-color) 40%, transparent);
 }
 .logo-text {
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: 4px;
-  color: #fff;
+  color: var(--p-content-color);
 }
 
 /* Lang Toggle */
@@ -40,35 +40,35 @@
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
-  background: rgba(255,255,255,0.05);
+  background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background));
   backdrop-filter: blur(10px);
   padding: 0.5rem 1rem;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--p-content-border-color);
   transition: all 0.3s ease;
 }
 .lang-toggle:hover {
-  background: rgba(255,255,255,0.1);
+  background: color-mix(in srgb, var(--p-content-color) 12%, var(--p-content-background));
 }
 .lang-toggle span {
   font-size: 0.75rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.4);
+  color: color-mix(in srgb, var(--p-content-color) 60%, transparent);
   transition: color 0.3s;
 }
 .lang-toggle span.active {
-  color: #fff;
+  color: var(--p-primary-color);
 }
 .switch {
   width: 32px; height: 16px;
-  background: rgba(0,0,0,0.5);
+  background: color-mix(in srgb, var(--p-content-color) 18%, var(--p-content-background));
   border-radius: 16px;
   position: relative;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--p-content-border-color);
 }
 .knob {
   width: 12px; height: 12px;
-  background: #10b981;
+  background: var(--p-primary-color);
   border-radius: 50%;
   position: absolute;
   top: 1px; left: 1px;
@@ -89,23 +89,23 @@
 }
 .dot {
   width: 40px; height: 4px;
-  background: rgba(255,255,255,0.1);
+  background: color-mix(in srgb, var(--p-content-color) 12%, var(--p-content-background));
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.4s ease;
 }
 .dot.active {
-  background: #10b981;
+  background: var(--p-primary-color);
   width: 60px;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--p-primary-color) 50%, transparent);
 }
 .dot:hover:not(.active) {
-  background: rgba(255,255,255,0.3);
+  background: color-mix(in srgb, var(--p-content-color) 18%, var(--p-content-background));
 }
 
 .slides-track {
   display: flex;
-  width: 700vw;
+  width: 1000vw;
   height: 100vh;
   transition: transform 0.8s cubic-bezier(0.8, 0, 0.2, 1);
 }
@@ -123,9 +123,9 @@
   display: flex; gap: 1rem;
 }
 .glass-btn {
-  background: rgba(255,255,255,0.05);
-  color: white;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background));
+  color: var(--p-content-color);
+  border: 1px solid var(--p-content-border-color);
   border-radius: 50%;
   width: 56px; height: 56px;
   font-size: 1.5rem;
@@ -134,21 +134,31 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glass-btn:hover:not([disabled]) {
-  background: rgba(255,255,255,0.15);
+  background: color-mix(in srgb, var(--p-content-color) 12%, var(--p-content-background));
   transform: scale(1.1);
-  border-color: rgba(255,255,255,0.3);
+  border-color: var(--p-primary-color);
 }
-.glass-btn[disabled] { opacity: 0.2; cursor: not-allowed; }
+.glass-btn[disabled] { opacity: 0.3; cursor: not-allowed; }
 
-/* Dark Text Overrides for Light Slides */
-.deck-header.dark-text .logo-text { color: #0f172a; }
-.deck-header.dark-text .lang-toggle { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.05); }
-.deck-header.dark-text .lang-toggle:hover { background: rgba(0,0,0,0.1); }
-.deck-header.dark-text .lang-toggle span { color: rgba(0,0,0,0.4); }
-.deck-header.dark-text .lang-toggle span.active { color: #0f172a; }
-
-.dots-nav.dark-text .dot { background: rgba(0,0,0,0.15); }
-.dots-nav.dark-text .dot:hover:not(.active) { background: rgba(0,0,0,0.3); }
-
-.nav-overlay.dark-text .glass-btn { color: #0f172a; border-color: rgba(0,0,0,0.15); background: rgba(0,0,0,0.05); }
-.nav-overlay.dark-text .glass-btn:hover:not([disabled]) { background: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.3); }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background));
+  backdrop-filter: blur(10px);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--p-content-border-color);
+  color: color-mix(in srgb, var(--p-content-color) 60%, transparent);
+  transition: all 0.3s ease;
+}
+.theme-toggle:hover {
+  background: color-mix(in srgb, var(--p-content-color) 12%, var(--p-content-background));
+  color: var(--p-primary-color);
+}

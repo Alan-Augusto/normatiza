@@ -1,7 +1,7 @@
-<section class="py-24 bg-white" id="depoimentos">
+<section class="py-24 bg-surface-0" id="depoimentos">
   <div class="max-w-7xl mx-auto px-6">
     <div class="text-center max-w-2xl mx-auto mb-16 reveal">
-      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-slate-900 mb-4">
+      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-surface-900 mb-4">
         Quem usa, entrega mais
       </h2>
     </div>
@@ -9,28 +9,28 @@
     <div class="grid md:grid-cols-3 gap-6">
       @for (item of testimonials; track item.name) {
         @if (item.featured) {
-          <div class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm hover:shadow-xl hover:shadow-[#5d0499]/5 transition-all duration-300 relative transform md:-translate-y-4 hover:-translate-y-5 reveal" [class]="item.delay">
-            <div class="absolute inset-0 bg-gradient-to-b from-[#5d0499]/[0.02] to-transparent rounded-2xl pointer-events-none"></div>
-            <div class="absolute top-0 right-8 -translate-y-1/2 bg-[#5d0499] text-white text-[10px] font-medium px-2 py-1 rounded-full uppercase tracking-wider shadow-sm">Destaque</div>
-            <iconify-icon icon="solar:quote-left-linear" class="text-[#5d0499] text-4xl mb-5 block"></iconify-icon>
+          <div class="bg-surface-0 border border-surface-200 rounded-2xl p-8 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 relative transform md:-translate-y-4 hover:-translate-y-5 reveal" [class]="item.delay">
+            <div class="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent rounded-2xl pointer-events-none"></div>
+            <div class="absolute top-0 right-8 -translate-y-1/2 bg-primary text-white text-[10px] font-medium px-2 py-1 rounded-full uppercase tracking-wider shadow-sm">Destaque</div>
+            <ng-icon name="lucideQuote" class="text-primary text-4xl mb-5 block"></ng-icon>
             <p class="text-sm text-slate-700 font-normal mb-8 leading-relaxed">{{ item.quote }}</p>
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-[#5d0499]/10 flex items-center justify-center text-[#5d0499] font-medium text-sm">{{ item.initials }}</div>
+              <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">{{ item.initials }}</div>
               <div>
-                <div class="text-sm font-medium text-slate-900">{{ item.name }}</div>
-                <div class="text-xs text-slate-500">{{ item.role }}</div>
+                <div class="text-sm font-medium text-surface-900">{{ item.name }}</div>
+                <div class="text-xs text-muted-color">{{ item.role }}</div>
               </div>
             </div>
           </div>
         } @else {
-          <div class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 hover:-translate-y-1 reveal" [class]="item.delay">
-            <iconify-icon icon="solar:quote-left-linear" class="text-[#5d0499]/20 text-4xl mb-5 block"></iconify-icon>
+          <div class="bg-surface-0 border border-surface-200 rounded-2xl p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 hover:-translate-y-1 reveal" [class]="item.delay">
+            <ng-icon name="lucideQuote" class="text-primary/20 text-4xl mb-5 block"></ng-icon>
             <p class="text-sm text-slate-700 font-normal mb-8 leading-relaxed">{{ item.quote }}</p>
             <div class="flex items-center gap-3 mt-auto">
-              <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 font-medium text-sm">{{ item.initials }}</div>
+              <div class="w-10 h-10 rounded-full bg-surface-50 border border-surface-200 flex items-center justify-center text-muted-color font-medium text-sm">{{ item.initials }}</div>
               <div>
-                <div class="text-sm font-medium text-slate-900">{{ item.name }}</div>
-                <div class="text-xs text-slate-500">{{ item.role }}</div>
+                <div class="text-sm font-medium text-surface-900">{{ item.name }}</div>
+                <div class="text-xs text-muted-color">{{ item.role }}</div>
               </div>
             </div>
           </div>

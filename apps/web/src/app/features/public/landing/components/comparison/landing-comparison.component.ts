@@ -1,8 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideXCircle, lucideMinusCircle, lucideCheckCircle } from '@ng-icons/lucide';
+
 
 @Component({
   selector: 'app-landing-comparison',
   standalone: true,
+  imports: [NgIconComponent],
+  providers: [provideIcons({ lucideXCircle, lucideMinusCircle, lucideCheckCircle })],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './landing-comparison.component.html',
   styleUrl: './landing-comparison.component.scss',

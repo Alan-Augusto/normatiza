@@ -1,0 +1,20 @@
+<div class="slide-content premium-light">
+  <div class="inner">
+    <div class="header-block">
+      <h2 class="section-title">{{ t().services.title }}</h2>
+      <p class="section-subtitle">{{ t().services.subtitle }}</p>
+    </div>
+
+    <div class="services-grid">
+      @for (item of t().services.items; track item.title) {
+        <div class="service-card">
+          <div class="service-icon">
+            <ng-icon [name]="item.icon" size="22"></ng-icon>
+          </div>
+          <h3 class="service-title">{{ item.title }}</h3>
+          <p class="service-text">{{ item.text }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,10 +1,10 @@
-<section class="py-24 bg-white" id="problema">
+<section class="py-24 bg-surface-0" id="problema">
   <div class="max-w-7xl mx-auto px-6">
     <div class="text-center max-w-2xl mx-auto mb-16 reveal">
-      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-slate-900 mb-4">
+      <h2 class="text-3xl md:text-4xl tracking-tight font-semibold text-surface-900 mb-4">
         Você ainda monta análise NR-12 assim?
       </h2>
-      <p class="text-lg text-slate-500 font-normal">
+      <p class="text-lg text-muted-color font-normal">
         O método tradicional rouba seu tempo, aumenta a margem de erro e dificulta o crescimento da sua operação.
       </p>
     </div>
@@ -12,17 +12,17 @@
     <div class="grid md:grid-cols-3 gap-6">
       @for (item of problems; track item.title) {
         <div
-          class="bg-slate-50 border border-slate-100 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 group reveal hover:-translate-y-1"
+          class="bg-surface-50 border border-surface-200 rounded-2xl p-8 hover:bg-surface-0 hover:shadow-xl transition-all duration-300 group reveal hover:-translate-y-1"
           [class]="item.delay + ' ' + item.hoverBorder + ' ' + item.hoverShadow"
         >
           <div
             class="w-12 h-12 rounded-lg flex items-center justify-center mb-6 group-hover:-rotate-6 transition-transform"
             [class]="item.iconBg + ' ' + item.iconColor"
           >
-            <iconify-icon [attr.icon]="item.icon" width="28" stroke-width="1.5"></iconify-icon>
+            <ng-icon [name]="item.icon" width="28" stroke-width="1.5"></ng-icon>
           </div>
-          <h3 class="text-lg font-medium tracking-tight text-slate-900 mb-2">{{ item.title }}</h3>
-          <p class="text-sm text-slate-500 font-normal leading-relaxed">{{ item.description }}</p>
+          <h3 class="text-lg font-medium tracking-tight text-surface-900 mb-2">{{ item.title }}</h3>
+          <p class="text-sm text-muted-color font-normal leading-relaxed">{{ item.description }}</p>
         </div>
       }
     </div>

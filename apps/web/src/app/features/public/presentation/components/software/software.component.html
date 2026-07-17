@@ -2,18 +2,11 @@
   <div class="inner">
     <div class="software-visual">
       <div class="dashboard-mockup">
-         <!-- Abstraction of a dashboard -->
-         <div class="dash-sidebar"></div>
-         <div class="dash-content">
-            <div class="dash-header"></div>
-            <div class="dash-widgets">
-              <div class="widget wide"></div>
-              <div class="widget"></div>
-              <div class="widget"></div>
-            </div>
-         </div>
+        <img src="assets/dashboard.png" alt="Normatiza Dashboard" />
       </div>
-      <div class="mobile-mockup"></div>
+      <div class="mobile-mockup">
+        <img src="assets/dashboard_mobile.png" alt="Normatiza Mobile" />
+      </div>
     </div>
 
     <div class="text-content">
@@ -23,8 +16,10 @@
       <div class="features-list">
         @for (feat of t().software.features; track feat) {
           <div class="feature-row">
-            <div class="check-icon">✓</div>
-            <p>{{ feat }}</p>
+            <div class="check-icon">
+              <ng-icon [name]="feat.icon" size="20"></ng-icon>
+            </div>
+            <p>{{ feat.text }}</p>
           </div>
         }
       </div>

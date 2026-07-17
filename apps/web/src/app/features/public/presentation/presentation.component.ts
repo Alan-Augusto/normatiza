@@ -1,26 +1,37 @@
+import { ThemeService } from '../../../shared/services/theme.service';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideMoon, lucideSun } from '@ng-icons/lucide';
 import { Component, HostListener, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PresentationI18nService } from './services/presentation-i18n.service';
 
 import { HeroComponent } from './components/hero/hero.component';
 import { ProblemComponent } from './components/problem/problem.component';
+import { CostComponent } from './components/cost/cost.component';
 import { SolutionComponent } from './components/solution/solution.component';
 import { SoftwareComponent } from './components/software/software.component';
+import { ServicesComponent } from './components/services/services.component';
 import { TimelineComponent } from './components/timeline/timeline.component';
-import { TrustComponent } from './components/trust/trust.component';
+import { SocialProofComponent } from './components/social-proof/social-proof.component';
+import { AboutUsComponent } from './components/about-us/about-us.component';
 import { CtaComponent } from './components/cta/cta.component';
 
 @Component({
   selector: 'app-presentation',
   standalone: true,
+  providers: [provideIcons({ lucideMoon, lucideSun })],
   imports: [
     CommonModule,
+    NgIconComponent,
     HeroComponent,
     ProblemComponent,
+    CostComponent,
     SolutionComponent,
     SoftwareComponent,
+    ServicesComponent,
     TimelineComponent,
-    TrustComponent,
+    SocialProofComponent,
+    AboutUsComponent,
     CtaComponent
   ],
   templateUrl: './presentation.component.html',
@@ -28,13 +39,9 @@ import { CtaComponent } from './components/cta/cta.component';
 })
 export class PresentationComponent {
   public i18n = inject(PresentationI18nService);
+  public themeService = inject(ThemeService);
   currentSlide = signal(0);
-  totalSlides = 7;
-
-  // Slides 2, 3, 4 are Light Mode. We need dark text on them.
-  isLightSlide() {
-    return [2, 3, 4].includes(this.currentSlide());
-  }
+  totalSlides = 10;
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {

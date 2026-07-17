@@ -66,3 +66,194 @@ body {
   }
 }
 
+
+
+/* =====================================================
+   UTILITÁRIOS GLOBAIS — Landing Page
+   ===================================================== */
+
+/* Gradiente de texto */
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(to right, var(--color-primary), var(--color-primary-hover));
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+.delay-400 { transition-delay: 400ms; }
+
+/* =====================================================
+   ANIMAÇÕES — Keyframes
+   ===================================================== */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+.animate-float          { animation: float 6s ease-in-out infinite; }
+.animate-float-delayed  { animation: float 6s ease-in-out 3s infinite; }
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 30s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scan {
+  0%   { top: -10%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.animate-scan {
+  animation: scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(93, 4, 153, 0.5); }
+  70%  { transform: scale(1);   box-shadow: 0 0 0 15px rgba(93, 4, 153, 0); }
+  100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(93, 4, 153, 0); }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tilt 3D */
+.tilt-wrapper {
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-style: preserve-3d;
+}
+.tilt-layer {
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.is-tilting .tilt-wrapper,
+.is-tilting .tilt-layer {
+  transition: transform 0.1s ease-out;
+}
+
+/* Donut chart */
+.donut-chart {
+  background: conic-gradient(var(--color-primary) 0% 45%, var(--color-surface-200, #e2e8f0) 45% 100%);
+  border-radius: 50%;
+}
+
+/* =====================================================
+   FEATURE CARDS — Loop animations (hover + mobile)
+   ===================================================== */
+
+@keyframes progress-loop {
+  0%, 100% { height: 10%; }
+  50%       { height: 60%; box-shadow: 0 0 10px var(--color-primary); }
+}
+@keyframes step-nudge-1 {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(8px); }
+}
+@keyframes step-nudge-2 {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(16px); }
+}
+@keyframes step-nudge-3 {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(8px); }
+}
+@keyframes btn-breathe {
+  0%, 100% { transform: translateX(-50%) translateY(-120%) scale(1); }
+  50%       { transform: translateX(-50%) translateY(-150%) scale(0.95); }
+}
+@keyframes doc-slide {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(16px); }
+}
+@keyframes card-back-spread {
+  0%, 100% { transform: none; opacity: 0.6; }
+  50%       { transform: translateY(-64px) rotate(-6deg) scale(0.95); opacity: 1; }
+}
+@keyframes card-mid-spread {
+  0%, 100% { transform: none; opacity: 0.8; }
+  50%       { transform: translateX(48px) translateY(32px) rotate(6deg) scale(0.95); opacity: 1; }
+}
+@keyframes card-front-spread {
+  0%, 100% { transform: none; }
+  50%       { transform: translateX(-16px) translateY(-16px) rotate(-2deg); }
+}
+@keyframes donut-spin-loop {
+  0%, 100% { transform: rotate(0deg); }
+  50%       { transform: rotate(90deg); }
+}
+@keyframes donut-text-counter {
+  0%, 100% { transform: rotate(0deg); }
+  50%       { transform: rotate(-90deg); }
+}
+
+/* Base: animações pausadas */
+.feature-group .progress-fill   { animation: progress-loop 3s ease-in-out infinite both; animation-play-state: paused; }
+.feature-group .step-card-1-inner { animation: step-nudge-1 3s ease-in-out infinite both; animation-play-state: paused; }
+.feature-group .step-card-2-inner { animation: step-nudge-2 3s ease-in-out 0.15s infinite both; animation-play-state: paused; }
+.feature-group .step-card-3-inner { animation: step-nudge-3 3s ease-in-out 0.3s infinite both; animation-play-state: paused; }
+.feature-group .pdf-btn         { animation: btn-breathe 3s ease-in-out infinite both; animation-play-state: paused; }
+.feature-group .pdf-doc         { animation: doc-slide 3s ease-in-out infinite both; animation-play-state: paused; }
+.feature-group .scan-line       { display: block; animation: scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite both; animation-play-state: paused; }
+.feature-group .team-card-back  { animation: card-back-spread 4s ease-in-out infinite both; animation-play-state: paused; }
+.feature-group .team-card-mid   { animation: card-mid-spread 4s ease-in-out 0.2s infinite both; animation-play-state: paused; }
+.feature-group .team-card-front { animation: card-front-spread 4s ease-in-out 0.4s infinite both; animation-play-state: paused; }
+.feature-group .donut-anim      { animation: donut-spin-loop 4s ease-in-out infinite both; animation-play-state: paused; }
+.feature-group .donut-text      { animation: donut-text-counter 4s ease-in-out infinite both; animation-play-state: paused; }
+
+/* Desktop com mouse real: hover ativa o loop */
+@media (hover: hover) {
+  .feature-group:hover .progress-fill,
+  .feature-group:hover .step-card-1-inner,
+  .feature-group:hover .step-card-2-inner,
+  .feature-group:hover .step-card-3-inner,
+  .feature-group:hover .pdf-btn,
+  .feature-group:hover .pdf-doc,
+  .feature-group:hover .scan-line,
+  .feature-group:hover .team-card-back,
+  .feature-group:hover .team-card-mid,
+  .feature-group:hover .team-card-front,
+  .feature-group:hover .donut-anim,
+  .feature-group:hover .donut-text { animation-play-state: running; }
+}
+
+/* Mobile: IntersectionObserver adiciona .feature-active ao entrar no viewport */
+.feature-group.feature-active .progress-fill,
+.feature-group.feature-active .step-card-1-inner,
+.feature-group.feature-active .step-card-2-inner,
+.feature-group.feature-active .step-card-3-inner,
+.feature-group.feature-active .pdf-btn,
+.feature-group.feature-active .pdf-doc,
+.feature-group.feature-active .scan-line,
+.feature-group.feature-active .team-card-back,
+.feature-group.feature-active .team-card-mid,
+.feature-group.feature-active .team-card-front,
+.feature-group.feature-active .donut-anim,
+.feature-group.feature-active .donut-text { animation-play-state: running; }

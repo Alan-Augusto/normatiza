@@ -1,8 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideQuote } from '@ng-icons/lucide';
+
 
 @Component({
   selector: 'app-landing-testimonials',
   standalone: true,
+  imports: [NgIconComponent],
+  providers: [provideIcons({ lucideQuote })],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './landing-testimonials.component.html',
   styleUrl: './landing-testimonials.component.scss',

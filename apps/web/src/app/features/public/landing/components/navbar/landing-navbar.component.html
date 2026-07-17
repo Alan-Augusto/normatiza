@@ -1,28 +1,28 @@
 <header
   class="fixed top-0 w-full z-50 border-b transition-all duration-300"
   [class.glass]="isScrolled()"
-  [class.bg-white]="!isScrolled()"
-  [class.border-slate-200/50]="isScrolled()"
+  [class.bg-surface-0]="!isScrolled()"
+  [class.border-surface-200/50]="isScrolled()"
   [class.border-transparent]="!isScrolled()"
 >
   <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-    <a href="#" class="text-xl font-medium tracking-tight text-[#5d0499] flex items-center gap-2">
+    <a href="#" class="text-xl font-medium tracking-tight text-primary flex items-center gap-2">
       <img src="/logo.png" alt="Logo Normatiza" class="w-6 h-6">
       NORMATIZA
     </a>
 
-    <nav class="hidden md:flex items-center gap-8 text-sm font-normal text-slate-600">
-      <a href="#solucao" class="hover:text-slate-900 transition-colors">Solução</a>
-      <a href="#funcionalidades" class="hover:text-slate-900 transition-colors">Funcionalidades</a>
-      <a href="#depoimentos" class="hover:text-slate-900 transition-colors">Depoimentos</a>
-      <a href="#faq" class="hover:text-slate-900 transition-colors">FAQ</a>
+    <nav class="hidden md:flex items-center gap-8 text-sm font-normal text-surface-600">
+      <a href="#solucao" class="hover:text-surface-900 transition-colors">Solução</a>
+      <a href="#funcionalidades" class="hover:text-surface-900 transition-colors">Funcionalidades</a>
+      <a href="#depoimentos" class="hover:text-surface-900 transition-colors">Depoimentos</a>
+      <a href="#faq" class="hover:text-surface-900 transition-colors">FAQ</a>
     </nav>
 
     <div class="flex items-center gap-4">
-      <a routerLink="/login" class="hidden sm:block text-sm font-normal text-slate-600 hover:text-slate-900 transition-colors">
+      <a routerLink="/login" class="hidden sm:block text-sm font-normal text-surface-600 hover:text-surface-900 transition-colors">
         Entrar
       </a>
-      <a routerLink="/login" class="bg-[#5d0499] hover:bg-[#43026e] text-white text-sm font-medium px-4 py-2 rounded-lg transition-all shadow-sm hover:shadow-md">
+      <a routerLink="/login" class="bg-primary hover:bg-primary-hover text-surface-0 text-sm font-medium px-4 py-2 rounded-lg transition-all shadow-sm hover:shadow-md">
         Testar Grátis
       </a>
     </div>
