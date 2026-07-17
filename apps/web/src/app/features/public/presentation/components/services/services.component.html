@@ -6,8 +6,11 @@
     </div>
 
     <div class="services-grid">
-      @for (item of t().services.items; track item.title) {
-        <div class="service-card">
+      <div class="snake-track">
+        <div class="energy-ball"></div>
+      </div>
+      @for (item of t().services.items; track item.title; let i = $index) {
+        <div class="service-card" [style.animation-delay]="'calc(' + ((i < 4 ? i : 11 - i) * 3.75) + 's - 1.5s)'">
           <div class="service-icon">
             <ng-icon [name]="item.icon" size="22"></ng-icon>
           </div>
