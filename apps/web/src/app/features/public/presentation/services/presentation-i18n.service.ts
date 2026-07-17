@@ -8,10 +8,10 @@ const TRANSLATIONS = {
       badge: 'Corporate Presentation',
       titleLine1: 'Your plant 100%',
       titleLine2: 'NR-12 compliant',
-      subtitle: 'Multidisciplinary engineering + proprietary technology to eliminate industrial compliance chaos.'
+      subtitle: 'Multidisciplinary engineering + proprietary technology to ensure industrial compliance.'
     },
     problem: {
-      title: 'The Industrial Compliance Chaos',
+      title: 'The Current Industrial Scenario',
       cards: [
         { text: 'Decentralized documentation scattered across spreadsheets, folders and emails — impossible to audit', icon: 'lucideFiles' },
         { text: 'High legal risk and potential plant shutdowns from non-compliance', icon: 'lucideShieldAlert' },
@@ -49,10 +49,10 @@ const TRANSLATIONS = {
       title: 'Proprietary Technology',
       subtitle: 'Built for the factory floor. Designed for management.',
       features: [
-        { text: 'Factory floor data collection without internet — works offline, syncs later', icon: 'lucideSmartphone' },
+        { text: 'Factory floor data collection with software for offline use without data consumption', icon: 'lucideSmartphone' },
         { text: '360° compliance visibility — track the status of every machine', icon: 'lucideLayoutDashboard' },
-        { text: 'Goodbye, spreadsheets — all documentation centralized and accessible', icon: 'lucideCloud' },
-        { text: 'Reports that impress inspectors — generated automatically with professional quality', icon: 'lucideFileBadge' }
+        { text: 'Easy-to-view reports and dashboards with all company documentation centralized and accessible', icon: 'lucideCloud' },
+        { text: 'Reports that meet legal requirements, generated automatically with quality and standardized!', icon: 'lucideFileBadge' }
       ]
     },
     services: {
@@ -76,7 +76,7 @@ const TRANSLATIONS = {
       steps: [
         { text: 'Machinery Inventory & Assessment', icon: 'lucideSearch' },
         { text: 'Engineering & Automation Projects', icon: 'lucidePenTool' },
-        { text: 'Physical Execution & Adequation', icon: 'lucideWrench' },
+        { text: 'Monitoring of physical execution and adequation', icon: 'lucideWrench' },
         { text: 'Continuous Digital Management', icon: 'lucideRefreshCw' }
       ],
       deliverables: [
@@ -116,7 +116,7 @@ const TRANSLATIONS = {
       title: 'Who is Normatiza',
       subtitle: 'A company born from the need for specialized NR-12 services, combining engineering expertise with proprietary technology.',
       highlights: [
-        { title: 'Based in Videira/SC', text: 'National coverage across all of Brazil', icon: 'lucideMapPin' },
+        { title: 'National and International', text: 'Consulting clients in legislation and projects', icon: 'lucideMapPin' },
         { title: 'Specialized Team', text: 'Engineers and technicians in mechanics, electrical, automation & safety', icon: 'lucideUsers' },
         { title: 'Proprietary Technology', text: 'In-house developed NR-12 management software', icon: 'lucideCode' },
         { title: '100% NR-12 Focus', text: 'Dedicated exclusively to machine safety since founding', icon: 'lucideAward' }
@@ -139,10 +139,10 @@ const TRANSLATIONS = {
       badge: 'Apresentação Institucional',
       titleLine1: 'Sua planta 100%',
       titleLine2: 'conforme à NR-12',
-      subtitle: 'Engenharia multidisciplinar + tecnologia proprietária para eliminar o caos da conformidade industrial.'
+      subtitle: 'Engenharia multidisciplinar + tecnologia proprietária para garantir a conformidade industrial.'
     },
     problem: {
-      title: 'O Caos da Conformidade Industrial',
+      title: 'O cenário industrial atual',
       cards: [
         { text: 'Documentação espalhada em planilhas, pastas e e-mails — impossível de auditar', icon: 'lucideFiles' },
         { text: 'Alto risco jurídico e de paralisação de planta por não conformidade', icon: 'lucideShieldAlert' },
@@ -180,10 +180,10 @@ const TRANSLATIONS = {
       title: 'Tecnologia Proprietária',
       subtitle: 'Feito para o chão de fábrica. Pensado para a gestão.',
       features: [
-        { text: 'Coleta em chão de fábrica sem internet — funciona offline, sincroniza depois', icon: 'lucideSmartphone' },
+        { text: 'Coleta em chão de fábrica com software para uso offline sem consumo de dados', icon: 'lucideSmartphone' },
         { text: 'Visão 360° da conformidade — acompanhe o status de todas as máquinas', icon: 'lucideLayoutDashboard' },
-        { text: 'Adeus, planilhas — toda documentação centralizada e acessível', icon: 'lucideCloud' },
-        { text: 'Relatórios que impressionam fiscais — gerados automaticamente com qualidade profissional', icon: 'lucideFileBadge' }
+        { text: 'Relatórios e dashboards de fácil visualização com toda a documentação da empresa centralizada e acessível', icon: 'lucideCloud' },
+        { text: 'Relatórios que atendem as premissas legais, gerados automaticamente com qualidade e normatizado!', icon: 'lucideFileBadge' }
       ]
     },
     services: {
@@ -207,7 +207,7 @@ const TRANSLATIONS = {
       steps: [
         { text: 'Inventário e Apreciação de Máquinas', icon: 'lucideSearch' },
         { text: 'Projetos de Engenharia e Automação', icon: 'lucidePenTool' },
-        { text: 'Execução Física e Adequação', icon: 'lucideWrench' },
+        { text: 'Acompanhamento de execução física e adequação', icon: 'lucideWrench' },
         { text: 'Gestão Contínua Digital', icon: 'lucideRefreshCw' }
       ],
       deliverables: [
@@ -247,7 +247,7 @@ const TRANSLATIONS = {
       title: 'Quem é a Normatiza',
       subtitle: 'Uma empresa que nasceu da necessidade de serviço especializado para NR-12, unindo expertise em engenharia à tecnologia proprietária.',
       highlights: [
-        { title: 'Sede em Videira/SC', text: 'Atendimento nacional em todo o Brasil', icon: 'lucideMapPin' },
+        { title: 'Nacional e Internacional', text: 'Clientes de consultoria em legislação e projetos', icon: 'lucideMapPin' },
         { title: 'Equipe Especializada', text: 'Engenheiros e técnicos em mecânica, elétrica, automação e segurança', icon: 'lucideUsers' },
         { title: 'Tecnologia Própria', text: 'Software de gestão NR-12 desenvolvido internamente', icon: 'lucideCode' },
         { title: '100% Focados em NR-12', text: 'Dedicados exclusivamente à segurança de máquinas desde a fundação', icon: 'lucideAward' }
