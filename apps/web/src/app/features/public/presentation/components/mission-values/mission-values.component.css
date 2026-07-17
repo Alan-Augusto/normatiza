@@ -64,9 +64,38 @@
   background: color-mix(in srgb, var(--p-content-background) 85%, transparent);
   backdrop-filter: blur(10px);
   border: 1px solid color-mix(in srgb, var(--p-primary-color) 30%, transparent);
-  box-shadow: inset 0 0 30px color-mix(in srgb, var(--p-primary-color) 20%, transparent), 0 0 40px color-mix(in srgb, var(--p-primary-color) 20%, transparent);
+  animation: innerHeatPulse 4s infinite alternate ease-in-out;
+}
+@keyframes innerHeatPulse {
+  0% {
+    box-shadow: inset 0 0 30px color-mix(in srgb, var(--p-primary-color) 15%, transparent), 
+                0 0 40px color-mix(in srgb, var(--p-primary-color) 15%, transparent);
+  }
+  100% {
+    box-shadow: inset 0 0 50px color-mix(in srgb, var(--p-primary-color) 35%, transparent), 
+                0 0 70px color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+    border-color: color-mix(in srgb, var(--p-primary-color) 50%, transparent);
+  }
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+.core-heat-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 20px color-mix(in srgb, #ff9100 50%, transparent),
+              inset 0 0 20px color-mix(in srgb, #ffcc00 50%, transparent);
+  opacity: 0;
+  animation: radiateHeat 6s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation-delay: var(--delay);
+  pointer-events: none;
+}
+@keyframes radiateHeat {
+  0% { transform: scale(0.9); opacity: 0; filter: blur(5px); }
+  20% { opacity: 0.5; }
+  100% { transform: scale(1.4); opacity: 0; filter: blur(15px); }
+}
 
 .core-content {
   position: relative; z-index: 10; display: flex; flex-direction: column; gap: 0.8rem;
