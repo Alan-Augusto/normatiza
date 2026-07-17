@@ -1,12 +1,14 @@
 import { Component, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NgIconComponent } from '@ng-icons/core';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideSearch, lucidePenTool, lucideWrench, lucideRefreshCw, lucideShieldCheck, lucideZap, lucideBookOpen, lucideGraduationCap } from '@ng-icons/lucide';
 import { PresentationI18nService } from '../../services/presentation-i18n.service';
 
 @Component({
   selector: 'app-presentation-timeline',
   standalone: true,
   imports: [CommonModule, NgIconComponent],
+  providers: [provideIcons({ lucideSearch, lucidePenTool, lucideWrench, lucideRefreshCw, lucideShieldCheck, lucideZap, lucideBookOpen, lucideGraduationCap })],
   templateUrl: './timeline.component.html',
   styleUrl: './timeline.component.css'
 })

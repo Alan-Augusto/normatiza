@@ -32,6 +32,13 @@ const TRANSLATIONS = {
       title: 'A Paradigm Shift',
       subtitle: 'We eliminate chaos by unifying multidisciplinary engineering with a proprietary management platform.',
       imgAlt: 'Normatiza Platform',
+      animation: {
+        syncing: 'Syncing...',
+        generated: 'Report Generated',
+        report: 'NR-12 Report',
+        inventory: 'Inventory',
+        assessment: 'Risk Assessment'
+      },
       pillars: [
         { title: 'Engineering', text: 'Mechanical, electrical, automation & safety team', icon: 'lucideWrench' },
         { title: 'Technology', text: 'Proprietary NR-12 management platform', icon: 'lucideMonitor' },
@@ -156,6 +163,13 @@ const TRANSLATIONS = {
       title: 'Uma Mudança de Paradigma',
       subtitle: 'Eliminamos o caos unindo engenharia multidisciplinar a uma plataforma proprietária de gestão.',
       imgAlt: 'Plataforma Normatiza',
+      animation: {
+        syncing: 'Sincronizando...',
+        generated: 'Laudo Gerado',
+        report: 'Laudo NR-12',
+        inventory: 'Inventário',
+        assessment: 'Apreciação'
+      },
       pillars: [
         { title: 'Engenharia', text: 'Equipe mecânica, elétrica, automação e segurança', icon: 'lucideWrench' },
         { title: 'Tecnologia', text: 'Plataforma proprietária de gestão NR-12', icon: 'lucideMonitor' },

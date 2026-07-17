@@ -2,18 +2,50 @@
   <div class="inner centered">
     <h2 class="section-title">{{ t().solution.title }}</h2>
     <p class="slide-subtitle">{{ t().solution.subtitle }}</p>
-    <img src="assets/analises.png" class="mockup-img" [alt]="t().solution.imgAlt">
     
-    <div class="pillars">
-      @for (pillar of t().solution.pillars; track pillar) {
-        <div class="pillar-card">
-          <div class="pillar-icon">
-            <ng-icon [name]="pillar.icon" size="24"></ng-icon>
+    <div class="funnel-animation">
+      <div class="messy-side">
+        <div class="messy-item" style="--delay: 0s; --y: -30px;"><ng-icon name="lucideFileSpreadsheet" size="24"></ng-icon></div>
+        <div class="messy-item" style="--delay: 1.5s; --y: 25px;"><ng-icon name="lucideMail" size="24"></ng-icon></div>
+        <div class="messy-item" style="--delay: 0.8s; --y: -10px;"><ng-icon name="lucideFolder" size="24"></ng-icon></div>
+        <div class="messy-item" style="--delay: 2.2s; --y: 40px;"><ng-icon name="lucideFiles" size="24"></ng-icon></div>
+        <div class="messy-item" style="--delay: 2.8s; --y: -50px;"><ng-icon name="lucideFileText" size="24"></ng-icon></div>
+      </div>
+
+      <div class="phone-center">
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <div class="phone-notch"></div>
+            </div>
+            <div class="phone-body">
+              <div class="process-line"></div>
+              <div class="process-line"></div>
+              <div class="process-line short"></div>
+            </div>
           </div>
-          <h3>{{ pillar.title }}</h3>
-          <p>{{ pillar.text }}</p>
         </div>
-      }
+        <div class="phone-notifications">
+          <div class="notif" style="--delay: 1.2s;"><ng-icon name="lucideBell" size="12"></ng-icon> {{ t().solution.animation.syncing }}</div>
+          <div class="notif success" style="--delay: 2.5s;"><ng-icon name="lucideCheckCircle" size="12"></ng-icon> {{ t().solution.animation.generated }}</div>
+        </div>
+      </div>
+
+      <div class="organized-side">
+        <div class="org-item" style="--delay: 1s; --y: -55px;">
+          <ng-icon name="lucideFileCheck" size="24"></ng-icon>
+          <span>{{ t().solution.animation.report }}</span>
+        </div>
+        <div class="org-item" style="--delay: 2.3s; --y: 0px;">
+          <ng-icon name="lucideFileCheck" size="24"></ng-icon>
+          <span>{{ t().solution.animation.inventory }}</span>
+        </div>
+        <div class="org-item" style="--delay: 3.6s; --y: 55px;">
+          <ng-icon name="lucideFileCheck" size="24"></ng-icon>
+          <span>{{ t().solution.animation.assessment }}</span>
+        </div>
+      </div>
     </div>
+    
   </div>
 </div>

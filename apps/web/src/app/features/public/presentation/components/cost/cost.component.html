@@ -12,7 +12,7 @@
         <div class="cost-card" [style.animation-delay]="(i * 0.12) + 's'">
           <div class="card-glow"></div>
           <div class="icon-wrapper">
-            <ng-icon [name]="card.icon" size="48" class="danger-icon"></ng-icon>
+            <ng-icon [name]="card.icon" size="48" class="danger-icon anim-icon-{{i}}"></ng-icon>
           </div>
           <h3 class="card-title">{{ card.title }}</h3>
           <p class="card-text">{{ card.text }}</p>

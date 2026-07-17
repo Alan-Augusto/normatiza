@@ -5,11 +5,21 @@
 .slide-subtitle { font-size: 1.25rem; color: color-mix(in srgb, var(--p-content-color) 60%, transparent); margin-bottom: 4rem; line-height: 1.6; }
 .features-list { display: flex; flex-direction: column; gap: 2rem; }
 .feature-row { display: flex; align-items: center; gap: 1.5rem; }
-.check-icon { width: 32px; height: 32px; background: var(--p-primary-color); color: var(--p-primary-contrast-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 10px color-mix(in srgb, var(--p-primary-color) 30%, transparent); }
+.check-icon { width: 32px; height: 32px; flex-shrink: 0; background: var(--p-primary-color); color: var(--p-primary-contrast-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 10px color-mix(in srgb, var(--p-primary-color) 30%, transparent); }
 .feature-row p { font-size: 1.2rem; font-weight: 600; color: var(--p-content-color); margin: 0; }
 
 .software-visual { position: relative; width: 100%; height: 600px; }
-.dashboard-mockup { position: absolute; top: 0; right: -60px; background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background)); border-radius: var(--p-border-radius-xl, 12px); box-shadow: 0 25px 50px -12px color-mix(in srgb, var(--p-content-color) 15%, transparent); border: 1px solid var(--p-content-border-color); overflow: hidden; display: flex; }
+.dashboard-mockup { position: absolute; top: 0; right: -60px; background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background)); border-radius: var(--p-border-radius-xl, 12px); box-shadow: 0 35px 60px -15px color-mix(in srgb, var(--p-content-color) 35%, transparent), 0 10px 30px -10px color-mix(in srgb, var(--p-primary-color) 20%, transparent); border: 1px solid color-mix(in srgb, var(--p-content-color) 15%, transparent); overflow: hidden; display: flex; }
 .dashboard-mockup img { max-height: 420px; width: auto; display: block; }
-.mobile-mockup { position: absolute; bottom: -20px; left: -60px; background: color-mix(in srgb, var(--p-content-color) 6%, var(--p-content-background)); border-radius: 30px; border: 8px solid var(--p-content-color); box-shadow: 0 30px 60px -15px color-mix(in srgb, var(--p-content-color) 30%, transparent); z-index: 10; overflow: hidden; display: flex; }
-.mobile-mockup img { max-height: 450px; width: auto; display: block; }
+.mobile-mockup.floating-3d { position: absolute; bottom: -20px; left: -60px; z-index: 10; width: 220px; height: 460px; animation: float3D 10s infinite ease-in-out; transform-style: preserve-3d; }
+.phone-mockup { width: 100%; height: 100%; background: #2a2a2d; border: 1px solid color-mix(in srgb, var(--p-content-color) 15%, transparent); border-radius: 36px; padding: 10px; box-shadow: -20px 30px 50px -10px color-mix(in srgb, var(--p-content-color) 50%, transparent); position: relative; transform-style: preserve-3d; }
+.phone-screen { width: 100%; height: 100%; background: var(--p-content-background); border-radius: 26px; overflow: hidden; position: relative; }
+.phone-header { position: absolute; top: 0; left: 0; width: 100%; height: 20px; display: flex; justify-content: center; z-index: 10; }
+.phone-notch { width: 70px; height: 20px; background: #2a2a2d; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.phone-screen img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@keyframes float3D {
+  0% { transform: perspective(1200px) translateY(0) rotateX(8deg) rotateY(15deg) rotateZ(1deg); }
+  50% { transform: perspective(1200px) translateY(-12px) rotateX(4deg) rotateY(10deg) rotateZ(0deg); }
+  100% { transform: perspective(1200px) translateY(0) rotateX(8deg) rotateY(15deg) rotateZ(1deg); }
+}

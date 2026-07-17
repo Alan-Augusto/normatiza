@@ -5,5 +5,9 @@
 .badge { display: inline-block; background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color); padding: 0.5rem 1.5rem; border-radius: 999px; font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2rem; border: 1px solid color-mix(in srgb, var(--p-primary-color) 20%, transparent); }
 .slide-title-wrapper { position: relative; display: inline-block; margin-bottom: 0.5rem; }
 .slide-title { font-size: 5rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin: 0; position: relative; color: var(--p-content-color); }
-.text-gradient { background: linear-gradient(135deg, var(--p-primary-color), color-mix(in srgb, var(--p-primary-color) 70%, var(--p-content-color))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.text-gradient { background: linear-gradient(135deg, var(--p-primary-color), color-mix(in srgb, var(--p-primary-color) 70%, var(--p-content-color))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: neonPulse 3s infinite alternate ease-in-out; }
+@keyframes neonPulse {
+  0% { text-shadow: 0 0 4px color-mix(in srgb, var(--p-primary-color) 20%, transparent), 0 0 10px color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
+  100% { text-shadow: 0 0 8px color-mix(in srgb, var(--p-primary-color) 50%, transparent), 0 0 20px color-mix(in srgb, var(--p-primary-color) 25%, transparent), 0 0 30px color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
+}
 .slide-subtitle { font-size: 1.5rem; color: color-mix(in srgb, var(--p-content-color) 60%, transparent); font-weight: 400; max-width: 700px; margin: 0 auto; line-height: 1.5; position: relative; z-index: 2; }

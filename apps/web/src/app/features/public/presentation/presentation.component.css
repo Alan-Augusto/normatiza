@@ -2,10 +2,16 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: var(--p-content-background);
+  background: color-mix(in srgb, black 8%, color-mix(in srgb, var(--p-content-color) 3%, var(--p-content-background)));
   position: relative;
   font-family: var(--p-font-family, 'Inter', sans-serif);
   color: var(--p-content-color);
+}
+.bg-glow { position: absolute; top: -20vh; right: -10vw; width: 60vw; height: 60vw; background: radial-gradient(circle, color-mix(in srgb, var(--p-primary-color) 15%, transparent) 0%, transparent 70%); z-index: 0; border-radius: 50%; pointer-events: none; }
+.bg-grid { position: absolute; inset: 0; opacity: 0.35; background-image: linear-gradient(color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px); background-size: 4rem 4rem; z-index: 0; mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%); pointer-events: none; }
+
+::ng-deep .slide-content {
+  background: transparent !important;
 }
 .deck-header {
   position: absolute;
