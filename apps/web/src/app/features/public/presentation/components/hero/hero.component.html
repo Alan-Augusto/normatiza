@@ -1,11 +1,23 @@
-<div class="slide-content premium-light">
+<div class="slide-content premium-light has-video">
+  <!-- Background Video -->
+  <video class="bg-video" autoplay loop muted [muted]="true" playsinline>
+    <source src="assets/institucional.mp4" type="video/mp4">
+  </video>
+  
+  <!-- Overlay for readability -->
+  <div class="video-overlay"></div>
+  
+  <!-- Optional grid and glow on top of video -->
+  <div class="bg-glow"></div>
+  <div class="bg-grid"></div>
+
   <div class="inner">
-    <div class="slide-title-wrapper">
+    <div class="slide-title-wrapper fade-in-up delay-1">
       <h1 class="slide-title">
         <span>{{ t().hero.titleLine1 }}</span> <br>
         <span class="text-gradient">{{ t().hero.titleLine2 }}</span>
       </h1>
     </div>
-    <p class="slide-subtitle">{{ t().hero.subtitle }}</p>
+    <p class="slide-subtitle fade-in-up delay-2">{{ t().hero.subtitle }}</p>
   </div>
 </div>

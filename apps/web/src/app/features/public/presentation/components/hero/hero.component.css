@@ -1,13 +1,54 @@
-.slide-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; background: color-mix(in srgb, var(--p-content-color) 3%, var(--p-content-background)); overflow: hidden; }
-.bg-glow { position: absolute; top: -20vh; right: -10vw; width: 60vw; height: 60vw; background: radial-gradient(circle, color-mix(in srgb, var(--p-primary-color) 15%, transparent) 0%, transparent 70%); z-index: 1; border-radius: 50%; }
-.bg-grid { position: absolute; inset: 0; background-image: linear-gradient(color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px); background-size: 4rem 4rem; z-index: 1; mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%); }
+.slide-content { 
+  /* Força cores fixas do tema escuro neste slide, ignorando o tema global (para não estragar a leitura no vídeo) */
+  --p-content-color: #ffffff;
+  --p-content-background: #000000;
+  
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; background: color-mix(in srgb, var(--p-content-color) 3%, var(--p-content-background)); overflow: hidden; 
+}
+
+/* Video Background */
+.bg-video {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  /* Zoom de 25% ancorado levemente no topo para empurrar e esconder a legenda embaixo */
+  transform: scale(1.25);
+  transform-origin: center 20%;
+}
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--p-content-background) 75%, transparent);
+  backdrop-filter: blur(3px); /* Ajuda a focar no texto e dar um ar cinematográfico */
+}
+
+.bg-glow { position: absolute; top: -20vh; right: -10vw; width: 60vw; height: 60vw; background: radial-gradient(circle, color-mix(in srgb, var(--p-primary-color) 25%, transparent) 0%, transparent 70%); z-index: 2; border-radius: 50%; }
+.bg-grid { position: absolute; inset: 0; background-image: linear-gradient(color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, color-mix(in srgb, var(--p-content-color) 50%, var(--p-content-background)) 20%, transparent) 1px, transparent 1px); background-size: 4rem 4rem; z-index: 2; mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%); }
 .inner { max-width: 1200px; width: 100%; text-align: center; position: relative; z-index: 10; padding: 0 2rem; }
-.badge { display: inline-block; background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color); padding: 0.5rem 1.5rem; border-radius: 999px; font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2rem; border: 1px solid color-mix(in srgb, var(--p-primary-color) 20%, transparent); }
+
 .slide-title-wrapper { position: relative; display: inline-block; margin-bottom: 0.5rem; }
 .slide-title { font-size: 5rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; margin: 0; position: relative; color: var(--p-content-color); }
 .text-gradient { background: linear-gradient(135deg, var(--p-primary-color), color-mix(in srgb, var(--p-primary-color) 70%, var(--p-content-color))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: neonPulse 3s infinite alternate ease-in-out; }
+
 @keyframes neonPulse {
   0% { text-shadow: 0 0 4px color-mix(in srgb, var(--p-primary-color) 20%, transparent), 0 0 10px color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
   100% { text-shadow: 0 0 8px color-mix(in srgb, var(--p-primary-color) 50%, transparent), 0 0 20px color-mix(in srgb, var(--p-primary-color) 25%, transparent), 0 0 30px color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
 }
-.slide-subtitle { font-size: 1.5rem; color: color-mix(in srgb, var(--p-content-color) 60%, transparent); font-weight: 400; max-width: 700px; margin: 0 auto; line-height: 1.5; position: relative; z-index: 2; }
+
+.slide-subtitle { font-size: 1.5rem; color: color-mix(in srgb, var(--p-content-color) 60%, transparent); font-weight: 400; max-width: 700px; margin: 0 auto; line-height: 1.5; position: relative; z-index: 10; }
+
+/* Entrance Animations */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.5s; }
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
