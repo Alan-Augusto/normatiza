@@ -26,9 +26,9 @@ const TRANSLATIONS = {
     problem: {
       title: 'The Current Industrial Scenario',
       cards: [
-        { text: 'Decentralized documentation scattered across spreadsheets, folders and emails — impossible to audit', icon: 'lucideFiles' },
+        { text: 'Lost and scattered documentation, hindering access and audits.', icon: 'lucideFiles' },
         { text: 'High legal risk and potential plant shutdowns from non-compliance', icon: 'lucideShieldAlert' },
-        { text: 'Technicians spend up to 70% of their time on paperwork instead of inspections', icon: 'lucideClock' },
+        { text: 'Professionals spend up to 70% of their time on bureaucracy and document organization.', icon: 'lucideClock' },
         { text: 'Managers only discover problems when the inspector arrives', icon: 'lucideBarChart3' }
       ]
     },
@@ -170,9 +170,9 @@ const TRANSLATIONS = {
     problem: {
       title: 'O cenário industrial atual',
       cards: [
-        { text: 'Documentação espalhada em planilhas, pastas e e-mails — impossível de auditar', icon: 'lucideFiles' },
+        { text: 'Documentação perdida e pulverizada dificultando acesso e auditorias.', icon: 'lucideFiles' },
         { text: 'Alto risco jurídico e de paralisação de planta por não conformidade', icon: 'lucideShieldAlert' },
-        { text: 'Técnicos gastam até 70% do tempo com papelada em vez de inspeções', icon: 'lucideClock' },
+        { text: 'Profissionais gastam até 70% do tempo com burocracia e organização de documentos.', icon: 'lucideClock' },
         { text: 'Gestores descobrem problemas só quando o fiscal chega', icon: 'lucideBarChart3' }
       ]
     },
