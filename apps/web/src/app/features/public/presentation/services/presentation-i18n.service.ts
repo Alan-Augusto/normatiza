@@ -29,7 +29,7 @@ const TRANSLATIONS = {
         { text: 'Lost and scattered documentation, hindering access and audits.', icon: 'lucideFiles' },
         { text: 'High legal risk and potential plant shutdowns from non-compliance', icon: 'lucideShieldAlert' },
         { text: 'Professionals spend up to 70% of their time on bureaucracy and document organization.', icon: 'lucideClock' },
-        { text: 'Managers only discover problems when the inspector arrives', icon: 'lucideBarChart3' }
+        { text: 'Lack of tools for management to identify non-conformities, avoiding problems in audits and enforcement actions.', icon: 'lucideBarChart3' }
       ]
     },
     cost: {
@@ -173,7 +173,7 @@ const TRANSLATIONS = {
         { text: 'Documentação perdida e pulverizada dificultando acesso e auditorias.', icon: 'lucideFiles' },
         { text: 'Alto risco jurídico e de paralisação de planta por não conformidade', icon: 'lucideShieldAlert' },
         { text: 'Profissionais gastam até 70% do tempo com burocracia e organização de documentos.', icon: 'lucideClock' },
-        { text: 'Gestores descobrem problemas só quando o fiscal chega', icon: 'lucideBarChart3' }
+        { text: 'Falta de ferramentas para a gestão identificar não conformidades, evitando problemas em auditorias e ações de fiscalização.', icon: 'lucideBarChart3' }
       ]
     },
     cost: {
