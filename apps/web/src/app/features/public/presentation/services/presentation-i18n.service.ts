@@ -306,4 +306,8 @@ export class PresentationI18nService {
   public toggleLanguage() {
     this._lang.update(l => l === 'en' ? 'pt' : 'en');
   }
+
+  public setLanguage(lang: Language) {
+    this._lang.set(lang);
+  }
 }

@@ -14,21 +14,23 @@
       <div class="logo-subtitle">NR12 DIGITAL - Tecnologia a serviço da segurança</div>
     </div>
     
-    <div class="header-actions">
-      <!-- Theme Toggle -->
-      <div class="theme-toggle" (click)="themeService.toggleTheme()">
-        <ng-icon [name]="themeService.isDarkMode() ? 'lucideMoon' : 'lucideSun'" size="20"></ng-icon>
-      </div>
-      
-      <!-- Language Toggle -->
-      <div class="lang-toggle" (click)="i18n.toggleLanguage()">
-        <span [class.active]="i18n.currentLang() === 'pt'">PT</span>
-        <div class="switch">
-          <div class="knob" [class.is-en]="i18n.currentLang() === 'en'"></div>
+    @if (!isPrintMode()) {
+      <div class="header-actions">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle" (click)="themeService.toggleTheme()">
+          <ng-icon [name]="themeService.isDarkMode() ? 'lucideMoon' : 'lucideSun'" size="20"></ng-icon>
         </div>
-        <span [class.active]="i18n.currentLang() === 'en'">EN</span>
+        
+        <!-- Language Toggle -->
+        <div class="lang-toggle" (click)="i18n.toggleLanguage()">
+          <span [class.active]="i18n.currentLang() === 'pt'">PT</span>
+          <div class="switch">
+            <div class="knob" [class.is-en]="i18n.currentLang() === 'en'"></div>
+          </div>
+          <span [class.active]="i18n.currentLang() === 'en'">EN</span>
+        </div>
       </div>
-    </div>
+    }
   </header>
 
   <!-- Navigation Dots (Premium feature) -->
@@ -57,8 +59,10 @@
   </div>
   
   <!-- Slide Navigation Overlay -->
-  <div class="nav-overlay">
-    <button (click)="prevSlide()" [disabled]="currentSlide() === 0" class="glass-btn">←</button>
-    <button (click)="nextSlide()" [disabled]="currentSlide() === totalSlides - 1" class="glass-btn">→</button>
-  </div>
+  @if (!isPrintMode()) {
+    <div class="nav-overlay">
+      <button (click)="prevSlide()" [disabled]="currentSlide() === 0" class="glass-btn">←</button>
+      <button (click)="nextSlide()" [disabled]="currentSlide() === totalSlides - 1" class="glass-btn">→</button>
+    </div>
+  }
 </div>

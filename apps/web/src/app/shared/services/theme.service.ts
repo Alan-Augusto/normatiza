@@ -19,7 +19,7 @@ export class ThemeService {
     this.setDarkMode(!this.isDarkMode());
   }
 
-  private setDarkMode(dark: boolean) {
+  public setDarkMode(dark: boolean) {
     this.isDarkMode.set(dark);
     if (typeof window !== 'undefined') {
       const root = document.documentElement;

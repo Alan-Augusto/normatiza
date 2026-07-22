@@ -1,9 +1,10 @@
 import { ThemeService } from '../../../shared/services/theme.service';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideMoon, lucideSun } from '@ng-icons/lucide';
-import { Component, HostListener, signal, inject } from '@angular/core';
+import { Component, HostListener, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PresentationI18nService } from './services/presentation-i18n.service';
+import { ActivatedRoute } from '@angular/router';
+import { PresentationI18nService, Language } from './services/presentation-i18n.service';
 
 import { HeroComponent } from './components/hero/hero.component';
 import { MissionValuesComponent } from './components/mission-values/mission-values.component';
@@ -39,12 +40,37 @@ import { CtaComponent } from './components/cta/cta.component';
   templateUrl: './presentation.component.html',
   styleUrl: './presentation.component.css'
 })
-export class PresentationComponent {
+export class PresentationComponent implements OnInit {
   public i18n = inject(PresentationI18nService);
   public themeService = inject(ThemeService);
+  private route = inject(ActivatedRoute);
+
   currentSlide = signal(0);
   totalSlides = 11;
   isFinalState = signal(false);
+  isPrintMode = signal(false);
+
+  ngOnInit() {
+    this.route.data.subscribe(data => {
+      if (data['isPrint']) {
+        this.isPrintMode.set(true);
+      }
+    });
+
+    this.route.queryParams.subscribe(params => {
+      const theme = params['theme'];
+      if (theme === 'dark') {
+        this.themeService.setDarkMode(true);
+      } else if (theme === 'light') {
+        this.themeService.setDarkMode(false);
+      }
+
+      const lang = params['lang'];
+      if (lang === 'en' || lang === 'pt') {
+        this.i18n.setLanguage(lang as Language);
+      }
+    });
+  }
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent) {

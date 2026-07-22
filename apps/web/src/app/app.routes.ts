@@ -23,6 +23,11 @@ export const routes: Routes = [
       {
         path: 'presentation',
         loadComponent: () => import('./features/public/presentation/presentation.component').then(m => m.PresentationComponent)
+      },
+      {
+        path: 'presentation/print',
+        loadComponent: () => import('./features/public/presentation/presentation.component').then(m => m.PresentationComponent),
+        data: { isPrint: true }
       }
     ]
   },
