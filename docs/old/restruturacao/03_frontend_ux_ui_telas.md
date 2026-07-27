@@ -4,6 +4,27 @@ Este documento dita as regras de negócio focadas na Experiência do Usuário (U
 
 ---
 
+## Mapa de Navegação (Resumo das Telas)
+
+Abaixo apresentamos a hierarquia das telas possíveis de acordo com cada nível de contexto na aplicação (Sidebar):
+
+- **NÍVEL 1: Contexto Global (Master/Consultoria)**
+  - 📊 **Dashboard Geral:** Visão panorâmica, alertas de vencimento, ranking de risco.
+  - 🏢 **Carteira de Clientes (Empresas):** Acesso às indústrias, busca, status.
+  - 📚 **Banco de Soluções:** Catálogo de adequações e referências normativas.
+
+- **NÍVEL 2: Contexto da Empresa (Cliente Específico)**
+  - 📈 **Dashboard da Empresa:** Score de conformidade local, distribuição de riscos.
+  - 📦 **Inventário de Máquinas (Equipamentos):** Gestão visual em tabela/cards.
+  - 📋 **Plano de Ação (Kanban):** Execução (PDCA) e acompanhamento de tarefas.
+
+- **NÍVEL 3: Contexto do Equipamento (Máquina Específica)**
+  - 🪪 **Prontuário:** Informações técnicas, dimensões e fotos da máquina.
+  - ⏳ **Linha do Tempo (Histórico):** Diário de bordo, histórico de inspeções/manutenções.
+  - 🔍 **Vistoria Ativa (NR-12):** Wizard de apreciação HRN, checklists, revalidação e emissão.
+
+---
+
 ## 1. O Conceito de "Menu Contextual Dinâmico"
 
 A premissa UX mais importante da nova plataforma é **reduzir a sobrecarga cognitiva**. 

@@ -19,11 +19,11 @@ export const MyCustomPreset = definePreset(Aura, {
     // Configuração global de border radius da aplicação em REM
     borderRadius: {
       none: '0',
-      xs: '0.125rem',   // 2px
-      sm: '0.25rem',    // 4px
-      md: '0.375rem',   // 6px
-      lg: '0.5rem',     // 8px (Padrão usado pela maioria dos componentes médios do PrimeNG)
-      xl: '0.75rem'     // 12px
+      xs: '0.25rem',
+      sm: '0.375rem', 
+      md: '0.5rem',
+      lg: '0.75rem',  
+      xl: '1rem'  
     }
   },
   components: {

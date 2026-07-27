@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed } from '@angular/core';
+import { Component, inject, input, signal, computed, HostListener } from '@angular/core';
 import { Router, NavigationEnd, RouterLink, RouterLinkActive } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
@@ -7,11 +7,13 @@ import { lucideSidebarClose, lucideSidebarOpen } from '@ng-icons/lucide';
 import { Tooltip } from 'primeng/tooltip';
 import { ThemeService } from '../../services/theme.service';
 import { MenuContextService } from '../../../core/services/menu-context';
+import { MenuModule } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NgIconComponent, Tooltip],
+  imports: [RouterLink, RouterLinkActive, NgIconComponent, Tooltip, MenuModule],
   providers: [provideIcons({ lucideSidebarClose, lucideSidebarOpen })],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.css'
@@ -50,11 +52,65 @@ export class SidebarComponent {
   protected readonly contextBackLink = computed(() => this.context().backLink);
   protected readonly breadcrumbs = computed(() => this.context().breadcrumbs);
 
+  // User Menu State
+  userMenuItems: MenuItem[] = [
+    {
+      label: 'Aparência',
+      items: [
+        { label: 'Tema Claro', icon: 'pi pi-sun', command: () => this.themeService.setDarkMode(false) },
+        { label: 'Tema Escuro', icon: 'pi pi-moon', command: () => this.themeService.setDarkMode(true) },
+        { label: 'Sistema', icon: 'pi pi-desktop', command: () => this.themeService.setSystemTheme() }
+      ]
+    },
+    {
+      label: 'Conta',
+      items: [
+        { label: 'Meu Perfil', icon: 'pi pi-user', command: () => this.router.navigate(['/app/profile']) },
+        { label: 'Plano / Créditos', icon: 'pi pi-star', command: () => this.router.navigate(['/app/billing']) }
+      ]
+    },
+    {
+      separator: true
+    },
+    {
+      label: 'Sessão',
+      items: [
+        { 
+          label: 'Sair', 
+          icon: 'pi pi-power-off', 
+          command: () => this.router.navigate(['/auth/login']) // Fallback for now
+        }
+      ]
+    }
+  ];
+
+  // Search State
+  isSearchOpen = signal<boolean>(false);
+
   toggleTheme() {
     this.themeService.toggleTheme();
   }
 
   toggleCollapse() {
     this.isCollapsed.set(!this.isCollapsed());
+  }
+
+  toggleSearch() {
+    this.isSearchOpen.set(!this.isSearchOpen());
+  }
+
+  closeSearch() {
+    this.isSearchOpen.set(false);
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+      event.preventDefault();
+      this.toggleSearch();
+    }
+    if (event.key === 'Escape' && this.isSearchOpen()) {
+      this.closeSearch();
+    }
   }
 }

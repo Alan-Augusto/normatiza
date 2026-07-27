@@ -32,4 +32,18 @@ export class ThemeService {
       }
     }
   }
+
+  public setSystemTheme() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      this.isDarkMode.set(prefersDark);
+      const root = document.documentElement;
+      if (prefersDark) {
+        root.classList.add('app-dark');
+      } else {
+        root.classList.remove('app-dark');
+      }
+    }
+  }
 }
