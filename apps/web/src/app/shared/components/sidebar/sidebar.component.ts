@@ -6,13 +6,7 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideSidebarClose, lucideSidebarOpen } from '@ng-icons/lucide';
 import { Tooltip } from 'primeng/tooltip';
 import { ThemeService } from '../../services/theme.service';
-
-export interface SidebarMenuItem {
-  label: string;
-  icon: string;
-  route: string;
-  subtitle?: string;
-}
+import { MenuContextService } from '../../../core/services/menu-context';
 
 @Component({
   selector: 'app-sidebar',
@@ -25,6 +19,7 @@ export interface SidebarMenuItem {
 export class SidebarComponent {
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
+  private readonly menuContext = inject(MenuContextService);
 
   title = input<string>('Normatiza');
   logoIcon = input<string>('pi pi-box');
@@ -32,7 +27,7 @@ export class SidebarComponent {
   protected readonly isDarkMode = this.themeService.isDarkMode;
   isCollapsed = signal<boolean>(false);
 
-  // Monitor current route changes
+  // Monitor current route changes for general layout links
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -41,60 +36,19 @@ export class SidebarComponent {
     { initialValue: this.router.url }
   );
 
-  // Determine the base route of the active context ('/app' or '/admin')
   protected readonly baseRoute = computed<string>(() => {
     const url = this.currentUrl();
-    if (url.startsWith('/admin')) {
-      return '/admin';
-    } else if (url.startsWith('/app')) {
-      return '/app';
-    }
-    return '/';
+    if (url.startsWith('/admin')) return '/admin';
+    return '/app';
   });
 
-  // Dynamically map menu items based on URL prefix ('/app' or '/admin')
-  protected readonly menuItems = computed<SidebarMenuItem[]>(() => {
-    const url = this.currentUrl();
-    let prefix = '';
-
-    if (url.startsWith('/admin')) {
-      prefix = 'admin';
-    } else if (url.startsWith('/app')) {
-      prefix = 'app';
-    } else {
-      return [];
-    }
-
-    const matchedRoute = this.router.config.find(route => route.path === prefix);
-    if (!matchedRoute || !matchedRoute.children) {
-      return [];
-    }
-
-    return matchedRoute.children
-      .filter(child => child.data && child.data['label'])
-      .map(child => ({
-        label: child.data!['label'] as string,
-        icon: child.data!['icon'] as string || 'pi pi-circle',
-        route: `/${prefix}/${child.path}`,
-        subtitle: child.data!['subtitle'] as string || ''
-      }));
-  });
-
-  // Calculate active page title for header/breadcrumb
-  protected readonly activePageTitle = computed<string>(() => {
-    const url = this.currentUrl();
-    const items = this.menuItems();
-    const active = items.find(item => url === item.route || url.startsWith(item.route + '/'));
-    return active ? active.label : 'Dashboard';
-  });
-
-  // Calculate active page subtitle dynamically from route metadata
-  protected readonly activePageSubtitle = computed<string>(() => {
-    const url = this.currentUrl();
-    const items = this.menuItems();
-    const active = items.find(item => url === item.route || url.startsWith(item.route + '/'));
-    return active && active.subtitle ? active.subtitle : `Normatiza v2 • Contexto ${this.title()}`;
-  });
+  // State provided by MenuContextService
+  protected readonly context = this.menuContext.context;
+  protected readonly menuItems = computed(() => this.context().items);
+  protected readonly activePageTitle = computed(() => this.context().title);
+  protected readonly activePageSubtitle = computed(() => this.context().subtitle);
+  protected readonly contextBackLink = computed(() => this.context().backLink);
+  protected readonly breadcrumbs = computed(() => this.context().breadcrumbs);
 
   toggleTheme() {
     this.themeService.toggleTheme();

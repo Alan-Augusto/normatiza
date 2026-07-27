@@ -43,15 +43,46 @@ export const routes: Routes = [
         redirectTo: 'dashboard',
         pathMatch: 'full'
       },
+      // Nível 1: Global
       {
         path: 'dashboard',
-        loadComponent: () => import('./features/app/dashboard/dashboard.component').then(m => m.DashboardComponent),
-        data: { label: 'Dashboard', icon: 'pi pi-chart-bar' }
+        loadComponent: () => import('./features/app/dashboard/dashboard').then(m => m.Dashboard)
       },
       {
+        path: 'clients',
+        loadComponent: () => import('./features/app/clients/clients-list/clients-list').then(m => m.ClientsList)
+      },
+      {
+        path: 'solutions',
+        loadComponent: () => import('./features/app/solutions/solutions').then(m => m.Solutions)
+      },
+      // Nível 2: Contexto da Empresa (Client)
+      {
+        path: 'clients/:clientId',
+        loadComponent: () => import('./features/app/clients/client-detail/layout/layout').then(m => m.Layout),
+        children: [
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: 'dashboard', loadComponent: () => import('./features/app/clients/client-detail/dashboard/dashboard').then(m => m.Dashboard) },
+          { path: 'equipments', loadComponent: () => import('./features/app/clients/client-detail/equipments/equipments-list/equipments-list').then(m => m.EquipmentsList) },
+          { path: 'kanban', loadComponent: () => import('./features/app/clients/client-detail/kanban/kanban').then(m => m.Kanban) },
+          
+          // Nível 3: Contexto do Equipamento
+          {
+            path: 'equipments/:equipmentId',
+            loadComponent: () => import('./features/app/clients/client-detail/equipments/equipment-detail/layout/layout').then(m => m.Layout),
+            children: [
+              { path: '', redirectTo: 'record', pathMatch: 'full' },
+              { path: 'record', loadComponent: () => import('./features/app/clients/client-detail/equipments/equipment-detail/record/record').then(m => m.Record) },
+              { path: 'history', loadComponent: () => import('./features/app/clients/client-detail/equipments/equipment-detail/history/history').then(m => m.History) },
+              { path: 'inspection', loadComponent: () => import('./features/app/clients/client-detail/equipments/equipment-detail/inspection/inspection').then(m => m.Inspection) },
+            ]
+          }
+        ]
+      },
+      // Utilitários globais do App
+      {
         path: 'profile',
-        loadComponent: () => import('./features/app/profile/profile.component').then(m => m.ProfileComponent),
-        data: { label: 'Meu Perfil', icon: 'pi pi-user' }
+        loadComponent: () => import('./features/app/profile/profile.component').then(m => m.ProfileComponent)
       }
     ]
   },

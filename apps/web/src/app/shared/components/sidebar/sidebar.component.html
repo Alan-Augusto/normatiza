@@ -10,14 +10,14 @@
     <div 
       [class.justify-center]="isCollapsed()" 
       [class.px-4]="!isCollapsed()" 
-      class="flex items-center h-14 border-b border-surface-100 dark:border-surface-800/60 shrink-0 overflow-hidden"
+      class="flex items-center h-14"
     >
       <div class="flex items-center gap-2.5">
-        <div class="flex items-center justify-center w-7 h-7 rounded bg-primary text-primary-contrast font-semibold text-sm shrink-0">
-          <i [class]="logoIcon()"></i>
+        <div class="flex items-center justify-center w-7 h-7 rounded text-primary-contrast font-semibold text-sm shrink-0">
+          <img src="assets/logo.png" alt="Logo">
         </div>
         @if (!isCollapsed()) {
-          <span class="text-sm font-semibold text-surface-900 dark:text-surface-0 tracking-tight transition-opacity duration-200 truncate">
+          <span class="text-lg font-semibold text-surface-900 dark:text-surface-0 tracking-tight transition-opacity duration-200 truncate">
             {{ title() }}
           </span>
         }
@@ -26,6 +26,23 @@
 
     <!-- Navigation Menu Items -->
     <nav class="flex-1 px-2.5 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
+      <!-- Context Back Link (E.g. Voltar para Carteira) -->
+      @if (contextBackLink(); as backLink) {
+        <a
+          [routerLink]="backLink.route"
+          [pTooltip]="isCollapsed() ? backLink.label : ''"
+          tooltipPosition="right"
+          [class.justify-center]="isCollapsed()"
+          [class.px-3]="!isCollapsed()"
+          class="group flex items-center gap-3 py-2 mb-4 rounded-md text-surface-500 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-100 dark:hover:bg-surface-800 transition-all duration-200 cursor-pointer relative border border-transparent hover:border-surface-200 dark:hover:border-surface-700"
+        >
+          <i class="pi pi-arrow-left text-sm flex items-center justify-center transition-transform duration-200 group-hover:-translate-x-1"></i>
+          @if (!isCollapsed()) {
+            <span class="text-[0.8rem] font-medium transition-opacity duration-200 truncate">{{ backLink.label }}</span>
+          }
+        </a>
+      }
+
       @for (item of menuItems(); track item.route) {
         <a
           [routerLink]="item.route"
@@ -115,8 +132,28 @@
           >
             <i class="pi pi-home text-[0.8125rem]"></i>
           </a>
-          <i class="pi pi-chevron-right text-[0.5625rem] text-surface-400"></i>
-          <span class="font-semibold text-surface-900 dark:text-surface-0">{{ activePageTitle() }}</span>
+          @for (crumb of breadcrumbs(); track $index) {
+            <i class="pi pi-chevron-right text-[0.5625rem] text-surface-400"></i>
+            @if (crumb.route) {
+              <a 
+                [routerLink]="crumb.route" 
+                class="hover:text-primary transition-colors cursor-pointer"
+                [class.font-semibold]="crumb === breadcrumbs()[breadcrumbs().length - 1]"
+                [class.text-surface-900]="crumb === breadcrumbs()[breadcrumbs().length - 1]"
+                [class.dark:text-surface-0]="crumb === breadcrumbs()[breadcrumbs().length - 1]"
+              >
+                {{ crumb.label }}
+              </a>
+            } @else {
+              <span 
+                [class.font-semibold]="crumb === breadcrumbs()[breadcrumbs().length - 1]"
+                [class.text-surface-900]="crumb === breadcrumbs()[breadcrumbs().length - 1]"
+                [class.dark:text-surface-0]="crumb === breadcrumbs()[breadcrumbs().length - 1]"
+              >
+                {{ crumb.label }}
+              </span>
+            }
+          }
         </div>
       </div>
       
