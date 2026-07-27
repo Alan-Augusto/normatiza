@@ -131,7 +131,7 @@ export class MenuContextService {
 
     // NÍVEL 1: Global (App)
     const items: MenuItem[] = [
-      { label: 'Dashboard', icon: 'pi pi-chart-bar', route: '/app/dashboard' },
+      { label: 'Dashboard', icon: 'pi pi-chart-pie', route: '/app/dashboard' },
       { label: 'Empresas', icon: 'pi pi-building', route: '/app/clients' },
       { label: 'Soluções', icon: 'pi pi-book', route: '/app/solutions' }
     ];

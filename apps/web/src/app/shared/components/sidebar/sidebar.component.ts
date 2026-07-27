@@ -23,7 +23,7 @@ export class SidebarComponent {
   private readonly themeService = inject(ThemeService);
   private readonly menuContext = inject(MenuContextService);
 
-  title = input<string>('Normatiza');
+  appTitle = input<string>('Normatiza', { alias: 'appTitle' });
   logoIcon = input<string>('pi pi-box');
 
   protected readonly isDarkMode = this.themeService.isDarkMode;
