@@ -6,31 +6,37 @@ Este guia serve como um passo a passo (checklist) prático que desenvolvedores e
 
 ## 🛠️ Passo a Passo para Criar uma Nova Tela
 
-Siga esta sequência lógica ao receber uma demanda para criar uma nova tela (exemplo: criar gerenciador de documentos em `/app/documents`):
+Siga esta sequência lógica ao receber uma demanda para criar uma nova tela (exemplo: criar o repositório de arquivos da empresa, no Contexto 2):
+
+### Passo 0: Confirmar a Regra de Negócio
+Antes de criar qualquer arquivo, localize a tela em **[docs/produto/03 — Navegação e Telas](../produto/03_navegacao_e_telas.md)** e confirme:
+- Em qual **contexto** ela vive (0, 1, 2, 3 ou Execução) — isso define a pasta e a rota.
+- Quais **papéis** a acessam e o que cada um pode fazer nela ([01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md)).
+- Se a tela depende de alguma **decisão em aberto** ([06 — Pendências](../produto/06_pendencias.md)). Se depender, resolva antes — não decida no código.
 
 ### Passo 1: Criar a Estrutura de Pastas da Feature
 Crie as pastas necessárias dentro da feature correspondente (seguindo as regras de contexto de **[docs/web/arquitetura.md](./arquitetura.md)**):
 ```bash
-mkdir -p apps/web/src/app/features/app/documents/components
-mkdir -p apps/web/src/app/features/app/documents/services
-mkdir -p apps/web/src/app/features/app/documents/mocks
+mkdir -p apps/web/src/app/features/company/files/components
+mkdir -p apps/web/src/app/features/company/files/services
+mkdir -p apps/web/src/app/features/company/files/mocks
 ```
 
 ### Passo 2: Criar os Componentes com Arquivos Separados
 Crie os arquivos TS, HTML e CSS obrigatórios para o componente principal. 
 ```bash
 # Se usar Angular CLI (com schematics configurado para SCSS/CSS)
-ng g c features/app/documents --skip-tests
+ng g c features/company/files --skip-tests
 ```
 > [!IMPORTANT]
 > Garanta que o decorador `@Component` no arquivo `.ts` aponte para arquivos externos:
 > ```typescript
 > @Component({
->   selector: 'app-documents',
+>   selector: 'app-company-files',
 >   standalone: true,
 >   imports: [CommonModule, RouterOutlet],
->   templateUrl: './documents.component.html',
->   styleUrl: './documents.component.css' // ou .scss se configurado
+>   templateUrl: './files.component.html',
+>   styleUrl: './files.component.css' // ou .scss se configurado
 > })
 > ```
 
@@ -38,15 +44,15 @@ ng g c features/app/documents --skip-tests
 No arquivo [app.routes.ts](../../apps/web/src/app/app.routes.ts), adicione a nova rota dentro do escopo correto (ex: sob o layout privado `/app`):
 ```typescript
 {
-  path: 'documents',
-  loadComponent: () => import('./features/app/documents/documents.component').then(m => m.DocumentsComponent)
+  path: 'files',
+  loadComponent: () => import('./features/company/files/files.component').then(m => m.FilesComponent)
 }
 ```
 
 ### Passo 4: Conectar à API com Serviços Locais
 Se a tela consome uma API dedicada a esta feature, crie um serviço local dentro da pasta `services/` da feature:
 ```bash
-# Exemplo: documents.service.ts
+# Exemplo: files.service.ts
 ```
 * Use `inject(HttpClient)` para requisições.
 * **Nunca** declare interfaces locais de API. Importe os DTOs e interfaces diretamente do pacote `@normatiza/shared`.
@@ -67,7 +73,12 @@ Antes de finalizar e enviar a tela para revisão (Pull Request), valide os segui
 - [ ] O HTML da página **não** contém padding raiz (como `p-6` ou `p-layout-padding`) nem cabeçalhos locais (`h1`, `p`) de título/subtítulo.
 - [ ] A rota correspondente no `app.routes.ts` tem os metadados `label` e `subtitle` preenchidos.
 
-### 3. Escolha de Ícones
+### 3. Regras de Negócio
+- [ ] A rota está sob o layout do contexto correto e protegida pelas guardas de papel/escopo?
+- [ ] A tela respeita a visibilidade do papel (ex: Executor não vê HRN; arquivos `CONSULTANCY_ONLY` não chegam ao cliente)?
+- [ ] Nenhuma permissão é aplicada apenas no front — o servidor valida a mesma regra?
+
+### 4. Escolha de Ícones
 - [ ] Se o ícone está na **Sidebar (menu lateral principal)**, utilizou **PrimeIcons** (ex: `'pi pi-file'`)?
 - [ ] Se o ícone está **dentro da página** (botões, cards, modais), utilizou os ícones **Lucide** (ex: `<ng-icon name="lucideFileText"></ng-icon>`)?
 - [ ] Os ícones Lucide utilizados foram importados e declarados no array de provedores de ícones no arquivo de configuração correspondente?

@@ -39,34 +39,62 @@ export class ExemploComponent {}
 
 ## 3. Estrutura de Pastas do App (`apps/web/src/app`)
 
-O diretório principal está estruturado da seguinte forma:
+A pasta de features **espelha os contextos de navegação** definidos em [docs/produto/03 — Navegação e Telas](../produto/03_navegacao_e_telas.md). Essa correspondência é intencional: se uma tela existe num contexto no produto, ela mora na pasta daquele contexto no código.
 
 ```
 src/app/
-├── core/                           # Inteligência global e Singletons (Core Module)
-│   ├── guards/                     # Guardas de rotas (Ex: auth.guard.ts)
-│   ├── interceptors/               # Interceptadores HTTP (tokens, tratamento de erros)
-│   └── services/                   # Serviços globais essenciais (Ex: auth.service.ts)
+├── core/                           # Inteligência global e Singletons
+│   ├── guards/                     # Guardas de rota: autenticação, papel e escopo
+│   ├── interceptors/               # Interceptadores HTTP (token, tratamento de erros)
+│   └── services/                   # Serviços globais (auth, contexto ativo, permissões)
 │
 ├── shared/                         # Utilitários visuais e genéricos compartilhados
-│   ├── components/                 # Componentes genéricos de UI (Ex: botões customizados)
-│   └── services/                   # Serviços transversais do frontend (Ex: theme.service.ts)
+│   ├── components/                 # Componentes genéricos de UI
+│   └── services/                   # Serviços transversais (ex: theme.service.ts)
 │
 └── features/                       # CONTEXTOS E FUNCIONALIDADES DO NEGÓCIO
-    ├── public/                     # --- Contextos Públicos ---
-    │   ├── public.layout.ts        # Layout padrão da área pública (Landing, login)
-    │   ├── landing/                # Página institucional (Landing Page)
-    │   └── auth/                   # Telas de login e cadastro
+    ├── public/                     # --- Área pública ---
+    │   ├── public.layout.ts        # Layout da área pública
+    │   ├── landing/                # Página institucional
+    │   └── auth/                   # Login, convite e definição de senha
     │
-    ├── app/                        # --- Contextos Privados da Aplicação ---
-    │   ├── app.layout.ts           # Layout interno padrão (Sidebar + Header)
-    │   ├── dashboard/              # Painel principal do usuário
-    │   └── profile/                # Edição de perfil do usuário logado
+    ├── admin/                      # --- Contexto 0: backoffice da plataforma ---
+    │   ├── admin.layout.ts
+    │   ├── accounts/               # Contas (consultorias)
+    │   └── catalogs/               # Catálogos globais e tabelas HRN versionadas
     │
-    └── admin/                      # --- Contextos Administrativos ---
-        ├── admin.layout.ts         # Layout administrativo
-        └── accounts/               # Gerenciamento de contas e usuários
+    ├── consultancy/                # --- Contexto 1: visão geral da consultoria ---
+    │   ├── consultancy.layout.ts
+    │   ├── dashboard/              # Dashboard geral e filas de trabalho
+    │   ├── companies/              # Carteira de empresas atendidas
+    │   ├── team/                   # Equipe, convites e desligamento com sucessão
+    │   ├── catalogs/               # Meus Cadastros (soluções, modelos)
+    │   └── reports/                # Relatórios gerenciais
+    │
+    ├── company/                    # --- Contexto 2: empresa ---
+    │   ├── company.layout.ts       # Cabeçalho com a empresa em contexto
+    │   ├── dashboard/
+    │   ├── sectors/
+    │   ├── action-plan/            # Plano de ação consolidado
+    │   ├── price-table/            # Tabela de preços e fornecedores
+    │   ├── team/                   # Equipe da empresa
+    │   ├── files/
+    │   └── equipments/             # Inventário
+    │       └── equipment/          # --- Contexto 3: equipamento ---
+    │           ├── equipment.layout.ts
+    │           ├── dashboard/
+    │           ├── analysis/       # Assistente de análise (4 etapas)
+    │           ├── studies/
+    │           ├── action-plan/
+    │           ├── reports/        # Laudos
+    │           └── history/
+    │
+    └── execution/                  # --- Área de Execução: transversal ---
+        └── my-tasks/               # Tela inicial e única do Executor
 ```
+
+> [!IMPORTANT]
+> **Guardas de rota não bastam.** O escopo e a etapa de cada item são validados no servidor. As guardas existem para não exibir ao usuário caminhos que ele não pode percorrer, nunca como mecanismo de segurança. Ver [docs/produto/01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md).
 
 ---
 
@@ -95,26 +123,36 @@ features/app/profile/
 
 ---
 
-## 5. Padrão de Layout e Cabeçalhos (Header & Padding)
+## 5. Padrão de Layout e Cabeçalhos
 
 Para manter a consistência visual e evitar código redundante nas telas individuais:
 
-1. **Paddings no Container Principal:**
-   - O wrapper do layout geral (`SidebarComponent` em `apps/web/src/app/shared/components/sidebar/`) já aplica automaticamente o espaçamento padrão (`p-6 md:p-8`) na tag `<main>` onde as páginas são renderizadas.
-   - **Regra:** O HTML de componentes de página **nunca** deve conter classes de padding ou largura máxima raiz (ex: `p-6` ou `max-w-7xl mx-auto`). Os elementos devem começar diretamente no fluxo estrutural do layout.
+### 5.1. Paddings no Container Principal
+O wrapper do layout já aplica automaticamente o espaçamento padrão na tag `<main>` onde as páginas são renderizadas.
 
-2. **Títulos e Subtítulos Dinâmicos:**
-   - O cabeçalho de título (`h1`) e subtítulo (`p`) de cada tela é gerenciado de forma centralizada pelo layout da sidebar. Ele lê dinamicamente as propriedades `label` e `subtitle` do objeto `data` da rota ativa em `app.routes.ts`.
-   - **Regra:** Não crie elementos locais de título e subtítulo dentro das telas. Configure-os na declaração da rota:
-     ```typescript
-     {
-       path: 'minha-tela',
-       loadComponent: () => import('./...'),
-       data: { 
-         label: 'Minha Tela', 
-         icon: 'pi pi-check', 
-         subtitle: 'Esta descrição aparecerá no topo sob o título.' 
-       }
-     }
-     ```
+**Regra:** o HTML de componentes de página **nunca** deve conter classes de padding ou largura máxima raiz (ex: `p-6` ou `max-w-7xl mx-auto`). Os elementos começam diretamente no fluxo estrutural do layout.
+
+### 5.2. Títulos e Subtítulos Dinâmicos
+O título (`h1`) e o subtítulo (`p`) de cada tela são gerenciados de forma centralizada pelo layout, que lê as propriedades `label` e `subtitle` do objeto `data` da rota ativa.
+
+**Regra:** não crie elementos locais de título e subtítulo dentro das telas. Configure-os na declaração da rota:
+
+```typescript
+{
+  path: 'minha-tela',
+  loadComponent: () => import('./...'),
+  data: {
+    label: 'Minha Tela',
+    icon: 'pi pi-check',
+    subtitle: 'Esta descrição aparecerá no topo sob o título.'
+  }
+}
+```
+
+### 5.3. Cabeçalho de Contexto
+Nos Contextos 2 e 3, o usuário precisa saber permanentemente **em qual empresa e em qual equipamento** está atuando — é a premissa central de UX do produto.
+
+Esse identificador é responsabilidade do **layout do contexto** (`company.layout.ts`, `equipment.layout.ts`), que o resolve a partir dos parâmetros da rota e o exibe acima do título da tela. Ele coexiste com o título dinâmico da §5.2, sem substituí-lo.
+
+**Regra:** telas individuais **não** renderizam o nome da empresa ou do equipamento como cabeçalho próprio. Consomem o contexto ativo pelo serviço correspondente em `core/services`.
 
