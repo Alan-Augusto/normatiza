@@ -18,7 +18,10 @@
     "rootDir": "../..",
     "paths": {
       "@normatiza/shared": ["../../packages/shared/src/index.ts"],
-      "@normatiza/shared/*": ["../../packages/shared/src/*"]
+      "@normatiza/shared/*": ["../../packages/shared/src/*"],
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@features/*": ["src/app/features/*"]
     }
   },
 

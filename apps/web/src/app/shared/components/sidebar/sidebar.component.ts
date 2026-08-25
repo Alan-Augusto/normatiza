@@ -6,7 +6,9 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideSidebarClose, lucideSidebarOpen } from '@ng-icons/lucide';
 import { Tooltip } from 'primeng/tooltip';
 import { ThemeService } from '../../services/theme.service';
-import { MenuContextService } from '../../../core/services/menu-context';
+import { MenuContextService } from '@core/services/menu-context.service';
+import { PageMetaService } from '@core/services/page-meta.service';
+import { ActiveContextService } from '@core/services/active-context.service';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 
@@ -22,6 +24,8 @@ export class SidebarComponent {
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
   private readonly menuContext = inject(MenuContextService);
+  private readonly pageMeta = inject(PageMetaService);
+  private readonly activeContext = inject(ActiveContextService);
 
   appTitle = input<string>('Normatiza', { alias: 'appTitle' });
   logoIcon = input<string>('pi pi-box');
@@ -44,13 +48,23 @@ export class SidebarComponent {
     return '/app';
   });
 
-  // State provided by MenuContextService
+  // Menu e migalhas: MenuContextService
   protected readonly context = this.menuContext.context;
   protected readonly menuItems = computed(() => this.context().items);
-  protected readonly activePageTitle = computed(() => this.context().title);
-  protected readonly activePageSubtitle = computed(() => this.context().subtitle);
   protected readonly contextBackLink = computed(() => this.context().backLink);
   protected readonly breadcrumbs = computed(() => this.context().breadcrumbs);
+
+  // Título e subtítulo da tela: `data` da rota ativa (arquitetura.md §5.2)
+  protected readonly activePageTitle = computed(() => this.pageMeta.meta().label);
+  protected readonly activePageSubtitle = computed(() => this.pageMeta.meta().subtitle);
+
+  // Cabeçalho de contexto: empresa e equipamento em contexto (arquitetura.md §5.3)
+  protected readonly contextHeader = computed<string | null>(() => {
+    const company = this.activeContext.company();
+    if (!company) return null;
+    const equipment = this.activeContext.equipment();
+    return equipment ? `${company.name} · ${equipment.name}` : company.name;
+  });
 
   // User Menu State
   userMenuItems: MenuItem[] = [

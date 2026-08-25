@@ -173,6 +173,9 @@
     <main class="flex-1 overflow-y-auto p-6 md:p-4">
       <!-- Page Title Header -->
       <div class="mb-6 select-none">
+        @if (contextHeader(); as header) {
+          <p class="text-[0.6875rem] font-semibold uppercase tracking-wide text-primary mb-1">{{ header }}</p>
+        }
         <h1 class="text-xl font-semibold tracking-tight text-surface-900 dark:text-surface-0">
           {{ activePageTitle() }}
         </h1>

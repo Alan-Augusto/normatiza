@@ -17,16 +17,16 @@ Antes de criar qualquer arquivo, localize a tela em **[docs/produto/03 — Naveg
 ### Passo 1: Criar a Estrutura de Pastas da Feature
 Crie as pastas necessárias dentro da feature correspondente (seguindo as regras de contexto de **[docs/web/arquitetura.md](./arquitetura.md)**):
 ```bash
-mkdir -p apps/web/src/app/features/company/files/components
-mkdir -p apps/web/src/app/features/company/files/services
-mkdir -p apps/web/src/app/features/company/files/mocks
+mkdir -p apps/web/src/app/features/app/companies/company/files/components
+mkdir -p apps/web/src/app/features/app/companies/company/files/services
+mkdir -p apps/web/src/app/features/app/companies/company/files/mocks
 ```
 
 ### Passo 2: Criar os Componentes com Arquivos Separados
 Crie os arquivos TS, HTML e CSS obrigatórios para o componente principal. 
 ```bash
 # Se usar Angular CLI (com schematics configurado para SCSS/CSS)
-ng g c features/company/files --skip-tests
+ng g c features/app/companies/company/files --skip-tests
 ```
 > [!IMPORTANT]
 > Garanta que o decorador `@Component` no arquivo `.ts` aponte para arquivos externos:
@@ -41,11 +41,16 @@ ng g c features/company/files --skip-tests
 > ```
 
 ### Passo 3: Registrar Rota com Lazy Loading
-No arquivo [app.routes.ts](../../apps/web/src/app/app.routes.ts), adicione a nova rota dentro do escopo correto (ex: sob o layout privado `/app`):
+No arquivo [app.routes.ts](../../apps/web/src/app/app.routes.ts), adicione a nova rota dentro do contexto correto (no exemplo, entre os filhos de `companies/:companyId`), sempre com `label` e `subtitle`:
 ```typescript
 {
   path: 'files',
-  loadComponent: () => import('./features/company/files/files.component').then(m => m.FilesComponent)
+  loadComponent: () => import('./features/app/companies/company/files/files.component').then(m => m.FilesComponent),
+  data: {
+    label: 'Arquivos da Empresa',
+    icon: 'pi pi-folder',
+    subtitle: 'Documentação da planta, com categoria, validade e visibilidade por lado.'
+  }
 }
 ```
 

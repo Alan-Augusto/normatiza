@@ -39,7 +39,16 @@ export class ExemploComponent {}
 
 ## 3. Estrutura de Pastas do App (`apps/web/src/app`)
 
-A pasta de features **espelha os contextos de navegação** definidos em [docs/produto/03 — Navegação e Telas](../produto/03_navegacao_e_telas.md). Essa correspondência é intencional: se uma tela existe num contexto no produto, ela mora na pasta daquele contexto no código.
+A pasta de features **espelha a hierarquia do domínio**, que é a mesma dos contextos de navegação definidos em [docs/produto/03 — Navegação e Telas](../produto/03_navegacao_e_telas.md) e a mesma da URL: uma consultoria tem empresas, uma empresa tem equipamentos, um equipamento tem pontos de risco. A pasta aninha do mesmo jeito.
+
+**A regra é uma só, aplicada em todos os níveis:** a *lista* de uma coleção fica na raiz da pasta dela; o *contexto de um item* fica numa subpasta no singular.
+
+| Nível | Rota | Arquivo |
+| :--- | :--- | :--- |
+| Lista de empresas | `/app/companies` | `app/companies/companies.component.ts` |
+| Contexto de uma empresa | `/app/companies/:companyId` | `app/companies/company/` |
+| Lista de equipamentos | `/app/companies/:companyId/equipments` | `app/companies/company/equipments/equipments.component.ts` |
+| Contexto de um equipamento | `.../equipments/:equipmentId` | `app/companies/company/equipments/equipment/` |
 
 ```
 src/app/
@@ -52,7 +61,7 @@ src/app/
 │   ├── components/                 # Componentes genéricos de UI
 │   └── services/                   # Serviços transversais (ex: theme.service.ts)
 │
-└── features/                       # CONTEXTOS E FUNCIONALIDADES DO NEGÓCIO
+└── features/
     ├── public/                     # --- Área pública ---
     │   ├── public.layout.ts        # Layout da área pública
     │   ├── landing/                # Página institucional
@@ -63,35 +72,57 @@ src/app/
     │   ├── accounts/               # Contas (consultorias)
     │   └── catalogs/               # Catálogos globais e tabelas HRN versionadas
     │
-    ├── consultancy/                # --- Contexto 1: visão geral da consultoria ---
-    │   ├── consultancy.layout.ts
-    │   ├── dashboard/              # Dashboard geral e filas de trabalho
-    │   ├── companies/              # Carteira de empresas atendidas
-    │   ├── team/                   # Equipe, convites e desligamento com sucessão
-    │   ├── catalogs/               # Meus Cadastros (soluções, modelos)
-    │   └── reports/                # Relatórios gerenciais
-    │
-    ├── company/                    # --- Contexto 2: empresa ---
-    │   ├── company.layout.ts       # Cabeçalho com a empresa em contexto
-    │   ├── dashboard/
-    │   ├── sectors/
-    │   ├── action-plan/            # Plano de ação consolidado
-    │   ├── price-table/            # Tabela de preços e fornecedores
-    │   ├── team/                   # Equipe da empresa
-    │   ├── files/
-    │   └── equipments/             # Inventário
-    │       └── equipment/          # --- Contexto 3: equipamento ---
-    │           ├── equipment.layout.ts
-    │           ├── dashboard/
-    │           ├── analysis/       # Assistente de análise (4 etapas)
-    │           ├── studies/
-    │           ├── action-plan/
-    │           ├── reports/        # Laudos
-    │           └── history/
-    │
-    └── execution/                  # --- Área de Execução: transversal ---
-        └── my-tasks/               # Tela inicial e única do Executor
+    └── app/                        # --- Área autenticada (o esqueleto do sistema) ---
+        ├── app.layout.ts           # Shell privado: sidebar, busca e cabeçalhos
+        │
+        │                           # Contexto 1 — Consultoria (visão geral)
+        ├── dashboard/              # Dashboard geral e filas de trabalho
+        ├── team/                   # Equipe, convites e desligamento com sucessão
+        ├── catalogs/               # Meus Cadastros (soluções, modelos)
+        ├── reports/                # Relatórios gerenciais
+        ├── profile/                # Perfil do usuário — transversal, sem contexto
+        ├── my-tasks/               # Área de Execução — transversal
+        │
+        └── companies/              # Carteira de empresas atendidas (lista)
+            ├── companies.component.ts
+            └── company/            # --- Contexto 2: uma empresa ---
+                ├── company.layout.ts     # Resolve a empresa em contexto
+                ├── dashboard/
+                ├── sectors/
+                ├── action-plan/          # Plano de ação consolidado
+                ├── price-table/          # Tabela de preços e fornecedores
+                ├── team/                 # Equipe da empresa
+                ├── files/
+                └── equipments/           # Inventário da planta (lista)
+                    ├── equipments.component.ts
+                    └── equipment/  # --- Contexto 3: um equipamento ---
+                        ├── equipment.layout.ts
+                        ├── dashboard/
+                        ├── analysis/     # Assistente de análise (4 etapas)
+                        ├── studies/
+                        ├── action-plan/  # Cartões dos pontos de risco
+                        ├── reports/      # Laudos
+                        └── history/
 ```
+
+> [!NOTE]
+> **O ponto de risco não é um nível de pasta.** Ele é o cartão dentro do plano de ação ([03 §5.4](../produto/03_navegacao_e_telas.md)) — não tem rota, não tem menu e não muda o contexto. Vive em `action-plan/components/`. A hierarquia de *dados* desce até o ponto; a de *navegação* para no equipamento.
+
+> [!NOTE]
+> **A tela do Contexto 2 é compartilhada.** A consultoria chega nela clicando numa empresa da carteira; o Gestor e o Engenheiro do Cliente entram direto nela, e nunca enxergam o Contexto 1. É a mesma tela para os dois lados — o que muda é o escopo dos dados e as permissões, nunca o componente. Por isso a área autenticada se chama `app/` e não `consultancy/`: a pasta não pertence a lado nenhum.
+
+### Imports entre áreas
+
+O aninhamento profundo não deve virar `../../../../../..`. Use os aliases declarados em `apps/web/tsconfig.json`:
+
+| Alias | Aponta para |
+| :--- | :--- |
+| `@core/*` | `src/app/core/*` |
+| `@shared/*` | `src/app/shared/*` |
+| `@features/*` | `src/app/features/*` |
+| `@normatiza/shared` | contratos e DTOs do monorepo |
+
+Caminho relativo (`./`, `../`) só **dentro** da mesma feature.
 
 > [!IMPORTANT]
 > **Guardas de rota não bastam.** O escopo e a etapa de cada item são validados no servidor. As guardas existem para não exibir ao usuário caminhos que ele não pode percorrer, nunca como mecanismo de segurança. Ver [docs/produto/01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md).
@@ -100,7 +131,7 @@ src/app/
 
 ## 4. Anatomy of a Context (Feature)
 
-Cada contexto funcional (por exemplo, `features/app/profile`) deve seguir uma estrutura interna padronizada para manter a coesão do código. 
+Cada feature (por exemplo, `features/app/companies/company/files`) deve seguir uma estrutura interna padronizada para manter a coesão do código. 
 
 ### O que DEVE e NÃO DEVE ter dentro de um contexto:
 
@@ -112,11 +143,11 @@ Cada contexto funcional (por exemplo, `features/app/profile`) deve seguir uma es
 
 ### Exemplo visual de um contexto:
 ```
-features/app/profile/
-├── profile.component.ts        # Lógica do componente
-├── profile.component.html      # Template HTML
-├── profile.component.css       # Estilo CSS
-├── components/                 # Componentes específicos (Ex: profile-avatar)
+features/app/companies/company/files/
+├── files.component.ts          # Lógica do componente
+├── files.component.html        # Template HTML
+├── files.component.css         # Estilo CSS
+├── components/                 # Componentes específicos (Ex: file-upload-dialog)
 ├── services/                   # Serviços específicos do contexto
 └── mocks/                      # Mocks de dados para testes
 ```

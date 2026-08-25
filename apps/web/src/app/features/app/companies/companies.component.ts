@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-clients-list',
+  selector: 'app-companies',
+  standalone: true,
   imports: [],
-  templateUrl: './clients-list.html',
-  styleUrl: './clients-list.css',
+  templateUrl: './companies.component.html',
+  styleUrl: './companies.component.css'
 })
-export class ClientsList {}
+export class CompaniesComponent {}

@@ -2,8 +2,9 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-solutions',
+  standalone: true,
   imports: [],
-  templateUrl: './solutions.html',
-  styleUrl: './solutions.css',
+  templateUrl: './solutions.component.html',
+  styleUrl: './solutions.component.css'
 })
-export class Solutions {}
+export class SolutionsComponent {}

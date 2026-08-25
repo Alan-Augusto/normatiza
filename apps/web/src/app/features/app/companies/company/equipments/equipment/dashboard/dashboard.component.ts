@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-record',
+  selector: 'app-equipment-dashboard',
+  standalone: true,
   imports: [],
-  templateUrl: './record.html',
-  styleUrl: './record.css',
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.css'
 })
-export class Record {}
+export class EquipmentDashboardComponent {}
