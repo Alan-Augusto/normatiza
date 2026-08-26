@@ -1,22 +1,13 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import * as cookieParser from 'cookie-parser';
 
+import { configureApp } from './app-setup';
 import { AppModule } from './app.module';
 import { EnvironmentVariables } from './config/env.validation';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
-  // O refresh token viaja em cookie httpOnly no web (D5).
-  app.use(cookieParser());
-
-  // DTOs decorados com class-validator valem em toda rota; `whitelist` descarta
-  // campo não declarado em vez de deixá-lo chegar ao serviço.
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-  );
+  const app = configureApp(await NestFactory.create(AppModule));
 
   // `credentials` é o que permite o cookie do refresh token atravessar a origem
   // do front. A lista de origens permitidas entra junto com a autenticação.

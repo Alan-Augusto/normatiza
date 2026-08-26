@@ -91,7 +91,7 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 - [x] **0.2** Instalar dependências do backend: `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt`, `argon2`, `class-validator`, `class-transformer`, `@nestjs/config`, `cookie-parser`.
 - [x] **0.3** Instalar e configurar o ferramental de teste que `docs/backend/testes.md` já pressupõe: `jest`, `ts-jest`, `@nestjs/testing`, `supertest`, mais os scripts `test`, `test:watch`, `test:cov`, `test:e2e` no `apps/api/package.json`.
 - [x] **0.4** Criar `PrismaService` (módulo global) e `ConfigModule` com validação das variáveis de ambiente obrigatórias — falhar no boot se `DATABASE_URL` ou os segredos de JWT faltarem. *(Escrito e coberto por 9 testes de intenção. **Não compila até 1.6**: veja a nota abaixo.)*
-- [x] **0.5** Definir a estratégia de banco de teste (branch dedicada no Neon) e o script de limpeza entre suítes — `test/setup-e2e.ts`, `test/reset-db.ts` e `scripts/migrate-test-db.js`, documentados em [testes.md](../backend/testes.md). Falta o usuário criar a branch e preencher `TEST_DATABASE_URL`.
+- [x] **0.5** Definir a estratégia de banco de teste (branch dedicada no Neon) e o script de limpeza entre suítes — `test/setup-e2e.ts`, `test/reset-db.ts` e `scripts/migrate-test-db.js`, documentados em [testes.md](../backend/testes.md). Branch de teste criada no Neon e migrada.
 
 > Nota de ordem, resolvida em 1.6: o `PrismaService` importa `PrismaClient`, que só existe após `prisma generate` — e o `generate` recusa rodar com `schema.prisma` sem models. A API ficou sem compilar entre 0.4 e 1.6.
 
@@ -113,18 +113,20 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 > [!IMPORTANT]
 > TDD é obrigatório ([docs/README.md](../README.md)). Os testes descrevem **intenção de negócio**, não implementação: *"deve recusar login de usuário desligado"*, nunca *"deve chamar findUnique"*.
 
-- [ ] **2.1** Testes do serviço de hash: gera Argon2id; valida senha correta; recusa senha errada; valida um hash legado SHA-256+salt conhecido; reescreve em Argon2id após validar o legado (D3).
-- [ ] **2.2** Testes do `AuthService`: login com credenciais válidas; e-mail inexistente; senha errada; usuário `DISABLED`; usuário `INVITED` que ainda não definiu senha; e-mail não confirmado. **As mensagens de erro de e-mail inexistente e senha errada devem ser indistinguíveis** (não vazar existência de conta). Mais os três casos de D16: e-mail em uma conta só; e-mail em duas contas com senhas diferentes (entra direto, sem perguntar); e-mail em duas contas com a mesma senha (pede a consultoria, e a lista **não** sai se a senha estiver errada).
-- [ ] **2.3** Testes de sessão (D4–D8): claims corretos (`userId`, `accountId` explícito); access token expira em 15 min; token adulterado é rejeitado; refresh emite novo par e invalida o anterior; **refresh token reusado revoga a família inteira**; revogar o usuário derruba a sessão no próximo refresh.
-- [ ] **2.4** Testes do serviço de permissão — o coração da feature:
+> **Estado: 104 testes escritos, todos vermelhos** — 49 unitários e 55 e2e. Os esqueleto de serviços, controllers e módulos existem (métodos lançando "não implementado") para que os testes falhem por **asserção**, e não por módulo inexistente. A lógica é a Fase 3.
+
+- [x] **2.1** Testes do serviço de hash: gera Argon2id; valida senha correta; recusa senha errada; valida um hash legado SHA-256+salt conhecido; reescreve em Argon2id após validar o legado (D3).
+- [x] **2.2** Testes do `AuthService`: login com credenciais válidas; e-mail inexistente; senha errada; usuário `DISABLED`; usuário `INVITED` que ainda não definiu senha; e-mail não confirmado. **As mensagens de erro de e-mail inexistente e senha errada devem ser indistinguíveis** (não vazar existência de conta). Mais os três casos de D16: e-mail em uma conta só; e-mail em duas contas com senhas diferentes (entra direto, sem perguntar); e-mail em duas contas com a mesma senha (pede a consultoria, e a lista **não** sai se a senha estiver errada).
+- [x] **2.3** Testes de sessão (D4–D8): claims corretos (`userId`, `accountId` explícito); access token expira em 15 min; token adulterado é rejeitado; refresh emite novo par e invalida o anterior; **refresh token reusado revoga a família inteira**; revogar o usuário derruba a sessão no próximo refresh.
+- [x] **2.4** Testes do serviço de permissão — o coração da feature:
   - união de papéis num mesmo `Membership` (Gestor + Eng. do Cliente na empresa pequena);
   - escopo de consultoria abrangendo várias empresas × escopo de cliente restrito a uma;
   - **isolamento de conta**: usuário da conta A não alcança dado da conta B em nenhuma hipótese;
   - **isolamento entre empresas do lado cliente**: usuário da BRF não enxerga a Seara;
   - invariante de vínculo único para `MANAGER`/`CLIENT_ENGINEER`/`DIRECTOR`, e **`EXECUTOR` com vários vínculos vendo as tarefas de todas as suas empresas numa lista só** (D12);
   - executor não alcança análise, HRN nem tarefa de outro.
-- [ ] **2.5** Testes do convite: escopo oferecido é subconjunto do escopo de quem convida; papel oferecido respeita a tabela "quem convida quem" ([01 §3](../produto/01_papeis_e_permissoes.md)); token expirado é recusado; token de uso único não serve duas vezes.
-- [ ] **2.6** Testes e2e (Supertest) dos endpoints: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /invitations`, `POST /invitations/:token/accept`. Cobrir os **dois modos de transporte** — cookie e bearer (D6).
+- [x] **2.5** Testes do convite: escopo oferecido é subconjunto do escopo de quem convida; papel oferecido respeita a tabela "quem convida quem" ([01 §3](../produto/01_papeis_e_permissoes.md)); token expirado é recusado; token de uso único não serve duas vezes.
+- [x] **2.6** Testes e2e (Supertest) dos endpoints: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /invitations`, `POST /invitations/:token/accept`. Cobrir os **dois modos de transporte** — cookie e bearer (D6).
 
 ### Fase 3 — Implementação do backend (até os testes passarem)
 
