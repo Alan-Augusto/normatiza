@@ -15,6 +15,8 @@ export const AuditAction = {
   INVITATION_ACCEPTED: 'invitation.accepted',
   INVITATION_RESENT: 'invitation.resent',
   INVITATION_REVOKED: 'invitation.revoked',
+  PLATFORM_ADMIN_GRANTED: 'platform_admin.granted',
+  PLATFORM_ADMIN_REVOKED: 'platform_admin.revoked',
 } as const;
 
 export type AuditActionValue = (typeof AuditAction)[keyof typeof AuditAction];

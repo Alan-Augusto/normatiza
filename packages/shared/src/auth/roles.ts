@@ -3,8 +3,16 @@
  * Regra de negócio: docs/produto/01_papeis_e_permissoes.md
  */
 
+/**
+ * Papel **no vínculo** — sempre "…nesta empresa, desta conta".
+ *
+ * O Admin do Sistema **não** está aqui de propósito: ele é a plataforma, não
+ * uma pessoa dentro da operação de um cliente ([01](../../../../docs/produto/01_papeis_e_permissoes.md)),
+ * e o escopo dele é global. Espremê-lo num `Membership` obrigaria a pendurá-lo
+ * numa empresa de uma consultoria cliente — o documento diria "global" e o banco
+ * diria "uma empresa de uma conta". Ele vive em `PlatformAdmin`.
+ */
 export type Role =
-  | 'SYSTEM_ADMIN'
   | 'LEAD_ENGINEER' // Engenheiro Responsável — consultoria
   | 'CONSULTANT_ENGINEER' // Engenheiro da Consultoria
   | 'TECHNICIAN' // Técnico
@@ -13,7 +21,7 @@ export type Role =
   | 'DIRECTOR' // Diretor — leitura
   | 'EXECUTOR'; // Executor
 
-export type RoleSide = 'PLATFORM' | 'CONSULTANCY' | 'CLIENT' | 'EXTERNAL';
+export type RoleSide = 'CONSULTANCY' | 'CLIENT' | 'EXTERNAL';
 
 /**
  * Como cada papel se chama para quem usa o sistema — os mesmos nomes de
@@ -24,7 +32,6 @@ export type RoleSide = 'PLATFORM' | 'CONSULTANCY' | 'CLIENT' | 'EXTERNAL';
  * "Eng. Cliente" no celular já seriam dois vocabulários para o mesmo papel.
  */
 export const ROLE_LABEL: Readonly<Record<Role, string>> = {
-  SYSTEM_ADMIN: 'Admin do Sistema',
   LEAD_ENGINEER: 'Engenheiro Responsável',
   CONSULTANT_ENGINEER: 'Engenheiro da Consultoria',
   TECHNICIAN: 'Técnico',
@@ -43,7 +50,6 @@ export const ROLE_LABEL: Readonly<Record<Role, string>> = {
  * contratual, não de sistema — vive em `Membership.executorType`.
  */
 export const ROLE_SIDE: Readonly<Record<Role, RoleSide>> = {
-  SYSTEM_ADMIN: 'PLATFORM',
   LEAD_ENGINEER: 'CONSULTANCY',
   CONSULTANT_ENGINEER: 'CONSULTANCY',
   TECHNICIAN: 'CONSULTANCY',
@@ -79,7 +85,6 @@ export const PORTFOLIO_ROLES: readonly Role[] = [
  * Ambos validados no servidor — a interface não é a defesa.
  */
 export const CAN_INVITE: Readonly<Record<Role, readonly Role[]>> = {
-  SYSTEM_ADMIN: [],
   LEAD_ENGINEER: [
     'CONSULTANT_ENGINEER',
     'TECHNICIAN',

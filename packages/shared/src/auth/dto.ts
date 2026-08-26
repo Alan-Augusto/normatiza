@@ -82,6 +82,15 @@ export interface SessionUser {
   user: User;
   account: Account;
   memberships: MembershipWithCompany[];
+  /**
+   * Acesso ao Contexto 0, sobreposto ao login normal — não é um papel de
+   * vínculo ([platform.ts](./platform.ts)). É o que faz o menu mostrar
+   * "Admin da Plataforma" a quem tem, e só a quem tem.
+   *
+   * Como todo o resto, decide **navegação**: o servidor revalida a cada
+   * requisição do Contexto 0.
+   */
+  isPlatformAdmin: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -10,7 +10,6 @@ import {
 import type { CreateInvitationRequest, ExecutorType, Role } from '@normatiza/shared';
 
 const PAPÉIS: Role[] = [
-  'SYSTEM_ADMIN',
   'LEAD_ENGINEER',
   'CONSULTANT_ENGINEER',
   'TECHNICIAN',

@@ -10,8 +10,15 @@ import { BRF, SEARA, sessão, vínculo } from './testing/sessao';
  * e as outras empresas atendidas junto.
  */
 describe('rotaDeEntrada', () => {
-  it('deve levar o administrador do sistema ao Contexto 0', () => {
-    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['SYSTEM_ADMIN'])]))).toBe('/admin');
+  it('deve levar o admin da plataforma ao Contexto 0', () => {
+    expect(rotaDeEntrada(sessão([], true))).toBe('/admin');
+  });
+
+  it('deve levar ao Contexto 0 quem é admin da plataforma e também da própria consultoria', () => {
+    // É o caso do dono do produto: Engenheiro Responsável da consultoria dele e
+    // dono da plataforma, com **um** login. A porta maior é o backoffice; ele
+    // desce para a consultoria pelo menu.
+    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])], true))).toBe('/admin');
   });
 
   it('deve levar o Engenheiro Responsável ao Contexto 1', () => {

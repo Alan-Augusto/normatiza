@@ -113,6 +113,10 @@ Cada papel pertence explicitamente a um **lado** da operação. O lado não é u
 ### Admin do Sistema — plataforma
 Não é uma pessoa dentro da operação do cliente: é a plataforma. Gerencia contas e catálogos globais. Vive num backoffice separado (Contexto 0).
 
+> **Não é um papel de vínculo**, e por isso não aparece na matriz de permissões abaixo — ela é sempre "…nesta empresa". O acesso é uma dimensão **sobreposta** ao login normal: quem é dono da plataforma e Engenheiro Responsável da própria consultoria tem **um** login, e transita entre os dois pelo menu. É concedido por linha de comando ou por outro admin, nunca por convite — o convite é a porta do produto, e a plataforma não é uma consultoria.
+>
+> **O admin não enxerga dado de cliente.** O isolamento de conta vale para ele como para qualquer outro; para olhar dentro de uma consultoria ele usa a impersonação auditada (§2.1 de [03](./03_navegacao_e_telas.md)), que grava quem acessou como quem. E ele **não define a senha de ninguém** — dispara a redefinição, e a pessoa escolhe a própria. Poder escolher a senha de um engenheiro seria poder emitir laudo assinado com o CREA dele.
+
 ### Engenheiro Responsável — consultoria · Josué
 Dono da conta e responsável técnico final. **Também atua operacionalmente**: cadastra empresas e equipamentos, faz análise de risco, valida evidências, assina laudo. Escopo: todas as empresas da conta.
 Convida qualquer papel, inclusive os do lado cliente — é ele quem faz o onboarding do cliente.

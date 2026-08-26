@@ -12,10 +12,14 @@ generator client {
 // Regras de negócio: docs/produto/01_papeis_e_permissoes.md e 04_modelo_de_dados.md
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Os oito papéis. O "lado" (RoleSide) é derivado do papel, não uma coluna:
-/// é função pura, vive em @normatiza/shared e não pode divergir entre app e banco.
+/// Papel **no vínculo** — sempre "…nesta empresa, desta conta". O "lado"
+/// (RoleSide) é derivado do papel, não uma coluna: é função pura, vive em
+/// @normatiza/shared e não pode divergir entre app e banco.
+///
+/// O Admin do Sistema não está aqui: ele é a plataforma, tem escopo global e
+/// vive em `PlatformAdmin`. Um papel de vínculo obrigaria a pendurá-lo numa
+/// empresa de uma consultoria cliente.
 enum Role {
-  SYSTEM_ADMIN
   LEAD_ENGINEER
   CONSULTANT_ENGINEER
   TECHNICIAN
@@ -135,6 +139,7 @@ model User {
   invitation         Invitation?          @relation("InvitedUser")
   sentInvitations    Invitation[]         @relation("InvitationAuthor")
   ownedAccount       Account?             @relation("AccountOwner")
+  platformAdmin      PlatformAdmin?       @relation("PlatformAdminUser")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -147,6 +152,41 @@ model User {
   /// é o que torna impossível, no banco, um vínculo atravessar contas.
   @@unique([id, accountId])
   @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin da Plataforma — o Contexto 0
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Acesso ao backoffice da plataforma, sobreposto ao login que a pessoa já tem.
+///
+/// `userId` aponta para **qualquer** usuário, de qualquer conta: quem é dono da
+/// plataforma normalmente também é Engenheiro Responsável de uma consultoria, e
+/// obrigá-lo a um segundo e-mail seria atrito sem ganho. Uma conta dedicada à
+/// plataforma continua possível para quem não pertence a consultoria nenhuma.
+///
+/// É tabela, e não um booleano no `User`, por causa das três colunas abaixo:
+/// um booleano responde "é admin?", isto responde "quem o tornou admin, quando,
+/// e quem revogou" — e a segunda pergunta não se reconstrói depois.
+model PlatformAdmin {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation("PlatformAdminUser", fields: [userId], references: [id])
+
+  /// Nulo apenas no primeiro admin, criado por linha de comando: não havia
+  /// ninguém para conceder.
+  grantedByUserId String?
+  grantedAt       DateTime @default(now())
+
+  /// Revogação preserva o histórico. Apagar a linha apagaria o fato de o acesso
+  /// ter existido — que é justamente o que uma auditoria procura.
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_admins")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

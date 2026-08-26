@@ -46,9 +46,14 @@ describe('guardas de rota', () => {
 
   afterEach(() => http.verify());
 
-  async function entrarComo(memberships: Parameters<typeof sessão>[0]) {
+  async function entrarComo(
+    memberships: Parameters<typeof sessão>[0],
+    isPlatformAdmin = false,
+  ) {
     const promessa = firstValueFrom(auth.login({ email: 'marcos@brf.com', password: 'certa' }));
-    http.expectOne(`${API}/auth/login`).flush(respostaDeLogin({ session: sessão(memberships) }));
+    http
+      .expectOne(`${API}/auth/login`)
+      .flush(respostaDeLogin({ session: sessão(memberships, isPlatformAdmin) }));
     await promessa;
   }
 
@@ -81,16 +86,21 @@ describe('guardas de rota', () => {
   });
 
   describe('adminGuard', () => {
-    it('deve deixar passar o administrador do sistema', async () => {
-      await entrarComo([vínculo(BRF.id, ['SYSTEM_ADMIN'])]);
+    it('deve deixar passar o admin da plataforma', async () => {
+      await entrarComo([], true);
       expect(rodar(adminGuard, '/admin/accounts')).toBe(true);
     });
 
-    it('deve barrar quem não é administrador do sistema', async () => {
-      // O Contexto 0 é da plataforma. Nem o Engenheiro Responsável entra nele.
+    it('deve deixar passar quem é admin da plataforma e também da própria consultoria', async () => {
+      // Um login só para quem é as duas coisas — o caso do dono do produto.
+      await entrarComo([vínculo(BRF.id, ['LEAD_ENGINEER'])], true);
+      expect(rodar(adminGuard, '/admin/accounts')).toBe(true);
+    });
+
+    it('deve barrar o Engenheiro Responsável que não é admin da plataforma', async () => {
+      // Ser dono da consultoria não é ser dono da plataforma.
       await entrarComo([vínculo(BRF.id, ['LEAD_ENGINEER'])]);
-      const resultado = rodar(adminGuard, '/admin/accounts');
-      expect(resultado).not.toBe(true);
+      expect(rodar(adminGuard, '/admin/accounts')).not.toBe(true);
     });
 
     it('deve barrar o anônimo', () => {

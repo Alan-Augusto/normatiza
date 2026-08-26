@@ -17,6 +17,7 @@ import { PasswordService } from './password.service';
 import { SessionContext, TokenService } from './token.service';
 import { AuditAction, AuditService } from '../audit/audit.service';
 import { SessionScope } from '../authorization/permission.service';
+import { PlatformAdminService } from '../platform/platform-admin.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -47,6 +48,7 @@ export class AuthService {
     private readonly passwords: PasswordService,
     private readonly tokens: TokenService,
     private readonly audit: AuditService,
+    private readonly platformAdmins: PlatformAdminService,
   ) {}
 
   /**
@@ -303,15 +305,19 @@ export class AuthService {
   }
 
   private async montaSessão(user: UserRow, account: Account): Promise<SessionUser> {
-    const memberships = await this.prisma.membership.findMany({
-      where: { userId: user.id, isActive: true, accountId: user.accountId },
-      include: { company: true },
-    });
+    const [memberships, isPlatformAdmin] = await Promise.all([
+      this.prisma.membership.findMany({
+        where: { userId: user.id, isActive: true, accountId: user.accountId },
+        include: { company: true },
+      }),
+      this.platformAdmins.isPlatformAdmin(user.id),
+    ]);
 
     return {
       user: paraContratoDeUsuário(user),
       account: paraContratoDeConta(account),
       memberships: memberships.map(paraContratoDeVínculo),
+      isPlatformAdmin,
     };
   }
 }

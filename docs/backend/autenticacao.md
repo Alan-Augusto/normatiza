@@ -145,6 +145,66 @@ O login resolve assim:
 
 ---
 
+## 5.1. O Admin da Plataforma — o Contexto 0
+
+O Admin do Sistema **não é um papel de vínculo**, e não está no enum `Role`.
+
+O motivo é que `Role` responde sempre *"…nesta empresa, desta conta"*, e a plataforma não tem empresa nem conta. [01](../produto/01_papeis_e_permissoes.md) é explícito — *"não é uma pessoa dentro da operação do cliente: é a plataforma"*, escopo **Global**. Espremê-lo num `Membership` obrigaria a pendurá-lo numa empresa de uma consultoria cliente: o documento diria "global" e o banco diria "uma empresa de uma conta".
+
+Ele vive numa tabela própria:
+
+```prisma
+model PlatformAdmin {
+  userId          String    @unique   // qualquer usuário, de qualquer conta
+  grantedByUserId String?
+  grantedAt       DateTime  @default(now())
+  revokedAt       DateTime?
+}
+```
+
+**É tabela, e não um booleano em `User`**, por causa das três colunas de baixo. Um booleano responde *"é admin?"*; isto responde *"quem o tornou admin, quando, e quem revogou"* — a pergunta que aparece numa auditoria e que ninguém reconstrói depois. `revokedAt` preserva o fato de o acesso ter existido; um `UPDATE` para `false` o apagaria.
+
+### Um login, não dois
+
+`userId` aponta para **qualquer** usuário. Quem é dono da plataforma normalmente também é Engenheiro Responsável de uma consultoria, e obrigá-lo a um segundo e-mail seria atrito sem ganho: ele entra com o login de sempre e o backoffice aparece por cima, com o menu levando de um lado ao outro.
+
+Uma conta dedicada à plataforma continua possível — é o caminho para um admin que não pertence a consultoria nenhuma. É a exceção, não a regra.
+
+> **O acesso fica pendurado num usuário que vive dentro de uma consultoria.** Desativar aquele usuário derruba o Contexto 0 junto — de propósito: desligar alguém precisa fechar todas as portas de uma vez. O `pnpm admin:create` é o *break-glass* para quando isso acontece por engano.
+
+### A porta é a CLI, não o convite
+
+```bash
+pnpm admin:create --email josue@normatiza.com
+pnpm admin:create --listar
+```
+
+O convite é a porta do **produto** — quem entra por ele entra numa consultoria, com papéis e empresas. Abrir um caminho no `CAN_INVITE` até `SYSTEM_ADMIN` daria ao teto de papel, hoje uma tabela fechada e auditável, uma aresta que leva ao topo. Depois do primeiro, os demais podem ser concedidos pela própria tela, com `grantedByUserId` preenchido.
+
+O comando exige `--conta` quando o e-mail existe em mais de uma consultoria: escolher sozinho seria conceder acesso de plataforma à identidade errada, em silêncio.
+
+### O isolamento não ganha exceção
+
+Esta é a parte que sustenta o desenho. O caminho preguiçoso seria acrescentar *"…a não ser que seja admin"* ao `assertSameAccount` — e aí a exceção passaria a viver dentro do coração do isolamento, o lugar onde um bug vira vazamento entre clientes.
+
+Não existe essa exceção. O admin da plataforma:
+
+- **não vê dado de cliente** — o escopo dele é a conta dele, e o `if` do §6 o barra como a qualquer outro;
+- opera sobre **contas como objetos** — controllers próprios do Contexto 0, com `PlatformAdminGuard`, que não passam pelo `PermissionService` de vínculo;
+- para olhar **dentro** de um cliente, usa a impersonação auditada de [03 §2.1](../produto/03_navegacao_e_telas.md): emite-se uma sessão normal escopada naquela conta, e o `AuditLog` grava `actorUserId` = o admin de verdade.
+
+A única porta para o dado do cliente é uma que deixa rastro com nome. Um superusuário que enxerga tudo o tempo todo não deixa rastro nenhum.
+
+> **`PlatformAdminGuard` devolve `404`, não `403`** — mesmo motivo do isolamento de conta: para quem está de fora, o backoffice não é proibido, ele não existe.
+
+### O que o admin não pode fazer
+
+**Definir a senha de alguém.** Ele dispara a redefinição; a pessoa escolhe a própria senha. Se um admin pudesse escolher a senha de um Engenheiro Responsável, poderia entrar como ele e **emitir um laudo assinado com o CREA dele**. Laudo é documento técnico com responsabilidade legal, e o sistema não pode ter um caminho em que outra pessoa assina no lugar de um profissional.
+
+**Revogar o próprio acesso.** Um sistema sem nenhum admin exige o banco para se recuperar. Barrar a auto-revogação não fecha todos os caminhos até lá, mas remove o mais fácil.
+
+---
+
 ## 6. Autorização no servidor
 
 A autorização do sistema é **bidimensional**: `PODE? = papel no vínculo × etapa do item` ([01 §6](../produto/01_papeis_e_permissoes.md)). Esta feature entrega a dimensão de papel; a de etapa entra com o plano de ação.
@@ -217,7 +277,7 @@ CREATE UNIQUE INDEX "memberships_company_scoped_role_unico"
 
 ## 9. Trilha de auditoria
 
-`AuditLog` registra os eventos de identidade: `auth.login`, `auth.login_failed`, `auth.logout`, `auth.token_reuse_detected`, `auth.password_reset_requested`, `auth.password_reset`, `auth.password_rehashed` e os de convite.
+`AuditLog` registra os eventos de identidade: `auth.login`, `auth.login_failed`, `auth.logout`, `auth.token_reuse_detected`, `auth.password_reset_requested`, `auth.password_reset`, `auth.password_rehashed`, os de convite e os de plataforma (`platform_admin.granted`, `platform_admin.revoked`).
 
 Duas decisões que valem lembrar:
 
@@ -252,6 +312,9 @@ A suíte de testes roda com o limite **desligado** (`THROTTLE_DISABLED`), porque
 | `POST /invitations` | `JwtAuthGuard` | Valida os dois tetos antes de qualquer escrita. |
 | `POST /invitations/accept` | — | Token **no corpo** — ver abaixo. |
 | `POST /invitations/:id/resend` | `JwtAuthGuard` | Rotaciona o token. |
+| `GET /platform/admins` | `JwtAuthGuard` + `PlatformAdminGuard` | Contexto 0. `404` para quem não é admin. |
+| `POST /platform/admins` | idem | Concede, registrando quem concedeu. |
+| `DELETE /platform/admins/:userId` | idem | Revoga sem apagar a linha. |
 
 > **Tokens de uso único vão no corpo, nunca no caminho da URL.**
 > Caminho de URL acaba em log de servidor, histórico de navegador e cabeçalho `Referer`. Um token que define a senha de alguém não tem por que passar por lá. Vale para aceitar convite, redefinir senha e recuperar acesso.
@@ -280,7 +343,8 @@ Validadas **no boot**, com falha ruidosa (`apps/api/src/config/env.validation.ts
 - **Envio real de e-mail.** Convite e recuperação de senha geram o token e o registram; a entrega ainda não está ligada a um provedor.
 - **Rotas de negócio.** A API tem hoje apenas `auth` e `invitations`. As telas do front guardadas por papel (Contexto 1, Contexto 0, Contexto 2) consomem *mocks* — **quando cada endpoint real nascer, ele precisa carregar a contraparte da guarda no servidor**, com `@Roles(...)` e verificação de escopo. A guarda do front não é a defesa.
 - **Desligamento com sucessão** ([01 §5](../produto/01_papeis_e_permissoes.md)) — os campos existem no schema (`disabledAt`, `succeededByUserId`), o fluxo não.
-- **Impersonação auditada** do Contexto 0.
+- **Impersonação auditada** do Contexto 0 — é o caminho previsto para o admin ver dado de cliente (§5.1), e sem ela esse dado permanece fora do alcance dele.
+- **As telas do Contexto 0** (contas, catálogos globais). Só `GET/POST/DELETE /platform/admins` existe hoje.
 - **Trial e auto-cadastro** — decisão de MVP, não de arquitetura. Nada no schema impede que entrem por migration.
 
 ---
@@ -299,7 +363,7 @@ O código cita estas siglas em comentários (`// … (D16)`). Elas nasceram no p
 | D6 | App de campo não usa cookie: `Authorization: Bearer` + *secure storage*. A API nasce aceitando os dois modos. | §4 |
 | D7 | Rotação a cada uso; token reusado revoga a família inteira; tokens guardados hasheados. | §3 |
 | D8 | O JWT carrega `accountId` **explícito**; "conta ativa" é conceito desde já. | §3 |
-| D9 | Os oito papéis vivem no `Membership`, não no `User`. Permissão efetiva = união dos papéis do vínculo. | §1 |
+| D9 | Os papéis de vínculo vivem no `Membership`, não no `User`. Permissão efetiva = união dos papéis do vínculo. | §1 |
 | D10 | `accountId` em toda entidade, validado **no servidor**, nunca só na interface. | §6, §8 |
 | D11 | `User.accountId` é singular: quem atende duas consultorias tem dois logins. | §5 |
 | D12 | `EXECUTOR` pode ter vários vínculos ativos; a invariante de vínculo único vale só para papéis de escopo-empresa. | §8 |
@@ -307,3 +371,4 @@ O código cita estas siglas em comentários (`// … (D16)`). Elas nasceram no p
 | D14 | Sem Trial no MVP. Nenhum campo de trial no schema; entra depois por migration se preciso. | §13 |
 | D15 | Sem auto-cadastro. A única entrada é o convite. | §11, §13 |
 | D16 | E-mail único **por conta**: login resolve candidatos por senha e pede a consultoria só em caso de empate. | §5 |
+| D17 | O Admin do Sistema sai do enum `Role` e vira dimensão própria (`PlatformAdmin`), sobreposta ao login normal. | §5.1 |

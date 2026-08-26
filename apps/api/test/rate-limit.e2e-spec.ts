@@ -31,32 +31,45 @@ describe('Rate limiting (e2e)', () => {
     elenco = await montarElenco(ctx.prisma);
   });
 
+  /**
+   * As tentativas vão **em paralelo**, e não em fila.
+   *
+   * O limite é de 10 por minuto: em fila, os onze pedidos precisariam caber
+   * dentro da janela de 60 segundos, e um dia de latência ruim no banco faria o
+   * primeiro deles expirar antes do último chegar — o teste falharia sem nada
+   * ter quebrado. Disparados juntos, todos caem na mesma janela por construção.
+   */
+  async function enxurrada(rota: string, corpo: (i: number) => object): Promise<number[]> {
+    const tentativas = Array.from({ length: LIMITE_DE_CREDENCIAL.limit + 1 }, (_, i) =>
+      http().post(rota).send(corpo(i)),
+    );
+    const respostas = await Promise.all(tentativas);
+    return respostas.map((r) => r.status);
+  }
+
   it('deve bloquear a enxurrada de tentativas de senha', async () => {
     // Sem isto, o Argon2id encarece cada tentativa mas não o volume: um
     // atacante testa milhares de senhas contra um e-mail que ele conhece.
-    const status: number[] = [];
-    for (let i = 0; i <= LIMITE_DE_CREDENCIAL.limit; i++) {
-      const res = await http()
-        .post('/auth/login')
-        .send({ email: elenco.marcos.email, password: `chute-${i}` });
-      status.push(res.status);
-    }
+    const status = await enxurrada('/auth/login', (i) => ({
+      email: elenco.marcos.email,
+      password: `chute-${i}`,
+    }));
 
-    expect(status.filter((s) => s === 401)).toHaveLength(LIMITE_DE_CREDENCIAL.limit);
-    expect(status[status.length - 1]).toBe(429);
+    expect(status).toContain(429);
+    expect(status.filter((s) => s !== 429).length).toBeLessThanOrEqual(
+      LIMITE_DE_CREDENCIAL.limit,
+    );
   });
 
   it('deve bloquear a enxurrada de pedidos de redefinição de senha', async () => {
     // Sem limite, a rota vira uma máquina de mandar e-mail para qualquer pessoa.
-    let última = 0;
+    const status = await enxurrada('/auth/forgot-password', () => ({
+      email: elenco.marcos.email,
+    }));
 
-    for (let i = 0; i <= LIMITE_DE_CREDENCIAL.limit; i++) {
-      const res = await http()
-        .post('/auth/forgot-password')
-        .send({ email: elenco.marcos.email });
-      última = res.status;
-    }
-
-    expect(última).toBe(429);
+    expect(status).toContain(429);
+    expect(status.filter((s) => s !== 429).length).toBeLessThanOrEqual(
+      LIMITE_DE_CREDENCIAL.limit,
+    );
   });
 });

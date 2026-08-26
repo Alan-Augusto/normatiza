@@ -40,6 +40,13 @@ export class AuthService {
   readonly session = this._session.asReadonly();
   readonly isAuthenticated = computed(() => this._session() !== null);
 
+  /**
+   * Acesso ao Contexto 0 — dimensão de plataforma, não papel de vínculo. É o que
+   * permite ao dono do produto ser Engenheiro Responsável da consultoria dele e
+   * admin da plataforma com um login só.
+   */
+  readonly isPlatformAdmin = computed(() => this._session()?.isPlatformAdmin === true);
+
   token(): string | null {
     return this.accessToken;
   }

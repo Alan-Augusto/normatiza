@@ -94,10 +94,18 @@ async function main() {
     });
   }
 
+  // O Josué é dono da consultoria **e** dono da plataforma — um login só, com o
+  // Contexto 0 sobreposto. É o caso real do produto, e é o que o seed reproduz.
+  await prisma.platformAdmin.upsert({
+    where: { userId: josué.id },
+    update: { revokedAt: null },
+    create: { userId: josué.id },
+  });
+
   console.log('Seed pronto.');
-  console.log(`  Engenheiro Responsável: josue@normatiza.com`);
-  console.log(`  Gestor da BRF:          marcos@brf.com`);
-  console.log(`  Senha dos dois:         ${SENHA}`);
+  console.log(`  Eng. Responsável + Admin da Plataforma: josue@normatiza.com`);
+  console.log(`  Gestor da BRF:                         marcos@brf.com`);
+  console.log(`  Senha dos dois:                        ${SENHA}`);
 }
 
 main()

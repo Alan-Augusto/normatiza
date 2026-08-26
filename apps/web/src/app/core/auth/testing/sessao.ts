@@ -36,8 +36,12 @@ export function vínculo(
   };
 }
 
-export function sessão(memberships: MembershipWithCompany[] = [vínculo(BRF.id, ['MANAGER'])]): SessionUser {
+export function sessão(
+  memberships: MembershipWithCompany[] = [vínculo(BRF.id, ['MANAGER'])],
+  isPlatformAdmin = false,
+): SessionUser {
   return {
+    isPlatformAdmin,
     user: {
       id: 'u-1',
       accountId: 'acc-normatiza',

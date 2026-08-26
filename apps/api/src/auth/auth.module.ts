@@ -7,9 +7,11 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { TokenService } from './token.service';
 import { EnvironmentVariables } from '../config/env.validation';
+import { PlatformAdminModule } from '../platform/platform-admin.module';
 
 @Module({
   imports: [
+    PlatformAdminModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<EnvironmentVariables, true>) => ({

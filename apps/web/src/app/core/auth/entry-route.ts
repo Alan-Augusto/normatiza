@@ -14,7 +14,6 @@ import type { Role, SessionUser } from '@normatiza/shared';
  * Executor tem uma carteira para administrar, e cair na fila de tarefas seria
  * entrar pela porta menor.
  */
-export const CONTEXTO_0: readonly Role[] = ['SYSTEM_ADMIN'];
 export const CONTEXTO_1: readonly Role[] = ['LEAD_ENGINEER', 'CONSULTANT_ENGINEER', 'TECHNICIAN'];
 export const CONTEXTO_2: readonly Role[] = ['MANAGER', 'CLIENT_ENGINEER', 'DIRECTOR'];
 
@@ -29,7 +28,12 @@ export function rotaDeEntrada(session: SessionUser): string {
   const tem = (papéis: readonly Role[]) =>
     ativos.filter((vínculo) => vínculo.roles.some((papel) => papéis.includes(papel)));
 
-  if (tem(CONTEXTO_0).length > 0) return '/admin';
+  // O Contexto 0 não é papel de vínculo: é a dimensão de plataforma, sobreposta
+  // ao login normal. Quem é as duas coisas — dono da plataforma e Engenheiro
+  // Responsável da própria consultoria — entra pelo backoffice e transita para
+  // a consultoria pelo menu, sem trocar de login.
+  if (session.isPlatformAdmin) return '/admin';
+
   if (tem(CONTEXTO_1).length > 0) return '/app/dashboard';
 
   // Todo papel do lado cliente pertence a uma única empresa: não existe nada

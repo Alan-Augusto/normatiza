@@ -69,8 +69,13 @@ export class SidebarComponent {
     return equipment ? `${company.name} · ${equipment.name}` : company.name;
   });
 
-  // User Menu State
-  userMenuItems: MenuItem[] = [
+  /**
+   * O menu do usuário é computado, e não uma lista fixa, por causa do bloco de
+   * plataforma: ele só existe para quem tem a concessão do Contexto 0, e é o que
+   * permite ao dono do produto transitar entre o backoffice e a consultoria dele
+   * sem trocar de login.
+   */
+  protected readonly userMenuItems = computed<MenuItem[]>(() => [
     {
       label: 'Aparência',
       items: [
@@ -86,6 +91,29 @@ export class SidebarComponent {
         { label: 'Plano / Créditos', icon: 'pi pi-star', command: () => this.router.navigate(['/app/billing']) }
       ]
     },
+    ...(this.auth.isPlatformAdmin()
+      ? [
+          {
+            label: 'Plataforma',
+            items:
+              this.baseRoute() === '/admin'
+                ? [
+                    {
+                      label: 'Voltar para a Consultoria',
+                      icon: 'pi pi-arrow-left',
+                      command: () => this.router.navigate(['/app'])
+                    }
+                  ]
+                : [
+                    {
+                      label: 'Acessar Painel Admin',
+                      icon: 'pi pi-shield',
+                      command: () => this.router.navigate(['/admin'])
+                    }
+                  ]
+          }
+        ]
+      : []),
     {
       separator: true
     },
@@ -99,7 +127,7 @@ export class SidebarComponent {
         }
       ]
     }
-  ];
+  ]);
 
   // Identidade de quem está usando o sistema
   protected readonly identidade = computed(() => this.auth.session()?.user ?? null);

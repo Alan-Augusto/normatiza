@@ -13,7 +13,8 @@
     "test:watch": "jest --config jest.config.js --watch",
     "test:cov": "jest --config jest.config.js --coverage",
     "test:e2e": "jest --config test/jest-e2e.config.js --runInBand",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "admin:create": "ts-node scripts/create-platform-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.9",

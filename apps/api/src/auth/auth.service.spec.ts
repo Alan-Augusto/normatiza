@@ -5,6 +5,7 @@ import { AuthService, CREDENCIAIS_INVALIDAS } from './auth.service';
 import { PasswordService } from './password.service';
 import { TokenService } from './token.service';
 import { AuditService } from '../audit/audit.service';
+import { PlatformAdminService } from '../platform/platform-admin.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -68,7 +69,14 @@ describe('AuthService — login', () => {
     // por `test/audit.e2e-spec.ts`, contra o banco real.
     const audit = { record: jest.fn() } as unknown as AuditService;
 
-    service = new AuthService(prisma, passwords, tokens, audit);
+    // O acesso ao Contexto 0 é ortogonal ao login: quem entra, entra igual,
+    // sendo admin da plataforma ou não. O comportamento dele está em
+    // `platform-admin.service.spec.ts` e em `test/platform-admin.e2e-spec.ts`.
+    const platformAdmins = {
+      isPlatformAdmin: jest.fn().mockResolvedValue(false),
+    } as unknown as PlatformAdminService;
+
+    service = new AuthService(prisma, passwords, tokens, audit, platformAdmins);
   });
 
   const senhaConfere = () => passwords.verify.mockResolvedValue({ valid: true, mustRehash: false });

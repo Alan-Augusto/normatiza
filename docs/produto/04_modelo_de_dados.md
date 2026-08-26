@@ -48,8 +48,8 @@ interface User {
 ### O vínculo: onde mora a permissão
 
 ```typescript
+// Papel **no vínculo** — sempre "…nesta empresa, desta conta".
 type Role =
-  | 'SYSTEM_ADMIN'
   | 'LEAD_ENGINEER'        // Engenheiro Responsável — consultoria
   | 'CONSULTANT_ENGINEER'  // Engenheiro da Consultoria
   | 'TECHNICIAN'           // Técnico
@@ -58,7 +58,19 @@ type Role =
   | 'DIRECTOR'             // Diretor — leitura
   | 'EXECUTOR';            // Executor
 
-type RoleSide = 'PLATFORM' | 'CONSULTANCY' | 'CLIENT' | 'EXTERNAL';
+type RoleSide = 'CONSULTANCY' | 'CLIENT' | 'EXTERNAL';
+
+// O Admin do Sistema **não** é papel de vínculo: ele é a plataforma, tem escopo
+// global e não pertence a empresa nenhuma. Vive numa dimensão própria,
+// sobreposta ao login normal — quem é dono da plataforma e Engenheiro
+// Responsável da própria consultoria tem **um** login só.
+interface PlatformAdmin {
+  id: string;
+  userId: string;                // qualquer usuário, de qualquer conta
+  grantedByUserId?: string;      // nulo só no primeiro, criado por linha de comando
+  grantedAt: Date;
+  revokedAt?: Date;              // revogar preserva o histórico; apagar o destruiria
+}
 
 // Um usuário × uma empresa × um ou mais papéis.
 interface Membership {
