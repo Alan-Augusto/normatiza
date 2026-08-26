@@ -9,9 +9,11 @@ Este documento estabelece as ferramentas, comandos e estruturas técnicas de arq
 
 ## 🛠️ 1. Frameworks e Ferramentas Adotadas
 
-*   **Testes Unitários:** [Vitest](https://vitest.dev/) (Rápido, baseado em Esbuild/Vite, compatível com o ecossistema do builder moderno do Angular).
-*   **Ambiente de DOM:** `jsdom` ou `happy-dom`.
-*   **Testes E2E (End-to-End):** [Playwright](https://playwright.dev/) (Execução rápida em múltiplos browsers headless).
+*   **Testes Unitários:** [Vitest](https://vitest.dev/), executado pelo builder nativo `@angular/build:unit-test` (alvo `test` do `angular.json`).
+*   **Ambiente de DOM:** `jsdom`.
+*   **Testes E2E (End-to-End):** [Playwright](https://playwright.dev/) — **ainda não instalado.** A seção 2.B e o comando correspondente descrevem o destino, não o estado atual.
+
+> **Sobre o `zone.js`.** A aplicação é *zoneless* e continua sendo. O pacote existe como dependência de desenvolvimento apenas porque o `init-testbed` do builder contém um `import('zone.js/testing')` que o Vite precisa resolver em tempo de build, mesmo dentro de um ramo que nunca executa.
 
 ---
 
@@ -63,7 +65,7 @@ it('deve autenticar o usuário com credenciais válidas', async () => {
 ## 💻 4. Scripts e Comandos Utilitários
 
 Na pasta `apps/web/`:
-*   `pnpm test`: Executa os testes unitários via Vitest em modo *watch*.
-*   `pnpm test:run`: Executa os testes unitários uma única vez (ideal para CI/CD).
-*   `pnpm test:coverage`: Gera o relatório de cobertura de código dos testes.
-*   `pnpm exec playwright test`: Executa os testes E2E com o Playwright.
+*   `pnpm test`: Executa os testes unitários uma única vez (é o que roda em CI).
+*   `pnpm test:watch`: Reexecuta a cada alteração de arquivo — o modo do dia a dia.
+*   `pnpm test:coverage`: Gera o relatório de cobertura.
+*   `pnpm exec playwright test`: E2E — **disponível quando o Playwright for instalado.**

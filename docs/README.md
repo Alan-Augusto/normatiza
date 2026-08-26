@@ -44,8 +44,9 @@ A documentação não convive com versões conflitantes da mesma informação. A
 *   [Roteiro de Implementação](./web/roteiro_implementacao.md): checklist para implementar uma nova tela.
 
 ### ⚙️ Backend API (NestJS — `apps/api`)
+*   [Autenticação e Autorização](./backend/autenticacao.md): sessão de dois tokens, rotação e detecção de reúso, transporte duplo cookie/bearer, guardas e invariantes garantidas no banco.
 *   [Guia de Testes API](./backend/testes.md): Jest, Supertest e mocks de Prisma.
-*   *Em breve:* estrutura do backend e padronização de endpoints.
+*   *Em breve:* padronização de endpoints e tratamento de erros.
 
 ### 📱 Mobile App (Ionic + Capacitor — `apps/mobile`)
 *   *Em breve:* arquitetura, estilos, testes e estratégia offline.

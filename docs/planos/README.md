@@ -11,4 +11,4 @@ Arquivos de trabalho **efêmeros**, um por feature em desenvolvimento. Cada arqu
 
 ## Planos ativos
 
-- [Autenticação, Usuários e Papéis](./autenticacao.md)
+*Nenhum no momento.*
