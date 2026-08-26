@@ -11,6 +11,8 @@ import { PageMetaService } from '@core/services/page-meta.service';
 import { ActiveContextService } from '@core/services/active-context.service';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
+import { ROLE_LABEL } from '@normatiza/shared';
+import { AuthService } from '@core/auth/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -26,6 +28,7 @@ export class SidebarComponent {
   private readonly menuContext = inject(MenuContextService);
   private readonly pageMeta = inject(PageMetaService);
   private readonly activeContext = inject(ActiveContextService);
+  private readonly auth = inject(AuthService);
 
   appTitle = input<string>('Normatiza', { alias: 'appTitle' });
   logoIcon = input<string>('pi pi-box');
@@ -89,14 +92,48 @@ export class SidebarComponent {
     {
       label: 'Sessão',
       items: [
-        { 
-          label: 'Sair', 
-          icon: 'pi pi-power-off', 
-          command: () => this.router.navigate(['/auth/login']) // Fallback for now
+        {
+          label: 'Sair',
+          icon: 'pi pi-power-off',
+          command: () => this.sair()
         }
       ]
     }
   ];
+
+  // Identidade de quem está usando o sistema
+  protected readonly identidade = computed(() => this.auth.session()?.user ?? null);
+
+  protected readonly iniciais = computed(() => {
+    const nome = this.identidade()?.name?.trim();
+    if (!nome) return '—';
+    const partes = nome.split(/\s+/);
+    const primeira = partes[0] ?? '';
+    const última = partes.length > 1 ? (partes[partes.length - 1] ?? '') : '';
+    return `${primeira.charAt(0)}${última.charAt(0)}`.toUpperCase();
+  });
+
+  /**
+   * O papel exibido é o do vínculo em contexto quando há uma empresa aberta —
+   * a mesma pessoa pode ser Gestor numa empresa e Executor noutra, e mostrar um
+   * papel fixo seria mostrar o papel errado em metade das telas.
+   */
+  protected readonly papelExibido = computed(() => {
+    const vínculos = (this.auth.session()?.memberships ?? []).filter((v) => v.isActive);
+    if (vínculos.length === 0) return '';
+
+    const empresa = this.activeContext.company();
+    const escolhido = vínculos.find((v) => v.companyId === empresa?.id) ?? vínculos[0];
+    return escolhido.roles.map((papel) => ROLE_LABEL[papel]).join(' · ');
+  });
+
+  private sair(): void {
+    // A navegação é a mesma nos dois desfechos: a sessão local já foi descartada
+    // pelo `AuthService`, e continuar na tela do app seria mostrar dados de
+    // alguém que acabou de sair.
+    const irParaOLogin = () => void this.router.navigate(['/login']);
+    this.auth.logout().subscribe({ next: irParaOLogin, error: irParaOLogin });
+  }
 
   // Search State
   isSearchOpen = signal<boolean>(false);

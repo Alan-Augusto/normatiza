@@ -92,12 +92,12 @@
         class="w-full flex items-center gap-2.5 p-1 rounded-md overflow-hidden hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors cursor-pointer group border border-transparent hover:border-surface-200 dark:hover:border-surface-700"
       >
         <div class="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[0.625rem] shrink-0 uppercase select-none group-hover:bg-primary/30 transition-colors">
-          UA
+          {{ iniciais() }}
         </div>
         @if (!isCollapsed()) {
           <div class="flex-1 min-w-0 transition-opacity duration-200 text-left">
-            <p class="text-[0.6875rem] font-semibold text-surface-900 dark:text-surface-0 truncate leading-none mb-0.5">Usuário</p>
-            <p class="text-[0.5625rem] text-muted-color truncate leading-none">usuario@normatiza.com</p>
+            <p class="text-[0.6875rem] font-semibold text-surface-900 dark:text-surface-0 truncate leading-none mb-0.5">{{ identidade()?.name }}</p>
+            <p class="text-[0.5625rem] text-muted-color truncate leading-none">{{ papelExibido() || identidade()?.email }}</p>
           </div>
           <i class="pi pi-ellipsis-v text-surface-400 text-xs px-1 group-hover:text-surface-600 dark:group-hover:text-surface-200"></i>
         }

@@ -16,6 +16,25 @@ export type Role =
 export type RoleSide = 'PLATFORM' | 'CONSULTANCY' | 'CLIENT' | 'EXTERNAL';
 
 /**
+ * Como cada papel se chama para quem usa o sistema — os mesmos nomes de
+ * docs/produto/01_papeis_e_permissoes.md.
+ *
+ * Fica aqui, e não em cada tela, porque painel web e app de campo precisam
+ * chamar a mesma coisa pelo mesmo nome: um "Engenheiro do Cliente" que virasse
+ * "Eng. Cliente" no celular já seriam dois vocabulários para o mesmo papel.
+ */
+export const ROLE_LABEL: Readonly<Record<Role, string>> = {
+  SYSTEM_ADMIN: 'Admin do Sistema',
+  LEAD_ENGINEER: 'Engenheiro Responsável',
+  CONSULTANT_ENGINEER: 'Engenheiro da Consultoria',
+  TECHNICIAN: 'Técnico',
+  MANAGER: 'Gestor',
+  CLIENT_ENGINEER: 'Engenheiro do Cliente',
+  DIRECTOR: 'Diretor',
+  EXECUTOR: 'Executor',
+};
+
+/**
  * O lado é atributo do papel, não do usuário — e é o que separa quem produz a
  * análise de quem a executa. Derivado, nunca persistido: coluna e mapa poderiam
  * divergir, e aqui não há duas verdades possíveis.

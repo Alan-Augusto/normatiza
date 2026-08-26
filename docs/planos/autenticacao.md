@@ -143,19 +143,27 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 
 ### Fase 4 — Testes de frontend
 
-- [ ] **4.1** Testes do `AuthService` do Angular: mantém o access token **em memória**, expõe o usuário corrente, restaura a sessão no boot via `/auth/refresh` (D5).
-- [ ] **4.2** Testes do interceptor HTTP: injeta o token nas chamadas; em `401`, tenta refresh uma única vez e desloga se falhar; requisições concorrentes durante o refresh não disparam múltiplos refreshes.
-- [ ] **4.3** Testes dos guards reais: rota protegida redireciona anônimo para `/login`; rota de papel recusa papel insuficiente.
-- [ ] **4.4** Testes da tela de login: erro de credencial exibido, botão desabilitado durante o envio, redirecionamento pós-login conforme o contexto do papel ([03 §1](../produto/03_navegacao_e_telas.md)).
+- [x] **4.1** Testes do `AuthService` do Angular: mantém o access token **em memória**, expõe o usuário corrente, restaura a sessão no boot via `/auth/refresh` (D5).
+- [x] **4.2** Testes do interceptor HTTP: injeta o token nas chamadas; em `401`, tenta refresh uma única vez e desloga se falhar; requisições concorrentes durante o refresh não disparam múltiplos refreshes.
+- [x] **4.3** Testes dos guards reais: rota protegida redireciona anônimo para `/login`; rota de papel recusa papel insuficiente.
+- [x] **4.4** Testes da tela de login: erro de credencial exibido, botão desabilitado durante o envio, redirecionamento pós-login conforme o contexto do papel ([03 §1](../produto/03_navegacao_e_telas.md)).
 
 ### Fase 5 — Implementação do frontend
 
-- [ ] **5.1** `AuthService` (token em memória) + interceptor com refresh silencioso.
-- [ ] **5.2** Substituir os stubs `auth.guard.ts` e `admin.guard.ts` por verificação real, e criar um `roleGuard` parametrizável.
-- [ ] **5.3** Tela de login (hoje um `<h1>`), seguindo o [Roteiro de Implementação](../web/roteiro_implementacao.md) — tokens semânticos, `rem`, dark mode, sem cor hardcoded.
-- [ ] **5.4** Telas de aceitar convite / definir senha e de recuperar senha.
-- [ ] **5.5** Roteamento por contexto: cada papel cai no contexto correto (0, 1, 2 ou Execução) após o login.
-- [ ] **5.6** Exibir identidade e papel no shell da aplicação, com ação de logout.
+- [x] **5.1** `AuthService` (token em memória) + interceptor com refresh silencioso.
+- [x] **5.2** Substituir os stubs `auth.guard.ts` e `admin.guard.ts` por verificação real, e criar um `roleGuard` parametrizável.
+- [x] **5.3** Tela de login (hoje um `<h1>`), seguindo o [Roteiro de Implementação](../web/roteiro_implementacao.md) — tokens semânticos, `rem`, dark mode, sem cor hardcoded.
+- [x] **5.4** Telas de aceitar convite / definir senha e de recuperar senha.
+- [x] **5.5** Roteamento por contexto: cada papel cai no contexto correto (0, 1, 2 ou Execução) após o login.
+- [x] **5.6** Exibir identidade e papel no shell da aplicação, com ação de logout.
+
+> **Estado: verde.** 204 testes — 68 unitários e 68 e2e no backend, 68 no front. A Fase 4 escreveu os 68 do front vermelhos; a Fase 5 os fez passar.
+>
+> **O ferramental de teste do front não existia.** Não havia alvo `test` no `angular.json` nem runner no `package.json` — só um `tsconfig.spec.json` apontando para `vitest/globals`. Instalados `vitest`, `jsdom` e `zone.js`, e configurado o builder `@angular/build:unit-test`. O `zone.js` entra apenas para o Vite resolver o `import('zone.js/testing')` do `init-testbed`: a aplicação é zoneless e continua sendo.
+>
+> **A API responde na raiz da própria origem, não sob `/api`.** O cookie do refresh token é gravado com `Path=/auth`, e o navegador só o devolve em URLs sob esse caminho — servir a API atrás de um proxy `/api` faria o cookie existir e nunca ser enviado, e a sessão morreria a cada recarregamento sem erro nenhum na tela. Daí os arquivos `src/environments/*` e o token `API_BASE_URL`, em vez de `proxy.config.json`.
+>
+> **A Área de Execução ganhou uma rota placeholder.** `rotaDeEntrada` manda o Executor para `/app/execution` conforme [03 §1](../produto/03_navegacao_e_telas.md); sem a rota, ele cairia no `**` e seria despejado na página pública. O componente diz que a área ainda não foi publicada — é uma placa, não uma tela de mentira. As telas de tarefa vêm com a feature de Execução.
 
 ### Fase 6 — Fechamento
 
@@ -169,7 +177,7 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 
 ## 6. Riscos
 
-- **Os guards-stub retornam `true`.** Enquanto a Fase 5 não fecha, qualquer rota "protegida" do front está aberta. Não publicar ambiente acessível antes disso.
+- ~~**Os guards-stub retornam `true`**~~ — resolvido em 5.2: `authGuard`, `adminGuard` e o novo `roleGuard` verificam sessão e papel de verdade, com teste. Continua valendo que eles decidem **navegação**, não permissão: quem os burlar com o devtools aberto esbarra no servidor, que valida a mesma regra a cada requisição.
 - **Cookie cross-site nos ambientes de preview.** Com domínios próprios (`admin.normatiza.com` + `api.normatiza.com`) o cookie do refresh token é same-site e funciona limpo. Nas URLs de preview (`*.web.app` + URL do Cloud Run) é cross-site e exige `SameSite=None; Secure`. Resolver na Fase 3 para não descobrir no deploy.
 - ~~**`docs/backend/testes.md` descreve um setup que não existe**~~ — resolvido em 0.3/0.5: o ferramental foi instalado e a doc, atualizada com a configuração real.
 - **A migração do legado depende desta modelagem.** O mapeamento de `UserType` → `Role` (`Customer` → `DIRECTOR`, etc.) e a preservação de senhas via lazy rehash só funcionam se os campos legados existirem desde a primeira migração — daí o passo 1.3 vir antes de qualquer código de autenticação.

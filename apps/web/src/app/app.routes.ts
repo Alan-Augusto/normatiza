@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { roleGuard } from './core/guards/role.guard';
+import { CONTEXTO_1, VÊ_A_EMPRESA } from './core/auth/entry-route';
 
 /**
  * As rotas espelham os contextos de navegação de docs/produto/03 — Navegação e Telas.
@@ -20,6 +22,20 @@ export const routes: Routes = [
       {
         path: 'login',
         loadComponent: () => import('./features/public/auth/auth.component').then(m => m.AuthComponent)
+      },
+      {
+        // O token vai na *query*, não no caminho: caminho de URL entra em log de
+        // servidor e em `Referer`, e este token define a senha de alguém.
+        path: 'accept-invite',
+        loadComponent: () => import('./features/public/accept-invite/accept-invite.component').then(m => m.AcceptInviteComponent)
+      },
+      {
+        path: 'forgot-password',
+        loadComponent: () => import('./features/public/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+      },
+      {
+        path: 'reset-password',
+        loadComponent: () => import('./features/public/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
       },
       {
         path: 'pricing',
@@ -45,7 +61,11 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
+        // O Contexto 1 é exclusivo da consultoria (03 §1). O lado cliente nasce
+        // dentro do Contexto 2 e nunca sai dele — abrir esta camada para ele
+        // seria mostrar à BRF que a mesma consultoria atende a Seara.
         path: 'dashboard',
+        canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/dashboard/dashboard.component').then(m => m.DashboardComponent),
         data: {
           label: 'Dashboard Geral',
@@ -55,6 +75,7 @@ export const routes: Routes = [
       },
       {
         path: 'companies',
+        canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/companies/companies.component').then(m => m.CompaniesComponent),
         data: {
           label: 'Empresas',
@@ -64,6 +85,7 @@ export const routes: Routes = [
       },
       {
         path: 'catalogs/solutions',
+        canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/catalogs/solutions/solutions.component').then(m => m.SolutionsComponent),
         data: {
           label: 'Soluções',
@@ -74,7 +96,10 @@ export const routes: Routes = [
 
       // CONTEXTO 2 — EMPRESA
       {
+        // O Contexto 2 é dos dois lados — mas só de quem tem vínculo **nesta**
+        // empresa. É o `companyId` da rota que a guarda usa para checar.
         path: 'companies/:companyId',
+        canActivate: [roleGuard(VÊ_A_EMPRESA)],
         loadComponent: () => import('./features/app/companies/company/company.layout').then(m => m.CompanyLayoutComponent),
         children: [
           { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -142,6 +167,17 @@ export const routes: Routes = [
             ]
           }
         ]
+      },
+
+      // ÁREA DE EXECUÇÃO — transversal, de qualquer papel operacional
+      {
+        path: 'execution',
+        loadComponent: () => import('./features/app/execution/execution.component').then(m => m.ExecutionComponent),
+        data: {
+          label: 'Minhas Tarefas',
+          icon: 'pi pi-check-square',
+          subtitle: 'Pontos do plano de ação sob sua responsabilidade, com prazo e evidência.'
+        }
       },
 
       // UTILITÁRIOS TRANSVERSAIS

@@ -1,1 +1,86 @@
-<h1>Login Page (/login)</h1>
+<div class="flex min-h-screen items-center justify-center bg-surface-50 px-4 py-12 dark:bg-surface-950">
+  <div class="w-full max-w-sm">
+    <header class="mb-8 text-center">
+      <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Normatiza</h1>
+      <p class="mt-1 text-sm text-muted-color">Entre para continuar.</p>
+    </header>
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+      class="rounded-lg border border-surface-200 bg-surface-0 p-6 shadow-sm dark:border-surface-700 dark:bg-surface-900"
+    >
+      <label for="email" class="mb-2 block text-sm font-medium">E-mail</label>
+      <input
+        id="email"
+        data-testid="email"
+        type="email"
+        autocomplete="username"
+        formControlName="email"
+        class="mb-4 w-full rounded-md border border-surface-300 bg-surface-0 px-3 py-2 text-sm outline-none focus:border-primary dark:border-surface-600 dark:bg-surface-800"
+      />
+
+      <label for="password" class="mb-2 block text-sm font-medium">Senha</label>
+      <input
+        id="password"
+        data-testid="password"
+        type="password"
+        autocomplete="current-password"
+        formControlName="password"
+        class="mb-4 w-full rounded-md border border-surface-300 bg-surface-0 px-3 py-2 text-sm outline-none focus:border-primary dark:border-surface-600 dark:bg-surface-800"
+      />
+
+      @if (erro()) {
+        <p
+          data-testid="erro"
+          role="alert"
+          class="mb-4 rounded-md bg-danger/10 px-3 py-2 text-sm text-danger"
+        >
+          {{ erro() }}
+        </p>
+      }
+
+      <button
+        data-testid="submit"
+        type="submit"
+        [disabled]="enviando()"
+        class="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-contrast disabled:opacity-60"
+      >
+        {{ enviando() ? 'Entrando…' : 'Entrar' }}
+      </button>
+
+      <a
+        data-testid="forgot-password"
+        routerLink="/forgot-password"
+        class="mt-4 block text-center text-sm text-muted-color hover:text-primary"
+      >
+        Esqueci minha senha
+      </a>
+    </form>
+
+    <!--
+      A escolha de consultoria (D16). Só aparece quando o mesmo e-mail e senha
+      valem em mais de uma conta — o que é raro, mas acontece com quem presta
+      serviço a empresas atendidas por consultorias diferentes.
+    -->
+    @if (contas().length > 0) {
+      <section
+        class="mt-4 rounded-lg border border-surface-200 bg-surface-0 p-6 dark:border-surface-700 dark:bg-surface-900"
+      >
+        <h2 class="mb-1 text-sm font-medium">Em qual consultoria você quer entrar?</h2>
+        <p class="mb-4 text-sm text-muted-color">Seu acesso vale em mais de uma.</p>
+
+        @for (conta of contas(); track conta.id) {
+          <button
+            data-testid="conta"
+            type="button"
+            (click)="escolherConta(conta)"
+            class="mb-2 w-full rounded-md border border-surface-300 px-3 py-2 text-left text-sm hover:border-primary dark:border-surface-600"
+          >
+            {{ conta.name }}
+          </button>
+        }
+      </section>
+    }
+  </div>
+</div>
