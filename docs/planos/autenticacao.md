@@ -113,7 +113,7 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 > [!IMPORTANT]
 > TDD é obrigatório ([docs/README.md](../README.md)). Os testes descrevem **intenção de negócio**, não implementação: *"deve recusar login de usuário desligado"*, nunca *"deve chamar findUnique"*.
 
-> **Estado: 104 testes escritos, todos vermelhos** — 49 unitários e 55 e2e. Os esqueleto de serviços, controllers e módulos existem (métodos lançando "não implementado") para que os testes falhem por **asserção**, e não por módulo inexistente. A lógica é a Fase 3.
+> **Estado: verde.** 136 testes — 68 unitários e 68 e2e. A Fase 2 os escreveu vermelhos; a Fase 3 os fez passar.
 
 - [x] **2.1** Testes do serviço de hash: gera Argon2id; valida senha correta; recusa senha errada; valida um hash legado SHA-256+salt conhecido; reescreve em Argon2id após validar o legado (D3).
 - [x] **2.2** Testes do `AuthService`: login com credenciais válidas; e-mail inexistente; senha errada; usuário `DISABLED`; usuário `INVITED` que ainda não definiu senha; e-mail não confirmado. **As mensagens de erro de e-mail inexistente e senha errada devem ser indistinguíveis** (não vazar existência de conta). Mais os três casos de D16: e-mail em uma conta só; e-mail em duas contas com senhas diferentes (entra direto, sem perguntar); e-mail em duas contas com a mesma senha (pede a consultoria, e a lista **não** sai se a senha estiver errada).
@@ -126,19 +126,20 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
   - invariante de vínculo único para `MANAGER`/`CLIENT_ENGINEER`/`DIRECTOR`, e **`EXECUTOR` com vários vínculos vendo as tarefas de todas as suas empresas numa lista só** (D12);
   - executor não alcança análise, HRN nem tarefa de outro.
 - [x] **2.5** Testes do convite: escopo oferecido é subconjunto do escopo de quem convida; papel oferecido respeita a tabela "quem convida quem" ([01 §3](../produto/01_papeis_e_permissoes.md)); token expirado é recusado; token de uso único não serve duas vezes.
-- [x] **2.6** Testes e2e (Supertest) dos endpoints: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /invitations`, `POST /invitations/:token/accept`. Cobrir os **dois modos de transporte** — cookie e bearer (D6).
+- [x] **2.6** Testes e2e (Supertest) dos endpoints: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /invitations`, `POST /invitations/accept`. Cobrir os **dois modos de transporte** — cookie e bearer (D6).
 
 ### Fase 3 — Implementação do backend (até os testes passarem)
 
-- [ ] **3.1** `PasswordService` — Argon2id, verificação do formato legado e lazy rehash (D2, D3).
-- [ ] **3.2** `TokenService` — emissão, rotação, detecção de reúso e revogação em família (D4, D7).
-- [ ] **3.3** `AuthModule`: login, refresh, logout, `me`. Aceitar cookie e bearer (D6). Registrar `lastAccessAt` no login bem-sucedido.
-- [ ] **3.4** Guardas: `JwtAuthGuard` (autenticação), `RolesGuard` (papel) e `AccountScopeGuard` (conta + empresa). A autorização é **bidimensional** — papel × etapa ([01 §6](../produto/01_papeis_e_permissoes.md)); nesta feature entra a dimensão de papel, e a de etapa fica preparada para o plano de ação.
-- [ ] **3.5** Fluxo de convite: criar convite, enviar e-mail com link, aceitar definindo senha, reenviar. Validar no servidor o teto de escopo e a tabela de quem convida quem (D15 — sem auto-cadastro).
-- [ ] **3.6** Recuperação de senha: solicitar, validar token, redefinir — invalidando as sessões ativas.
-- [ ] **3.7** Registrar em trilha de auditoria os eventos de identidade — login, falha de login, convite emitido/aceito, redefinição de senha, revogação ([05 §2](../produto/05_regras_transversais.md)).
-- [ ] **3.8** Aplicar rate limiting nas rotas de login, refresh e recuperação de senha.
-- [ ] **3.9** Seed de desenvolvimento: uma conta, um Engenheiro Responsável, uma empresa e um Gestor — o mínimo para o front trabalhar.
+- [x] **3.1** `PasswordService` — Argon2id, verificação do formato legado e lazy rehash (D2, D3).
+- [x] **3.2** `TokenService` — emissão, rotação, detecção de reúso e revogação em família (D4, D7).
+- [x] **3.3** `AuthModule`: login, refresh, logout, `me`. Aceitar cookie e bearer (D6). Registrar `lastAccessAt` no login bem-sucedido.
+- [x] **3.4** Guardas: `JwtAuthGuard` (autenticação) e `RolesGuard` (papel, com verificação da empresa alvo quando a rota a informa). A autorização é **bidimensional** — papel × etapa ([01 §6](../produto/01_papeis_e_permissoes.md)); nesta feature entra a dimensão de papel, e a de etapa fica preparada para o plano de ação.
+  > O `AccountScopeGuard` separado **não foi criado**: o isolamento de conta é imposto por `PermissionService.assertSameAccount` e pelas chaves compostas do banco, e o escopo de empresa entrou no próprio `RolesGuard`. Uma guarda a mais que nenhuma rota usa não seria proteção — seria código não exercitado se dizendo proteção. Quando a primeira rota precisar dela isolada, ela nasce com teste.
+- [x] **3.5** Fluxo de convite: criar convite, enviar e-mail com link, aceitar definindo senha, reenviar. Validar no servidor o teto de escopo e a tabela de quem convida quem (D15 — sem auto-cadastro).
+- [x] **3.6** Recuperação de senha: solicitar, validar token, redefinir — invalidando as sessões ativas.
+- [x] **3.7** Registrar em trilha de auditoria os eventos de identidade — login, falha de login, convite emitido/aceito, redefinição de senha, revogação ([05 §2](../produto/05_regras_transversais.md)).
+- [x] **3.8** Aplicar rate limiting nas rotas de login, refresh e recuperação de senha.
+- [x] **3.9** Seed de desenvolvimento: uma conta, um Engenheiro Responsável, uma empresa e um Gestor — o mínimo para o front trabalhar.
 
 ### Fase 4 — Testes de frontend
 

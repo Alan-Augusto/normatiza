@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import {
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -59,6 +60,18 @@ export class EnvironmentVariables {
   @IsOptional()
   @Matches(DURATION, { message: 'JWT_REFRESH_TTL deve ser algo como `30d`.' })
   JWT_REFRESH_TTL: string = '30d';
+
+  /**
+   * `true` quando o front e a API vivem em sites diferentes — o caso dos
+   * ambientes de preview (`*.web.app` + URL do Cloud Run). Aí o cookie do
+   * refresh token exige `SameSite=None; Secure`.
+   *
+   * Com domínios irmãos em produção (`admin.` e `api.` do mesmo domínio) fica
+   * `false`, e o cookie é `SameSite=Lax` — mais restrito, e o suficiente.
+   */
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  COOKIE_CROSS_SITE: string = 'false';
 
   @IsOptional()
   @IsInt()

@@ -6,6 +6,10 @@ import { resetDatabase } from './reset-db';
 loadEnv();
 process.env.NODE_ENV = 'test';
 
+// O rate limiting é desligado por padrão na suíte — dezenas de logins em
+// segundos tropeçariam no limite. `rate-limit.e2e-spec.ts` religa e testa.
+process.env.THROTTLE_DISABLED = 'true';
+
 if (!process.env.TEST_DATABASE_URL) {
   throw new Error(
     'TEST_DATABASE_URL não definida. A suíte e2e trunca todas as tabelas — ela ' +

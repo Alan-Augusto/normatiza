@@ -4,6 +4,7 @@ import { AccountSelectionRequiredException } from './account-selection-required.
 import { AuthService, CREDENCIAIS_INVALIDAS } from './auth.service';
 import { PasswordService } from './password.service';
 import { TokenService } from './token.service';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -63,7 +64,11 @@ describe('AuthService — login', () => {
       issuePair: jest.fn().mockResolvedValue(sessãoEmitida),
     } as unknown as jest.Mocked<TokenService>;
 
-    service = new AuthService(prisma, passwords, tokens);
+    // A auditoria é registrada, não decidida aqui: o que ela grava está coberto
+    // por `test/audit.e2e-spec.ts`, contra o banco real.
+    const audit = { record: jest.fn() } as unknown as AuditService;
+
+    service = new AuthService(prisma, passwords, tokens, audit);
   });
 
   const senhaConfere = () => passwords.verify.mockResolvedValue({ valid: true, mustRehash: false });

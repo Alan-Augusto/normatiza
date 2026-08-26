@@ -12,7 +12,8 @@
     "test": "jest --config jest.config.js",
     "test:watch": "jest --config jest.config.js --watch",
     "test:cov": "jest --config jest.config.js --coverage",
-    "test:e2e": "jest --config test/jest-e2e.config.js --runInBand"
+    "test:e2e": "jest --config test/jest-e2e.config.js --runInBand",
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.9",
@@ -21,6 +22,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.3.9",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^5.14.0",
     "argon2": "^0.45.1",
     "class-transformer": "^0.5.1",
@@ -50,5 +52,8 @@
     "ts-loader": "^9.6.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

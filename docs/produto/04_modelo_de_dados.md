@@ -651,7 +651,7 @@ interface TimelineEvent {          // alimenta os históricos de empresa e equip
 interface AuditLog {               // trilha técnica: quem, quando, o quê, por quê
   id: string;
   accountId?: string;
-  actorUserId: string;
+  actorUserId?: string;            // ausente quando não há autor a atribuir
   action: string;
   entityType: string;
   entityId: string;
@@ -659,6 +659,7 @@ interface AuditLog {               // trilha técnica: quem, quando, o quê, por
   after?: unknown;
   reason?: string;
   ipAddress?: string;
+  userAgent?: string;
   occurredAt: Date;
 }
 
@@ -676,6 +677,10 @@ interface Notification {
 ```
 
 > `TimelineEvent` é a narrativa legível pelo usuário; `AuditLog` é o registro técnico completo, incluindo impersonação e alteração de catálogo. São coisas diferentes e não devem ser fundidas.
+>
+> **`actorUserId` é opcional** porque o evento mais importante da trilha de autenticação é justamente o que não tem autor: uma tentativa de login com e-mail que não existe em conta nenhuma. Exigir autor obrigaria a inventar um, ou a não registrar o evento — e é ele que denuncia um ataque em andamento.
+>
+> **Credencial nunca entra em `before`/`after`.** Nem senha, nem hash, nem token de convite ou de redefinição. A trilha registra o que mudou, não com o quê.
 
 ---
 

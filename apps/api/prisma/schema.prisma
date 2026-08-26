@@ -302,3 +302,40 @@ model RefreshToken {
   @@index([familyId])
   @@map("refresh_tokens")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trilha de auditoria
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Registro técnico de quem fez o quê, quando e de onde.
+///
+/// É o registro **técnico**, não a narrativa: a linha do tempo legível pelo
+/// usuário é o `TimelineEvent`, que entra com as features de negócio. São coisas
+/// diferentes e não devem ser fundidas.
+model AuditLog {
+  id String @id @default(cuid())
+
+  /// Nulo em tentativa de login com e-mail que não existe: não há conta a que
+  /// atribuir o evento, e é justamente esse evento que se quer registrar.
+  accountId   String?
+  actorUserId String?
+
+  action     String
+  entityType String
+  entityId   String?
+
+  /// Só o que a ação mudou. Credencial nunca entra aqui — nem antes, nem depois.
+  before Json?
+  after  Json?
+  reason String?
+
+  ipAddress String?
+  userAgent String?
+
+  occurredAt DateTime @default(now())
+
+  @@index([accountId, occurredAt])
+  @@index([actorUserId, occurredAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
