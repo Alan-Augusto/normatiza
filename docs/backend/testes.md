@@ -27,6 +27,15 @@ Devem ser isolados na pasta `test/` na raiz do projeto da API:
 *   `apps/api/test/app.e2e-spec.ts`
 *   `apps/api/test/auth.e2e-spec.ts`
 
+### C. Arquivos de configuração
+*   `apps/api/jest.config.js` — suíte unitária (`rootDir: src`, arquivos `*.spec.ts`).
+*   `apps/api/test/jest-e2e.config.js` — suíte e2e (arquivos `*.e2e-spec.ts`).
+*   `apps/api/test/setup-e2e.ts` — carrega o `.env`, força `NODE_ENV=test` e limpa o banco entre os testes.
+*   `apps/api/test/reset-db.ts` — truncamento genérico das tabelas.
+*   `apps/api/scripts/migrate-test-db.js` — aplica as migrações na branch de teste.
+
+Ambas as configurações carregam `reflect-metadata` antes da suíte: os decorators do Nest e do `class-validator` dependem de `Reflect.getMetadata`.
+
 ---
 
 ## ✍️ 3. Práticas Técnicas na Escrita de Testes
@@ -73,8 +82,11 @@ describe('UsersService', () => {
 ```
 
 ### 2. Isolamento de Banco de Dados nos Testes E2E
-*   **Banco de Dados de Teste:** Testes E2E/Integração que batem no banco de dados devem utilizar uma base de dados isolada (ex: PostgreSQL com uma URL de conexão separada).
-*   **Limpeza do Banco:** Antes de cada suíte de testes (`beforeAll`), execute as migrações no banco de testes. Após cada teste (`afterEach` ou `beforeEach`), limpe as tabelas para garantir que um teste não influencie o resultado do outro.
+
+*   **Branch dedicada no Neon.** A suíte e2e roda contra uma **branch de teste** do Neon, apontada por `TEST_DATABASE_URL` no `.env`. Nunca contra o banco de desenvolvimento: a suíte trunca todas as tabelas, e apontar errado apaga os dados de trabalho. `setup-e2e.ts` e o script de migração **recusam rodar** se `TEST_DATABASE_URL` faltar ou for igual à `DATABASE_URL` — a proteção é do código, não da disciplina de quem roda.
+*   **Migrações.** `pnpm prisma:migrate:test` aplica as migrações na branch de teste (`prisma migrate deploy` com a URL trocada no processo filho).
+*   **Limpeza.** `resetDatabase` roda em `beforeEach` — na entrada, e não na saída: um teste que quebra no meio deixa o banco sujo, e limpar antes garante que o próximo comece do zero de qualquer jeito. O truncamento lê o catálogo do Postgres em vez de listar models, então cada tabela nova entra na limpeza sozinha.
+*   **`--runInBand`.** A suíte e2e é serial por decisão: testes paralelos compartilhariam a mesma branch e um truncaria o banco debaixo do outro.
 
 ---
 
@@ -84,4 +96,5 @@ Na pasta `apps/api/`:
 *   `pnpm test`: Executa todos os testes unitários via Jest.
 *   `pnpm test:watch`: Executa testes unitários em modo *watch*.
 *   `pnpm test:cov`: Gera o relatório de cobertura de código.
-*   `pnpm test:e2e`: Executa a suíte de testes E2E/Integração (que batem nos endpoints simulados).
+*   `pnpm test:e2e`: Executa a suíte de testes E2E/Integração contra a branch de teste do Neon.
+*   `pnpm prisma:migrate:test`: Aplica as migrações pendentes na branch de teste.

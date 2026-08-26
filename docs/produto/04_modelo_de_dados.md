@@ -82,6 +82,7 @@ interface Membership {
 2. Toda empresa ativa tem ao menos um `Membership` ativo contendo `MANAGER`.
 3. No convite, o conjunto de empresas oferecido é subconjunto do escopo de quem convida.
 4. Todo `Membership` de um usuário pertence à mesma `Account` do `User` — o vínculo nunca atravessa contas.
+5. `User.email` é único **dentro da conta**, não globalmente. É a consequência aritmética da invariante anterior: se a mesma pessoa tem um login por consultoria, o mesmo e-mail existe em duas contas.
 
 > **A identidade pertence a uma conta.** `User.accountId` é singular por decisão: o isolamento entre contas fica verificável na identidade, e não dependente de cada query acertar o escopo. A consequência é que um executor terceiro que atenda clientes de **duas consultorias diferentes** terá dois logins — um por conta. Dentro de uma mesma conta, um login basta, por mais empresas que ele atenda (invariante 1).
 >

@@ -1,3 +1,5 @@
+export * from './auth';
+
 export interface SharedHello {
   message: string;
   timestamp: Date;

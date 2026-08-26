@@ -2,8 +2,11 @@ packages:
   - 'apps/*'
   - 'packages/*'
 allowBuilds:
+  '@nestjs/core': true
+  argon2: true
   esbuild: true
   lmdb: true
+  unrs-resolver: true
 minimumReleaseAgeExclude:
   - '@primeicons/angular@8.0.0-rc.1'
   - '@primeicons/core@8.0.0-rc.1'

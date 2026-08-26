@@ -53,6 +53,7 @@ Escopo desta feature:
 | D5 | Onde guarda (web) | Access token **na memória do JS** (nunca em `localStorage`); refresh token em **cookie `httpOnly`**, inacessível a XSS. No boot da aplicação, `/auth/refresh` restaura a sessão. |
 | D6 | Onde guarda (mobile) | O app Capacitor **não usa cookie**: envia `Authorization: Bearer` e guarda o refresh token no *secure storage* do dispositivo. **A API nasce aceitando os dois modos.** |
 | D7 | Rotação | Cada uso do refresh token emite um novo e invalida o anterior. Reaparecimento de um token já usado é tratado como roubo: revoga-se a família inteira e força-se novo login. Tokens são guardados **hasheados**. |
+| D16 | E-mail ambíguo no login | `User.email` é único **por conta** (consequência de D11). O login busca os candidatos pelo e-mail e verifica a senha em cada um: bateu em um, entra direto; bateu em mais de um, a API responde `409 ACCOUNT_SELECTION_REQUIRED` com as consultorias, e a segunda chamada repete o mesmo endpoint com `accountId`. A lista só sai **depois** de a senha bater — devolvê-la antes tornaria o login um oráculo de quem é cliente de quem. |
 | D8 | Conta ativa no token | O JWT carrega `accountId` **explícito** e a aplicação trata "conta ativa" como conceito desde já, mesmo existindo só uma — seguro barato para um eventual futuro de identidade multi-conta ([04 §1](../produto/04_modelo_de_dados.md)). |
 
 ### Papéis e escopo
@@ -86,21 +87,26 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 
 ### Fase 0 — Fundação (sem regra de negócio ainda)
 
-- [ ] **0.1** Receber a connection string do Neon e criar `apps/api/.env` a partir do `.env.example`.
-- [ ] **0.2** Instalar dependências do backend: `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt`, `argon2`, `class-validator`, `class-transformer`, `@nestjs/config`, `cookie-parser`.
-- [ ] **0.3** Instalar e configurar o ferramental de teste que `docs/backend/testes.md` já pressupõe: `jest`, `ts-jest`, `@nestjs/testing`, `supertest`, mais os scripts `test`, `test:watch`, `test:cov`, `test:e2e` no `apps/api/package.json`.
-- [ ] **0.4** Criar `PrismaService` (módulo global) e `ConfigModule` com validação das variáveis de ambiente obrigatórias — falhar no boot se `DATABASE_URL` ou os segredos de JWT faltarem.
-- [ ] **0.5** Definir a estratégia de banco de teste (branch dedicada no Neon) e o script de limpeza entre suítes.
+- [x] **0.1** Receber a connection string do Neon e criar `apps/api/.env` a partir do `.env.example`. *(Conectividade confirmada com `prisma db execute`. O `.env.example` cresceu: segredos de sessão, TTLs e `TEST_DATABASE_URL`.)*
+- [x] **0.2** Instalar dependências do backend: `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt`, `argon2`, `class-validator`, `class-transformer`, `@nestjs/config`, `cookie-parser`.
+- [x] **0.3** Instalar e configurar o ferramental de teste que `docs/backend/testes.md` já pressupõe: `jest`, `ts-jest`, `@nestjs/testing`, `supertest`, mais os scripts `test`, `test:watch`, `test:cov`, `test:e2e` no `apps/api/package.json`.
+- [x] **0.4** Criar `PrismaService` (módulo global) e `ConfigModule` com validação das variáveis de ambiente obrigatórias — falhar no boot se `DATABASE_URL` ou os segredos de JWT faltarem. *(Escrito e coberto por 9 testes de intenção. **Não compila até 1.6**: veja a nota abaixo.)*
+- [x] **0.5** Definir a estratégia de banco de teste (branch dedicada no Neon) e o script de limpeza entre suítes — `test/setup-e2e.ts`, `test/reset-db.ts` e `scripts/migrate-test-db.js`, documentados em [testes.md](../backend/testes.md). Falta o usuário criar a branch e preencher `TEST_DATABASE_URL`.
+
+> Nota de ordem, resolvida em 1.6: o `PrismaService` importa `PrismaClient`, que só existe após `prisma generate` — e o `generate` recusa rodar com `schema.prisma` sem models. A API ficou sem compilar entre 0.4 e 1.6.
 
 ### Fase 1 — Modelagem
 
-- [ ] **1.1** Escrever os enums no `schema.prisma`: `Role`, `RoleSide`, `UserStatus`, `AccountStatus`, `ExecutorType`.
-- [ ] **1.2** Escrever os models `Account`, `User`, `Membership` e `Company` conforme [04 §1](../produto/04_modelo_de_dados.md), com os campos de auditoria (`createdAt`, `updatedAt`, `createdByUserId`) e de desativação (`disabledAt`, `succeededByUserId`). Sem campos de trial (D14).
-- [ ] **1.3** Adicionar os campos de credencial: `passwordHash`, `passwordAlgo` (`ARGON2ID` | `LEGACY_SHA256`), `legacyPasswordSalt`, `emailConfirmedAt`, `lastAccessAt`.
-- [ ] **1.4** Adicionar os models de fluxo: `Invitation` (token, expiração, papéis e escopo oferecidos, quem convidou), `PasswordResetToken` e `RefreshToken` (hash, expiração, família, revogação — D7).
-- [ ] **1.5** Traduzir as invariantes de [04 §1](../produto/04_modelo_de_dados.md) em constraints de banco onde couber — em especial o vínculo único por empresa para `MANAGER`/`CLIENT_ENGINEER`/`DIRECTOR`, com `EXECUTOR` livre (D12).
-- [ ] **1.6** Rodar a primeira migração e confirmar que o schema sobe limpo no Neon.
-- [ ] **1.7** Publicar os contratos em `packages/shared`: `Role`, `RoleSide`, `User`, `Membership`, `Account` e os DTOs de rede (`LoginRequest`, `LoginResponse`, `AcceptInviteRequest`, …). **Nenhuma interface de API pode ser declarada localmente no front.**
+- [x] **1.1** Escrever os enums no `schema.prisma`: `Role`, `UserStatus`, `AccountStatus`, `ExecutorType`, `RegistryType`, `PasswordAlgo`, `InvitationStatus`. *(`RoleSide` ficou fora do banco de propósito: é derivado do papel, e coluna + mapa poderiam divergir.)*
+- [x] **1.2** Escrever os models `Account`, `User`, `Membership` e `Company` conforme [04 §1](../produto/04_modelo_de_dados.md), com os campos de auditoria (`createdAt`, `updatedAt`, `createdByUserId`) e de desativação (`disabledAt`, `succeededByUserId`). Sem campos de trial (D14).
+- [x] **1.3** Adicionar os campos de credencial: `passwordHash`, `passwordAlgo` (`ARGON2ID` | `LEGACY_SHA256`), `legacyPasswordSalt`, `emailConfirmedAt`, `lastAccessAt`.
+- [x] **1.4** Adicionar os models de fluxo: `Invitation` (token, expiração, papéis e escopo oferecidos, quem convidou), `PasswordResetToken` e `RefreshToken` (hash, expiração, família, revogação — D7).
+- [x] **1.5** Traduzir as invariantes de [04 §1](../produto/04_modelo_de_dados.md) em constraints de banco. Duas ficaram **garantidas pelo Postgres**, não pela aplicação:
+  - índice único parcial em `memberships(userId) WHERE isActive AND roles && ARRAY['MANAGER','CLIENT_ENGINEER','DIRECTOR']` — invariante 1, com `EXECUTOR` livre (D12);
+  - chaves estrangeiras compostas `(userId, accountId)` e `(companyId, accountId)` — invariante 4, o vínculo não atravessa contas nem por bug de query.
+  *(Invariante 2 — toda empresa ativa tem um Gestor — não cabe em constraint: é regra de transação, fica na Fase 3.)*
+- [x] **1.6** Rodar a primeira migração e confirmar que o schema sobe limpo no Neon. *(Aplicada nas duas branches; invariantes verificadas contra o banco real.)*
+- [x] **1.7** Publicar os contratos em `packages/shared/src/auth`: `Role`, `RoleSide`, `ROLE_SIDE`, `CAN_INVITE`, `User`, `Membership`, `Account` e os DTOs de rede. **Nenhuma interface de API pode ser declarada localmente no front.**
 
 ### Fase 2 — Testes de backend (vermelhos primeiro)
 
@@ -108,7 +114,7 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 > TDD é obrigatório ([docs/README.md](../README.md)). Os testes descrevem **intenção de negócio**, não implementação: *"deve recusar login de usuário desligado"*, nunca *"deve chamar findUnique"*.
 
 - [ ] **2.1** Testes do serviço de hash: gera Argon2id; valida senha correta; recusa senha errada; valida um hash legado SHA-256+salt conhecido; reescreve em Argon2id após validar o legado (D3).
-- [ ] **2.2** Testes do `AuthService`: login com credenciais válidas; e-mail inexistente; senha errada; usuário `DISABLED`; usuário `INVITED` que ainda não definiu senha; e-mail não confirmado. **As mensagens de erro de e-mail inexistente e senha errada devem ser indistinguíveis** (não vazar existência de conta).
+- [ ] **2.2** Testes do `AuthService`: login com credenciais válidas; e-mail inexistente; senha errada; usuário `DISABLED`; usuário `INVITED` que ainda não definiu senha; e-mail não confirmado. **As mensagens de erro de e-mail inexistente e senha errada devem ser indistinguíveis** (não vazar existência de conta). Mais os três casos de D16: e-mail em uma conta só; e-mail em duas contas com senhas diferentes (entra direto, sem perguntar); e-mail em duas contas com a mesma senha (pede a consultoria, e a lista **não** sai se a senha estiver errada).
 - [ ] **2.3** Testes de sessão (D4–D8): claims corretos (`userId`, `accountId` explícito); access token expira em 15 min; token adulterado é rejeitado; refresh emite novo par e invalida o anterior; **refresh token reusado revoga a família inteira**; revogar o usuário derruba a sessão no próximo refresh.
 - [ ] **2.4** Testes do serviço de permissão — o coração da feature:
   - união de papéis num mesmo `Membership` (Gestor + Eng. do Cliente na empresa pequena);
@@ -162,6 +168,6 @@ Nenhuma. As pendências que bloqueavam esta feature foram resolvidas e removidas
 
 - **Os guards-stub retornam `true`.** Enquanto a Fase 5 não fecha, qualquer rota "protegida" do front está aberta. Não publicar ambiente acessível antes disso.
 - **Cookie cross-site nos ambientes de preview.** Com domínios próprios (`admin.normatiza.com` + `api.normatiza.com`) o cookie do refresh token é same-site e funciona limpo. Nas URLs de preview (`*.web.app` + URL do Cloud Run) é cross-site e exige `SameSite=None; Secure`. Resolver na Fase 3 para não descobrir no deploy.
-- **`docs/backend/testes.md` descreve um setup que não existe** (Jest/Supertest não instalados). O passo 0.3 corrige a realidade; se a doc precisar de ajuste, ajustar a doc.
+- ~~**`docs/backend/testes.md` descreve um setup que não existe**~~ — resolvido em 0.3/0.5: o ferramental foi instalado e a doc, atualizada com a configuração real.
 - **A migração do legado depende desta modelagem.** O mapeamento de `UserType` → `Role` (`Customer` → `DIRECTOR`, etc.) e a preservação de senhas via lazy rehash só funcionam se os campos legados existirem desde a primeira migração — daí o passo 1.3 vir antes de qualquer código de autenticação.
 - **Sem Trial e sem auto-cadastro é decisão de MVP, não de arquitetura** (D14, D15). Não criar nada que impeça a entrada deles depois por migration.

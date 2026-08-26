@@ -6,3 +6,299 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// Regras de negócio: docs/produto/01_papeis_e_permissoes.md e 04_modelo_de_dados.md
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Os oito papéis. O "lado" (RoleSide) é derivado do papel, não uma coluna:
+/// é função pura, vive em @normatiza/shared e não pode divergir entre app e banco.
+enum Role {
+  SYSTEM_ADMIN
+  LEAD_ENGINEER
+  CONSULTANT_ENGINEER
+  TECHNICIAN
+  MANAGER
+  CLIENT_ENGINEER
+  DIRECTOR
+  EXECUTOR
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum RegistryType {
+  CREA
+  CFT
+}
+
+enum ExecutorType {
+  INTERNAL
+  THIRD_PARTY
+}
+
+/// Qual esquema produziu o `passwordHash` do usuário. `LEGACY_SHA256` existe
+/// apenas para o intervalo entre a migração e o primeiro login de cada pessoa:
+/// verificado uma vez, o hash é reescrito em Argon2id e o algoritmo muda (D3).
+enum PasswordAlgo {
+  ARGON2ID
+  LEGACY_SHA256
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Conta e identidade
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A consultoria assinante. Unidade de faturamento e limite absoluto de
+/// isolamento: nada atravessa contas, em nenhuma hipótese.
+model Account {
+  id       String        @id @default(cuid())
+  name     String
+  document String        @unique
+  status   AccountStatus @default(ACTIVE)
+
+  /// O Engenheiro Responsável. Opcional na coluna porque a conta nasce antes do
+  /// primeiro usuário existir — a obrigatoriedade é do fluxo de criação, não do banco.
+  ownerUserId String? @unique
+  owner       User?   @relation("AccountOwner", fields: [ownerUserId], references: [id])
+
+  users       User[]       @relation("AccountUsers")
+  companies   Company[]
+  memberships Membership[]
+  invitations Invitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("accounts")
+}
+
+/// A pessoa. Um login, independente de quantos papéis tenha.
+model User {
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation("AccountUsers", fields: [accountId], references: [id])
+
+  name  String
+  email String
+  phone String?
+
+  // Perfil profissional — apenas para engenheiros e técnicos
+  registryType   RegistryType?
+  registryNumber String?
+  jobTitle       String?
+
+  // ── Credenciais ────────────────────────────────────────────────────────────
+  /// Nulo enquanto o usuário está `INVITED`: quem convida cria o acesso, o
+  /// convidado define a senha pelo link.
+  passwordHash String?
+  passwordAlgo PasswordAlgo?
+  /// Salt de 32 bytes do sistema legado. Só faz sentido com `LEGACY_SHA256`, e
+  /// é apagado no mesmo ato em que a senha é reescrita em Argon2id.
+  legacyPasswordSalt String?
+  emailConfirmedAt   DateTime?
+  lastAccessAt       DateTime?
+
+  // ── Ciclo de vida ──────────────────────────────────────────────────────────
+  status     UserStatus @default(INVITED)
+  disabledAt DateTime?
+
+  /// A aresta da árvore de convites. Não determina propriedade de dados — tudo
+  /// pertence à conta. Serve para calcular o teto de escopo e a sucessão.
+  invitedByUserId String?
+  invitedBy       User?   @relation("InviteTree", fields: [invitedByUserId], references: [id])
+  invitees        User[]  @relation("InviteTree")
+
+  /// Quem herdou seu escopo no desligamento. Revogação exige sucessão.
+  succeededByUserId String?
+  succeededBy       User?   @relation("Succession", fields: [succeededByUserId], references: [id])
+  succeeded         User[]  @relation("Succession")
+
+  memberships        Membership[]
+  refreshTokens      RefreshToken[]
+  passwordResets     PasswordResetToken[]
+  invitation         Invitation?          @relation("InvitedUser")
+  sentInvitations    Invitation[]         @relation("InvitationAuthor")
+  ownedAccount       Account?             @relation("AccountOwner")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  /// O e-mail é único **dentro da conta**, não globalmente: a mesma pessoa
+  /// atendendo duas consultorias tem dois logins, um por conta (D11).
+  @@unique([accountId, email])
+  /// Existe para que `Membership` referencie (userId, accountId) em conjunto —
+  /// é o que torna impossível, no banco, um vínculo atravessar contas.
+  @@unique([id, accountId])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Empresa
+// Modelagem mínima: só o suficiente para o vínculo existir. O cadastro completo
+// (contato, endereço, grupo, logo) entra na feature de empresas.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Company {
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  corporateName String
+  tradeName     String
+  document      String
+  isActive      Boolean @default(true)
+
+  memberships Membership[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([accountId, document])
+  @@unique([id, accountId])
+  @@map("companies")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O vínculo: onde mora a permissão
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Um usuário × uma empresa × um ou mais papéis. A permissão efetiva é a união
+/// dos papéis do vínculo — por isso `roles` é lista, e não coluna única.
+model Membership {
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  userId String
+  /// A chave composta (userId, accountId) é deliberada: o banco recusa um
+  /// vínculo cujo usuário pertença a outra conta.
+  user   User   @relation(fields: [userId, accountId], references: [id, accountId])
+
+  companyId String
+  company   Company @relation(fields: [companyId, accountId], references: [id, accountId])
+
+  roles Role[]
+
+  executorType ExecutorType?
+  /// Fornecedor do executor terceiro. Sem relação por enquanto: `Supplier` é da
+  /// feature de custos e ainda não existe.
+  supplierId String?
+
+  isActive Boolean @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  /// Um vínculo por par usuário×empresa. Papel adicional entra no array `roles`,
+  /// nunca como segundo vínculo com a mesma empresa.
+  @@unique([userId, companyId])
+  @@index([accountId])
+  @@index([companyId])
+  @@map("memberships")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fluxos de credencial
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// O convite é a **única** porta de entrada de usuário no sistema (D15).
+/// O `User` já nasce junto com o convite, em `INVITED`; aceitar o convite é
+/// definir a senha, não criar cadastro.
+model Invitation {
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  userId String @unique
+  user   User   @relation("InvitedUser", fields: [userId], references: [id])
+
+  invitedByUserId String
+  invitedBy       User   @relation("InvitationAuthor", fields: [invitedByUserId], references: [id])
+
+  /// Escopo oferecido, congelado no ato do convite: nunca maior que o de quem
+  /// convida. É snapshot — reavaliar no aceite deixaria o teto móvel.
+  roles        Role[]
+  companyIds   String[]
+  executorType ExecutorType?
+
+  /// Só o hash: quem lê o banco não consegue aceitar convite alheio.
+  tokenHash String           @unique
+  expiresAt DateTime
+  status    InvitationStatus @default(PENDING)
+
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@map("invitations")
+}
+
+model PasswordResetToken {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  requestedIp String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+/// Refresh token persistido — é o que torna a revogação imediata (D4).
+/// O access token é stateless e curto; este é longo e revogável.
+model RefreshToken {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  /// Todos os tokens descendentes de um mesmo login. Detectado o reúso de um
+  /// token já rotacionado, a **família inteira** é revogada: é roubo até prova
+  /// em contrário, e a prova não vem a tempo (D7).
+  familyId String
+
+  tokenHash String   @unique
+  expiresAt DateTime
+
+  /// Marcado ao ser trocado por um novo. Um token com `usedAt` que reaparece é
+  /// o sinal de reúso.
+  usedAt            DateTime?
+  replacedByTokenId String?
+  revokedAt         DateTime?
+  revokedReason     String?
+
+  userAgent String?
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
