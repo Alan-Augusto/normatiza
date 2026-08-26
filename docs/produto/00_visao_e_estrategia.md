@@ -71,7 +71,7 @@ Monorepo único (pnpm workspaces), com contratos TypeScript compartilhados entre
 
 | App | Stack | Papel |
 | :--- | :--- | :--- |
-| `apps/api` | NestJS + Prisma + MySQL | API REST |
+| `apps/api` | NestJS + Prisma + PostgreSQL (Neon) | API REST |
 | `apps/web` | Angular + PrimeNG + Tailwind | Painel da consultoria e do cliente |
 | `apps/mobile` | Angular + Ionic + Capacitor | Trabalho de campo, com suporte offline |
 | `packages/shared` | TypeScript puro, zero dependências | DTOs e contratos de rede |

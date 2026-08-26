@@ -160,6 +160,12 @@ Recebe login com o **menor escopo do sistema**: enxerga apenas as tarefas design
 
 **Não vê:** a análise, o HRN, os demais pontos da máquina, outras máquinas, nem valores além dos da própria tarefa.
 
+**Todo executor tem conta**, inclusive o terceiro. Não existe acesso anônimo por link: a evidência é prova, e prova precisa de autoria atribuível — "Paulo instalou a proteção em 12/03" só se sustenta com identidade autenticada.
+
+O atrito de cadastro é resolvido pelo fluxo, não pela exceção: **quem cria o acesso é alguém da empresa** (o Gestor ou o Engenheiro do Cliente), e o executor apenas define a senha pelo link do convite — ele nunca preenche formulário de cadastro.
+
+Um executor pode atender **várias empresas** da mesma conta com um login só (§5).
+
 > Este papel unifica o "terceiro contratado" e o "envolvido adicional" — o mecânico e o eletricista acionados para a mesma obra. A diferença entre eles é o tipo, não o papel.
 
 ---
@@ -168,7 +174,11 @@ Recebe login com o **menor escopo do sistema**: enxerga apenas as tarefas design
 
 **Delegação decrescente.** Quem convida só concede um subconjunto do próprio escopo. Validação obrigatória **no servidor**, no ato do convite — a interface não é a defesa.
 
-**Carteira só do lado consultoria.** Papéis da consultoria podem ter várias empresas; papéis do cliente têm exatamente uma. Quando o Josué convida um Gestor, ele escolhe **a** empresa daquela pessoa, não uma lista.
+**Carteira só do lado consultoria.** Papéis da consultoria podem ter várias empresas; papéis do cliente **cujo escopo é a empresa** — Gestor, Engenheiro do Cliente e Diretor — têm exatamente uma. Quando o Josué convida um Gestor, ele escolhe **a** empresa daquela pessoa, não uma lista.
+
+**O Executor é a exceção, e não por privilégio.** O escopo dele não é a empresa: são as próprias tarefas. Ele nunca enxerga a análise, o HRN, as demais máquinas ou qualquer dado no nível da empresa — logo, atender BRF e Seara não lhe dá acesso a nada que ele já não tivesse. Um mesmo instalador terceiro pode ter **vários vínculos ativos**, e vê numa lista só as tarefas de todas as empresas que atende.
+
+**A identidade pertence a uma conta.** Todos os vínculos de um usuário vivem dentro da mesma conta. Um executor terceiro que atenda clientes de **duas consultorias diferentes** terá dois logins, um por conta — é o preço de "nada atravessa contas, em nenhuma hipótese". Dentro de uma mesma consultoria, um login basta, por mais empresas que ele atenda.
 
 **Acúmulo de papéis.** Um mesmo usuário pode ter **mais de um papel na mesma empresa**. O caso concreto e esperado:
 

@@ -8,7 +8,7 @@ Este é o repositório central do projeto **Normatiza v2**, organizado no modelo
 
 ```text
 ├── apps/
-│   ├── api/          # Backend (NestJS + Prisma + MySQL)
+│   ├── api/          # Backend (NestJS + Prisma + PostgreSQL)
 │   ├── web/          # Frontend Web Desktop (Angular + PrimeNG)
 │   └── mobile/       # Aplicativo Móvel Campo (Angular + Ionic + Capacitor)
 ├── packages/
@@ -20,7 +20,7 @@ Este é o repositório central do projeto **Normatiza v2**, organizado no modelo
 
 ### Detalhes das Stacks
 *   **[shared](file:///Users/alan-augusto/DEV/BRWORKS/normatiza_v2/packages/shared)**: Contém interfaces, DTOs e funções utilitárias puras. Restrição absoluta de zero dependências em runtime para consumo imediato.
-*   **[api](file:///Users/alan-augusto/DEV/BRWORKS/normatiza_v2/apps/api)**: API REST que serve a aplicação. Configurada com suporte ao **Prisma ORM** conectando a uma base **MySQL**, utilizando compilação via **Webpack** para manter a estrutura de build plana.
+*   **[api](file:///Users/alan-augusto/DEV/BRWORKS/normatiza_v2/apps/api)**: API REST que serve a aplicação. Configurada com suporte ao **Prisma ORM** conectando a uma base **PostgreSQL** (hospedada no [Neon](https://neon.tech)), utilizando compilação via **Webpack** para manter a estrutura de build plana.
 *   **[web](file:///Users/alan-augusto/DEV/BRWORKS/normatiza_v2/apps/web)**: Painel administrativo focado em ambiente Desktop rodando sobre Angular e componentes PrimeNG.
 *   **[mobile](file:///Users/alan-augusto/DEV/BRWORKS/normatiza_v2/apps/mobile)**: Aplicação móvel focada em trabalho em campo com suporte a fluxos offline e banco local de dados.
 
@@ -67,18 +67,15 @@ Compila as três aplicações do monorepo sequencialmente de forma compatível c
 pnpm build:all
 ```
 
-### 🗄️ Banco de Dados (Prisma & MySQL)
-Comandos orquestrados para gerenciar o banco de dados do backend:
+### 🗄️ Banco de Dados (Prisma & PostgreSQL)
+O banco é um Postgres (hospedado no [Neon](https://neon.tech)), modelado **a partir do `schema.prisma`** — não há banco legado sendo reaproveitado. Comandos orquestrados para gerenciar o banco de dados do backend:
 
 ```bash
-# Baixa e atualiza a estrutura do banco MySQL existente para o schema.prisma (Database-First)
-# Execute após configurar sua variável DATABASE_URL no arquivo apps/api/.env
-pnpm --filter api prisma db pull
-
 # Gera os tipos atualizados do cliente Prisma baseados no schema.prisma
 pnpm prisma:generate
 
-# Cria e aplica migrações de banco (se aplicável ao ambiente de desenvolvimento)
+# Cria e aplica uma nova migração a partir de mudanças no schema.prisma
+# Execute após configurar sua variável DATABASE_URL no arquivo apps/api/.env
 pnpm prisma:migrate
 ```
 

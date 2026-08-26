@@ -1,4 +1,4 @@
-# Plano de Arquitetura de Nuvem e CI/CD: Cloud Run + Firebase + Cloud SQL
+# Plano de Arquitetura de Nuvem e CI/CD: Cloud Run + Firebase + Neon
 
 Este documento apresenta a estratégia completa de implantação e entrega contínua (CI/CD) para o projeto **Normatiza v2**, dividida entre **Produção**, **Desenvolvimento** e **Ambientes de Preview/Teste por Branch**.
 
@@ -6,13 +6,13 @@ Este documento apresenta a estratégia completa de implantação e entrega cont�
 
 ## 🎛️ 1. Arquitetura de Ambientes
 
-Para otimizar custos mantendo o isolamento, utilizaremos a flexibilidade do Firebase Hosting e do Google Cloud Run.
+Para otimizar custos mantendo o isolamento, utilizaremos a flexibilidade do Firebase Hosting, do Google Cloud Run e do Neon (Postgres gerenciado).
 
-### Banco de Dados (Cloud SQL - MySQL)
-Para otimizar os créditos do Google Cloud, usaremos **uma única instância física do Cloud SQL**, mas dividida logicamente:
-*   `normatiza_prod`: Banco oficial consumido pela API de Produção.
-*   `normatiza_dev`: Banco de testes consumido pela API de Desenvolvimento.
-*   `normatiza_preview`: Banco de testes efêmeros consumido pelas branches de feature.
+### Banco de Dados (Neon - PostgreSQL)
+O banco é um Postgres hospedado no **Neon**, fora do GCP. Usaremos o recurso de *branching* do Neon para isolar os ambientes a partir de um único projeto:
+*   `main` (branch de produção): Banco oficial consumido pela API de Produção.
+*   `develop`: Banco de testes consumido pela API de Desenvolvimento, criado como branch do `main`.
+*   Uma branch efêmera por PR: banco de teste temporário para os ambientes de preview, descartado quando o PR fecha.
 
 ### Backend (Google Cloud Run)
 Hospedaremos as APIs em contêineres Docker independentes no Cloud Run:
@@ -65,14 +65,14 @@ Criaremos três arquivos de workflows sob a pasta `.github/workflows/`:
 *   **Ações**:
     1.  Autentica no GCP via Service Account.
     2.  Builda a imagem Docker da API (`apps/api`), envia para o **Google Artifact Registry** e atualiza o serviço `api-dev` no Cloud Run.
-    3.  Roda as migrações automáticas de banco via Prisma: `prisma db push` ou `prisma migrate deploy` direcionadas ao banco `normatiza_dev`.
+    3.  Roda as migrações automáticas de banco via Prisma: `prisma migrate deploy` direcionadas à branch `develop` do Neon.
     4.  Builda e publica o Front Web e o Mobile PWA no site de desenvolvimento do Firebase Hosting.
 
 ### C. Produção (`production.yml`)
 *   **Gatilho**: Push/Merge na branch `main`.
 *   **Ações**:
     1.  Executa o build de produção da API, envia para o Artifact Registry e atualiza o serviço `api-prod` no Cloud Run.
-    2.  Aplica as migrações pendentes de banco no `normatiza_prod`.
+    2.  Aplica as migrações pendentes de banco via `prisma migrate deploy` na branch `main` do Neon.
     3.  Builda e publica o Front Web e o Mobile PWA nos domínios principais de produção no Firebase Hosting.
 
 ---
@@ -84,25 +84,24 @@ Crie uma conta de serviço no painel do GCP chamada `github-actions-deployer` co
 *   `Administrador do Cloud Run` (para gerenciar os deploys).
 *   `Usuário da conta de serviço` (para o Cloud Run poder rodar a imagem).
 *   `Gravador do Artifact Registry` (para enviar as imagens Docker).
-*   `Cliente do Cloud SQL` (para conectar a API e rodar as migrações).
 
 ### Passo 2: Google Artifact Registry
 Crie um repositório Docker no painel do GCP:
 *   Nome: `normatiza-repo`
 *   Formato: Docker
 
-### Passo 3: Banco de Dados no Cloud SQL
-1.  Crie a instância MySQL.
-2.  Crie os bancos lógicos `normatiza_prod`, `normatiza_dev` e `normatiza_preview` na aba "Bancos de dados".
-3.  Configure o acesso para conexões seguras usando o **Cloud SQL Auth Proxy** (nativo nos contêineres do Cloud Run).
+### Passo 3: Banco de Dados no Neon
+1.  Crie o projeto Postgres no Neon.
+2.  Crie as branches lógicas `main` (produção), `develop` e uma branch efêmera por PR de preview, todas a partir do mesmo projeto.
+3.  A conexão usa a string do Neon diretamente (`?sslmode=require`) — não há proxy adicional a configurar no Cloud Run.
 
 ### Passo 4: Segredos no GitHub (Repository Secrets)
 Adicione as credenciais confidenciais no repositório do GitHub em *Settings > Secrets and variables > Actions*:
 *   `GCP_SA_KEY`: JSON gerado da Conta de Serviço criada no Passo 1.
 *   `GCP_PROJECT_ID`: ID do seu projeto no GCP.
 *   `FIREBASE_SERVICE_ACCOUNT`: Token/Credencial do Firebase para deploy do hosting.
-*   `DATABASE_URL_DEV`: String de conexão MySQL para desenvolvimento.
-*   `DATABASE_URL_PROD`: String de conexão MySQL para produção.
+*   `DATABASE_URL_DEV`: String de conexão Postgres (Neon) da branch `develop`.
+*   `DATABASE_URL_PROD`: String de conexão Postgres (Neon) da branch `main`.
 
 ---
 

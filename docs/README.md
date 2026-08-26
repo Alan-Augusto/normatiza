@@ -53,6 +53,11 @@ A documentação não convive com versões conflitantes da mesma informação. A
 ### 🚀 DevOps e Infraestrutura
 *   [Guia de Deploy](./devops/deploy.md): build, CI/CD e ambientes de produção, desenvolvimento e preview.
 
+### 📋 Planos de Implementação (`docs/planos`)
+Arquivos de trabalho **efêmeros**, um por feature em desenvolvimento: objetivo, decisões travadas e passo a passo com caixas de seleção. Apagados quando a feature termina.
+
+*   [Índice e regras da pasta](./planos/README.md) — **plano não é fonte da verdade**: nenhuma regra de negócio nasce ali, ela vive em `docs/produto`.
+
 ### 🗄️ Legado (`docs/legado`)
 *   [Especificação do sistema anterior](./legado/README.md): acervo congelado do Normatiza em produção (.NET + React). Referência **exclusiva** para migração e preservação de regras históricas de cálculo. Não descreve o que será construído.
 

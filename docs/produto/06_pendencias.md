@@ -34,17 +34,7 @@ Este documento existe para que nenhuma decisão pendente vire uma escolha implí
 
 ---
 
-## 3. Executor atendendo várias empresas
-
-**Situação.** Um mesmo instalador terceirizado pode atender várias empresas da mesma consultoria. Ele é **um usuário só**, com tarefas de empresas diferentes na mesma Área de Execução, ou **um cadastro por empresa**?
-
-**O trade-off.** Um usuário só é mais limpo de administrar e evita logins duplicados — mas significa que ele vê nomes de várias indústrias na sua lista de tarefas, o que pode ser comercialmente sensível para a consultoria.
-
-**Impacto no modelo.** A entidade `Membership` já suporta as duas leituras: um usuário com vários vínculos resolve o caso "um usuário só". O que precisa ser decidido é se a regra de escopo do lado cliente — *"papéis do cliente têm exatamente um vínculo"* — abre exceção para `EXECUTOR`, dado que o escopo dele não é a empresa e sim as próprias tarefas.
-
----
-
-## 4. Diretor e visibilidade de custo
+## 3. Diretor e visibilidade de custo
 
 **Situação.** O Diretor vê os valores dos planos de ação?
 
@@ -56,17 +46,7 @@ A matriz de permissões hoje marca `○` (leitura) para o Diretor na tabela de p
 
 ---
 
-## 5. Executor precisa mesmo de login?
-
-**Situação.** Ficou definido que sim. Mas vale considerar um caminho alternativo para o terceiro que não vai criar conta: **um link de acesso direto à tarefa, com validade, sem senha.**
-
-**Por que importa.** Reduz muito o atrito de onboarding do prestador de obra — que é uma pessoa que vai usar o sistema três vezes na vida. O atrito de criar conta é uma causa provável de o executor simplesmente não registrar a evidência, e a evidência é o que destrava o ciclo inteiro.
-
-**Impacto se sim:** um mecanismo de token de acesso com escopo de uma única tarefa e expiração, que não cria `User` nem `Membership`. A autoria da evidência precisaria ser registrada de outra forma — nome informado no ato, vinculado ao convite.
-
----
-
-## 6. Multi-normas — NR-10 continua no plano?
+## 4. Multi-normas — NR-10 continua no plano?
 
 **Situação.** O documento de reestruturação inicial previa explicitamente o sistema como multi-normas, com um **Módulo NR-10** (segurança elétrica, painéis, arco elétrico, aterramento) como próxima extensão sobre o mesmo inventário de máquinas — e usava isso como argumento comercial de cross-selling. A estrutura consolidada com o dono do produto é **NR-12 pura**, sem menção a NR-10.
 
@@ -78,7 +58,7 @@ A matriz de permissões hoje marca `○` (leitura) para o Diretor na tabela de p
 
 ---
 
-## 7. Acervo de fotos na migração
+## 5. Acervo de fotos na migração
 
 **Situação.** As fotos do sistema legado estão no Firebase Storage, organizadas por pasta de cliente. Na migração, mantém-se as referências existentes ou reprocessa-se o acervo?
 

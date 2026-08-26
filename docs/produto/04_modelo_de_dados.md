@@ -75,12 +75,17 @@ interface Membership {
 
 > **Por que `roles` é um array:** o Gestor e o Engenheiro do Cliente são a mesma pessoa em empresa pequena. Modelar um papel único forçaria duplicar o usuário ou criar um papel-exceção; o array resolve sem inventar caso especial no fluxo.
 >
-> **Por que o escopo vive no vínculo e não no usuário:** papéis da consultoria têm vários `Membership` (a carteira); papéis do cliente têm exatamente um. A regra "carteira só do lado consultoria" é validada no servidor a partir do `RoleSide` do papel sendo concedido.
+> **Por que o escopo vive no vínculo e não no usuário:** papéis da consultoria têm vários `Membership` (a carteira); papéis do cliente cujo escopo é a empresa têm exatamente um. A regra "carteira só do lado consultoria" é validada no servidor a partir do `RoleSide` do papel sendo concedido.
 
 **Invariantes obrigatórias, validadas no servidor:**
-1. Todo papel de `RoleSide: 'CLIENT'` só pode existir em **um** `Membership` ativo por usuário.
+1. Papéis cujo escopo **é a empresa** — `MANAGER`, `CLIENT_ENGINEER` e `DIRECTOR` — só podem existir em **um** `Membership` ativo por usuário. `EXECUTOR` é exceção: seu escopo são as próprias tarefas, não a empresa, e ele pode ter vários vínculos ativos dentro da mesma conta.
 2. Toda empresa ativa tem ao menos um `Membership` ativo contendo `MANAGER`.
 3. No convite, o conjunto de empresas oferecido é subconjunto do escopo de quem convida.
+4. Todo `Membership` de um usuário pertence à mesma `Account` do `User` — o vínculo nunca atravessa contas.
+
+> **A identidade pertence a uma conta.** `User.accountId` é singular por decisão: o isolamento entre contas fica verificável na identidade, e não dependente de cada query acertar o escopo. A consequência é que um executor terceiro que atenda clientes de **duas consultorias diferentes** terá dois logins — um por conta. Dentro de uma mesma conta, um login basta, por mais empresas que ele atenda (invariante 1).
+>
+> Para que essa escolha continue reversível, o token de sessão carrega `accountId` **explicitamente** e a aplicação trata "conta ativa" como conceito desde já, mesmo existindo apenas uma. Se um dia a identidade precisar atravessar contas, move-se `accountId` do `User` para o `Membership` sem reescrever a autenticação.
 
 ---
 
