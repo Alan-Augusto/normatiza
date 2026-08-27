@@ -1,6 +1,6 @@
 # Plano — Gestão de Equipe
 
-> **Status:** Fases 0 e 1 concluídas · **Criado em:** 2026-08-26
+> **Status:** Fases 0–2 concluídas (Fase 2 entrega os testes **vermelhos**) · **Criado em:** 2026-08-26
 > **Regras de negócio:** [01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md) · [03 — Navegação §3.3 e §4.5](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §1](../produto/04_modelo_de_dados.md)
 > **Arquitetura existente:** [Autenticação e Autorização](../backend/autenticacao.md)
 
@@ -60,7 +60,9 @@ Escopo desta feature:
 | :-- | :--- | :--- |
 | D3 | Quem convida, concede e remove | A alçada para **trocar** o papel de alguém é a mesma de convidá-lo: reusa `CAN_INVITE`. Sem regra nova, sem segunda tabela a manter em dia. |
 | D4 | Sucessor só quando a saída quebra uma invariante | Tirar o último Gestor da BRF **exige** sucessor; tirar um Executor entre cinco, não. Pedir sempre viraria burocracia em 90% dos casos, e burocracia inútil é o que faz gente contornar o fluxo. |
-| D5 | Desliga-se quem não se convidou | Dentro do próprio escopo e da própria alçada. Sem isto, um Executor convidado por alguém que já saiu ficaria ativo e órfão, sem ninguém com poder de encerrá-lo. |
+| D5 | Desliga-se quem não se convidou | A alçada é **papel e escopo**, nunca a árvore de convites. Sem isto, um Executor convidado por alguém que já saiu ficaria ativo e órfão, sem ninguém com poder de encerrá-lo. [01 §5](../produto/01_papeis_e_permissoes.md) fecha as duas alçadas: remover da empresa é de "quem administra aquela empresa"; desligar da conta é "só o lado consultoria". |
+| D16 | Ninguém muda o próprio papel | Nem para menos. `CAN_INVITE` impede subir acima do próprio teto, mas não impede um Gestor de se dar Engenheiro do Cliente por conta própria — e alçada que a pessoa se concede sozinha deixa de ser alçada. Mexer no próprio vínculo é pedido a quem está acima. |
+| D17 | Suceder **não** concede empresa nova | O sucessor precisa já ter vínculo ativo com a empresa em questão: a sucessão adiciona o papel que faltava, nunca o acesso à empresa. Conceder empresa como efeito colateral de um desligamento seria ampliar escopo sem ninguém ter convidado — e escondido dentro de outro ato. Quem não tem candidato elegível resolve convidando antes, que é o caminho visível. |
 | D6 | **Não existe *delete*** | Desligar é `disabledAt` + sucessão. Apagar a pessoa apagaria a autoria das evidências que ela entregou — e evidência é prova. |
 | D7 | E-mail é imutável | Nome e telefone o próprio dono edita; papel e escopo, quem tem alçada. **Ninguém edita o e-mail de outra pessoa**: mudar o e-mail alheio é, na prática, assumir a conta dela — o link de redefinição passa a chegar na caixa nova. Troca de e-mail, se um dia existir, é fluxo com confirmação nos dois endereços. |
 
@@ -81,7 +83,7 @@ Escopo desta feature:
 
 | # | Decisão | Definição |
 | :-- | :--- | :--- |
-| D13 | A alçada por linha vem do **servidor** | Cada linha das duas telas de equipe carrega `actions` — o que *quem está olhando* pode fazer com *aquela pessoa*. A alternativa seria a tela recalcular a alçada, e ela não tem como: D5 depende da **árvore de convites** e D12 da titularidade da conta. Reimplementar isso no Angular criaria uma segunda cópia de uma regra de autorização — justo o que a Fase 6.2 existe para impedir. Continua sendo decisão de interface: o servidor revalida em toda mutação. O que os booleanos evitam é **oferecer um botão que será recusado**. |
+| D13 | A alçada por linha vem do **servidor** | Cada linha das duas telas de equipe carrega `actions` — o que *quem está olhando* pode fazer com *aquela pessoa*. A alternativa é a tela recalcular a alçada, e ela **não tem os dados**: na Equipe da Empresa, D15 omite de propósito o escopo do outro, e sem ele não dá para saber se desligar aquela pessoa a deixaria sem acesso a alguma coisa. Mesmo onde os dados chegam, recalcular criaria uma segunda implementação de uma regra de autorização, em outra linguagem, que teria de ficar em dia com a primeira — justo o que a Fase 6.2 existe para impedir. Continua sendo decisão de interface: o servidor revalida em toda mutação. O que os booleanos evitam é **oferecer um botão que será recusado**. |
 | D14 | Desligamento tem **consulta prévia** | `GET /users/:id/disable-preview` responde, antes de a tela oferecer qualquer coisa: pode desligar? exige sucessor? quem pode suceder? Sem isso, D4 obrigaria a tela a adivinhar quando a saída quebra uma invariante — e errar para pedir sucessor sempre (burocracia em 90% dos casos, que é o que D4 rejeita) ou para não pedir nunca (erro de servidor na cara do usuário). É a resposta ao segundo risco do §7. |
 | D15 | Duas projeções, não uma filtrada | `TeamMember` tem `memberships[]`; `CompanyMember` **não tem**, nem `companyIds`, nem `isAccountOwner`. Não é economia de bytes: um `companyIds` na projeção de empresa conta ao Marcos que a Normatiza também atende a Seara. O isolamento do D1 precisa estar na **forma do contrato**, não na diligência de quem monta a tela. |
 
@@ -197,15 +199,21 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 ### Fase 2 — Testes de backend (vermelhos primeiro)
 
-- [ ] **2.1** Listagem da conta: só usuários da própria conta; a consultoria com carteira vê só as empresas do escopo dela.
-- [ ] **2.2** Listagem por empresa: o Marcos vê a BRF e **não** a Seara; o Executor de várias empresas aparece em cada uma.
-- [ ] **2.3** Troca de papel: respeita `CAN_INVITE` (D3); recusa papel acima da alçada; **recusa o segundo papel de escopo-empresa** com mensagem de negócio, não erro de banco.
-- [ ] **2.4** Remoção de vínculo × desligamento de conta (D8): remover da BRF não desliga da Normatiza; desligar da conta derruba todos os vínculos e as sessões ativas.
-- [ ] **2.5** Sucessão (D4): recusa tirar o último Gestor sem sucessor; aceita com sucessor; permite tirar Executor sem nada.
-- [ ] **2.6** Desligar quem não se convidou funciona (D5); desligar o dono da conta é recusado (§4).
-- [ ] **2.7** Perfil: o dono edita nome e telefone; **ninguém edita e-mail** (D7); ninguém edita o perfil de outro; trocar a senha exige a senha atual.
-- [ ] **2.9** `actions` e *preview* (D13/D14) concordam com a mutação: o que vier `false` na listagem tem de ser recusado pelo endpoint correspondente, e o que o *preview* disser exigir sucessor tem de falhar sem ele. Um botão oferecido e recusado é o mesmo defeito que um botão escondido sem motivo.
-- [ ] **2.8** E2E dos endpoints novos, com os dois transportes já cobertos pela autenticação.
+- [x] **2.1** Listagem da conta: só usuários da própria conta; a consultoria com carteira vê só as empresas do escopo dela.
+- [x] **2.2** Listagem por empresa: o Marcos vê a BRF e **não** a Seara; o Executor de várias empresas aparece em cada uma.
+- [x] **2.3** Troca de papel: respeita `CAN_INVITE` (D3); recusa papel acima da alçada; **recusa o segundo papel de escopo-empresa** com mensagem de negócio, não erro de banco.
+- [x] **2.4** Remoção de vínculo × desligamento de conta (D8): remover da BRF não desliga da Normatiza; desligar da conta derruba todos os vínculos e as sessões ativas.
+- [x] **2.5** Sucessão (D4): recusa tirar o último Gestor sem sucessor; aceita com sucessor; permite tirar Executor sem nada.
+- [x] **2.6** Desligar quem não se convidou funciona (D5); desligar o dono da conta é recusado (§4).
+- [x] **2.7** Perfil: o dono edita nome e telefone; **ninguém edita e-mail** (D7); ninguém edita o perfil de outro; trocar a senha exige a senha atual.
+- [x] **2.9** `actions` e *preview* (D13/D14) concordam com a mutação: o que vier `false` na listagem tem de ser recusado pelo endpoint correspondente, e o que o *preview* disser exigir sucessor tem de falhar sem ele. Um botão oferecido e recusado é o mesmo defeito que um botão escondido sem motivo.
+- [ ] **2.8** E2E **de transporte** dos endpoints novos — guardas, códigos HTTP, os dois transportes. Fica para a Fase 3, quando os controladores existirem; as regras de negócio já estão cobertas em `test/team.e2e-spec.ts`, no nível de serviço.
+
+> **Estado: vermelho, como deve ser.** 20 testes de unidade (`member-policy.service.spec.ts`) e 40 e2e (`team.e2e-spec.ts`) falham contra esqueletos que só lançam. Os 99 testes que já existiam seguem verdes, e a API compila.
+>
+> **Por que os e2e batem no banco de verdade.** Duas das regras desta feature **são** do banco: o índice parcial que garante papel de escopo-empresa em um vínculo ativo só, e as chaves compostas que impedem qualquer coisa de atravessar contas. Um Prisma falso concordaria com o que eu escrevesse — inclusive com o que estivesse errado.
+>
+> **Três testes passaram na primeira execução e foram apertados.** Usavam `rejects.toBeDefined()`, que um `throw new Error('não implementado')` satisfaz: passariam contra qualquer implementação quebrada. Agora nomeiam a exceção esperada — e a de listar empresa fora do escopo é `NotFoundException`, não `ForbiddenException`, porque um 403 já contaria ao Marcos que existe algo ali para ser proibido.
 
 ### Fase 3 — Implementação do backend
 

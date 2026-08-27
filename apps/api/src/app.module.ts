@@ -13,6 +13,7 @@ import { InvitationsModule } from './invitations/invitations.module';
 import { MailModule } from './mail/mail.module';
 import { PlatformModule } from './platform/platform.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { TeamModule } from './team/team.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     InvitationsModule,
     PlatformModule,
+    TeamModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
