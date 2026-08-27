@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './team';
 
 export interface SharedHello {
   message: string;

@@ -1,6 +1,6 @@
 # Plano — Gestão de Equipe
 
-> **Status:** Fase 0 concluída · **Criado em:** 2026-08-26
+> **Status:** Fases 0 e 1 concluídas · **Criado em:** 2026-08-26
 > **Regras de negócio:** [01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md) · [03 — Navegação §3.3 e §4.5](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §1](../produto/04_modelo_de_dados.md)
 > **Arquitetura existente:** [Autenticação e Autorização](../backend/autenticacao.md)
 
@@ -76,6 +76,14 @@ Escopo desta feature:
 | :-- | :--- | :--- |
 | D11 | Executor terceiro sem fornecedor | O convite de Executor pergunta apenas **interno × terceiro**; **não** pergunta de qual empresa prestadora. `Membership.supplierId` continua existindo e sem uso. Fornecedor pertence à feature de custos — é ele que alimenta a Tabela de Preços ([03 §4.6](../produto/03_navegacao_e_telas.md)) —, e fazer meio cadastro aqui significaria refazê-lo lá. |
 | D12 | O titular da conta não é desligável | **Por ninguém** — nem por outro Engenheiro Responsável, nem pelo Admin do Sistema. Não é alçada insuficiente: desligar o titular deixaria a consultoria sem dono, e sem dono não há quem convide, administre ou responda por ela. Trocar o titular é **transferência de titularidade**, caso particular com fluxo próprio, fora desta feature. Regra escrita em [01 §5](../produto/01_papeis_e_permissoes.md). |
+
+### Forma dos contratos
+
+| # | Decisão | Definição |
+| :-- | :--- | :--- |
+| D13 | A alçada por linha vem do **servidor** | Cada linha das duas telas de equipe carrega `actions` — o que *quem está olhando* pode fazer com *aquela pessoa*. A alternativa seria a tela recalcular a alçada, e ela não tem como: D5 depende da **árvore de convites** e D12 da titularidade da conta. Reimplementar isso no Angular criaria uma segunda cópia de uma regra de autorização — justo o que a Fase 6.2 existe para impedir. Continua sendo decisão de interface: o servidor revalida em toda mutação. O que os booleanos evitam é **oferecer um botão que será recusado**. |
+| D14 | Desligamento tem **consulta prévia** | `GET /users/:id/disable-preview` responde, antes de a tela oferecer qualquer coisa: pode desligar? exige sucessor? quem pode suceder? Sem isso, D4 obrigaria a tela a adivinhar quando a saída quebra uma invariante — e errar para pedir sucessor sempre (burocracia em 90% dos casos, que é o que D4 rejeita) ou para não pedir nunca (erro de servidor na cara do usuário). É a resposta ao segundo risco do §7. |
+| D15 | Duas projeções, não uma filtrada | `TeamMember` tem `memberships[]`; `CompanyMember` **não tem**, nem `companyIds`, nem `isAccountOwner`. Não é economia de bytes: um `companyIds` na projeção de empresa conta ao Marcos que a Normatiza também atende a Seara. O isolamento do D1 precisa estar na **forma do contrato**, não na diligência de quem monta a tela. |
 
 ### Infraestrutura
 
@@ -178,10 +186,14 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 ### Fase 1 — Contratos e modelagem
 
-- [ ] **1.1** Confirmar que D11 e D12 não exigem migration — a expectativa é que não: `supplierId` já existe e fica sem uso, e `Account.ownerUserId` já identifica o titular.
-- [ ] **1.2** Contratos em `packages/shared`: `TeamMember`, `CompanyMember`, `UpdateMembershipRequest`, `DisableUserRequest`, `UpdateProfileRequest`. **Nenhuma interface de API no front.**
-- [ ] **1.3** Migration só se as pendências exigirem (`Supplier`). O ciclo de vida já cabe no schema atual.
-- [ ] **1.4** Novas ações de auditoria: `membership.role_changed`, `membership.removed`, `user.disabled`, `user.succeeded`.
+- [x] **1.1** Confirmar que D11 e D12 não exigem migration. **Confirmado:** `Account.ownerUserId`, `User.disabledAt`, `succeededByUserId`, `lastAccessAt`, `invitedByUserId` e `Membership.supplierId` já existem no schema.
+- [x] **1.2** Contratos em `packages/shared/src/team`: `TeamMember`, `CompanyMember`, `UpdateMembershipRequest`, `DisableUserPreview`, `DisableUserRequest`, `UpdateProfileRequest`, `ChangePasswordRequest`, `MemberActions`, `TeamListQuery` — mais `memberOrigin()`, a única regra derivada do lote.
+- [x] **1.3** Migration: **nenhuma**. O ciclo de vida cabe inteiro no schema atual, e `Supplier` está fora do escopo por D11.
+- [x] **1.4** Novas ações de auditoria: `membership.role_changed`, `membership.removed`, `user.disabled`, `user.succeeded`, `user.profile_updated`, `user.password_changed`.
+
+> **Estado: verde.** 99 testes na API, build do front limpo. Nada mudou de comportamento — a fase é de contrato.
+>
+> Três decisões de forma apareceram ao desenhar as projeções e estão em D13, D14 e D15. As duas primeiras adicionam trabalho às fases seguintes (`actions` por linha, e o *preview* de desligamento); a terceira é o D1 movido para dentro do tipo.
 
 ### Fase 2 — Testes de backend (vermelhos primeiro)
 
@@ -191,7 +203,8 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 - [ ] **2.4** Remoção de vínculo × desligamento de conta (D8): remover da BRF não desliga da Normatiza; desligar da conta derruba todos os vínculos e as sessões ativas.
 - [ ] **2.5** Sucessão (D4): recusa tirar o último Gestor sem sucessor; aceita com sucessor; permite tirar Executor sem nada.
 - [ ] **2.6** Desligar quem não se convidou funciona (D5); desligar o dono da conta é recusado (§4).
-- [ ] **2.7** Perfil: o dono edita nome e telefone; **ninguém edita e-mail** (D7); ninguém edita o perfil de outro.
+- [ ] **2.7** Perfil: o dono edita nome e telefone; **ninguém edita e-mail** (D7); ninguém edita o perfil de outro; trocar a senha exige a senha atual.
+- [ ] **2.9** `actions` e *preview* (D13/D14) concordam com a mutação: o que vier `false` na listagem tem de ser recusado pelo endpoint correspondente, e o que o *preview* disser exigir sucessor tem de falhar sem ele. Um botão oferecido e recusado é o mesmo defeito que um botão escondido sem motivo.
 - [ ] **2.8** E2E dos endpoints novos, com os dois transportes já cobertos pela autenticação.
 
 ### Fase 3 — Implementação do backend
@@ -200,9 +213,10 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 - [ ] **3.2** `PATCH /memberships/:id` — papel e tipo de executor.
 - [ ] **3.3** `DELETE /memberships/:id` — remover da empresa.
 - [ ] **3.4** `POST /users/:id/disable` — com `successorUserId` opcional, exigido só quando a invariante manda.
-- [ ] **3.5** `PATCH /users/me` — perfil próprio.
+- [ ] **3.5** `PATCH /users/me` — perfil próprio; `POST /users/me/password` — troca da própria senha.
 - [ ] **3.6** `GET /invitations` — pendentes, para a coluna de status.
 - [ ] **3.7** Auditoria em todas as mutações acima.
+- [ ] **3.8** `GET /users/:id/disable-preview` (D14) e o cálculo de `actions` por linha (D13) — a mesma função de alçada serve às duas projeções e à validação da mutação, para não haver três respostas para a mesma pergunta.
 
 ### Fase 4 — Testes de frontend (vermelhos primeiro)
 
@@ -226,7 +240,7 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 - [ ] **6.1** Suíte completa verde (`test`, `test:e2e`, front).
 - [ ] **6.2** Conferir que nenhuma regra é aplicada só no front.
-- [ ] **6.3** Estender [`docs/backend/autenticacao.md`](../backend/autenticacao.md) com o ciclo de vida, ou abrir `docs/backend/equipe.md` se ficar grande demais.
+- [ ] **6.3** Estender [`docs/backend/autenticacao.md`](../backend/autenticacao.md) com o ciclo de vida, ou abrir `docs/backend/equipe.md` se ficar grande demais. **Levar junto o índice D1–D15**: o código já cita `(D8)`, `(D12)`, `(D13)` em comentário, e apagar este plano sem o índice deixa essas siglas sem referente — foi o motivo do §14 da autenticação.
 - [ ] **6.4** Atualizar `docs/produto` com o que for decidido durante a implementação.
 - [ ] **6.5** Apagar este arquivo e a linha no [README dos planos](./README.md).
 
@@ -235,6 +249,7 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 ## 7. Riscos
 
 - **A invariante do índice parcial vai aparecer para o usuário.** Papel de escopo-empresa em um vínculo ativo só é garantido pelo Postgres. Se a tela não antecipar, o usuário vê erro de constraint. É o principal ponto de atrito de UX desta feature.
+- ~~**A invariante do índice parcial vai aparecer para o usuário**~~ — mitigada em D13/D14 no que dá: `actions` esconde o que será recusado e o *preview* explica a sucessão antes do envio. O conflito de papel de escopo-empresa, porém, **continua de pé** — ele depende do papel escolhido no formulário, que nenhuma consulta prévia antecipa. Resolve-se em 2.3, com mensagem de negócio.
 - **Sucessão é regra de negócio pouco exercitada.** "Não se remove o último Gestor sem sucessor" está escrito em [01 §5](../produto/01_papeis_e_permissoes.md) e nunca rodou. Provável que a implementação levante casos que o documento não previu — eles voltam para `docs/produto`, não se resolvem no código.
 - ~~**`Supplier` inexistente pode contaminar o convite de terceiro**~~ — resolvido em D11: o campo não entra nesta feature.
 - **E-mail é dependência externa nova.** Primeira do projeto. O modo de desenvolvimento sem chave (0.3) existe para que o time não fique refém dela.

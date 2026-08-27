@@ -15,6 +15,16 @@ export const AuditAction = {
   INVITATION_ACCEPTED: 'invitation.accepted',
   INVITATION_RESENT: 'invitation.resent',
   INVITATION_REVOKED: 'invitation.revoked',
+  /** Papel trocado no vínculo. O `before`/`after` guarda os dois conjuntos. */
+  MEMBERSHIP_ROLE_CHANGED: 'membership.role_changed',
+  /** Saiu da empresa. Não é o mesmo que sair da conta (D8). */
+  MEMBERSHIP_REMOVED: 'membership.removed',
+  /** Saiu da conta: sessões revogadas e todos os vínculos derrubados (D8). */
+  USER_DISABLED: 'user.disabled',
+  /** Quem herdou o escopo de quem saiu (D4). */
+  USER_SUCCEEDED: 'user.succeeded',
+  PROFILE_UPDATED: 'user.profile_updated',
+  PASSWORD_CHANGED: 'user.password_changed',
   PLATFORM_ADMIN_GRANTED: 'platform_admin.granted',
   PLATFORM_ADMIN_REVOKED: 'platform_admin.revoked',
 } as const;
