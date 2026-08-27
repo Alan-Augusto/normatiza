@@ -11,4 +11,4 @@ Arquivos de trabalho **efêmeros**, um por feature em desenvolvimento. Cada arqu
 
 ## Planos ativos
 
-*Nenhum no momento.*
+- [Gestão de Equipe](./gestao-de-equipe.md)

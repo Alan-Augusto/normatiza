@@ -1,10 +1,13 @@
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { AccountSelectionRequiredException } from './account-selection-required.exception';
 import { AuthService, CREDENCIAIS_INVALIDAS } from './auth.service';
 import { PasswordService } from './password.service';
 import { TokenService } from './token.service';
 import { AuditService } from '../audit/audit.service';
+import { EnvironmentVariables } from '../config/env.validation';
+import { MailService } from '../mail/mail.service';
 import { PlatformAdminService } from '../platform/platform-admin.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -76,7 +79,18 @@ describe('AuthService — login', () => {
       isPlatformAdmin: jest.fn().mockResolvedValue(false),
     } as unknown as PlatformAdminService;
 
-    service = new AuthService(prisma, passwords, tokens, audit, platformAdmins);
+    // O envio de e-mail é efeito colateral do fluxo de senha, não decisão do
+    // login. O que a trava de envio permite está em `mail.service.spec.ts`.
+    const mail = {
+      enviarConvite: jest.fn(),
+      enviarRecuperacaoDeSenha: jest.fn(),
+    } as unknown as MailService;
+    const config = { get: () => 'http://localhost:8080' } as unknown as ConfigService<
+      EnvironmentVariables,
+      true
+    >;
+
+    service = new AuthService(prisma, passwords, tokens, audit, platformAdmins, mail, config);
   });
 
   const senhaConfere = () => passwords.verify.mockResolvedValue({ valid: true, mustRehash: false });

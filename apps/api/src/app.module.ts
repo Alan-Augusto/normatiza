@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { validate } from './config/env.validation';
 import { InvitationsModule } from './invitations/invitations.module';
+import { MailModule } from './mail/mail.module';
 import { PlatformModule } from './platform/platform.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -29,6 +30,7 @@ import { PrismaModule } from './prisma/prisma.module';
       skipIf: () => process.env.THROTTLE_DISABLED === 'true',
     }),
     PrismaModule,
+    MailModule,
     AuditModule,
     AuthorizationModule,
     AuthModule,

@@ -1,12 +1,15 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Invitation, User } from '@prisma/client';
 import type { CreateInvitationRequest, InvitationSummary } from '@normatiza/shared';
 
 import { AuditAction, AuditService } from '../audit/audit.service';
+import { EnvironmentVariables } from '../config/env.validation';
 import { PermissionService, SessionScope } from '../authorization/permission.service';
 import { PasswordService } from '../auth/password.service';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Quantos dias um convite vale. Depois disso, precisa ser reenviado. */
@@ -29,6 +32,8 @@ export class InvitationsService {
     private readonly permissions: PermissionService,
     private readonly passwords: PasswordService,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService<EnvironmentVariables, true>,
   ) {}
 
   /**
@@ -102,6 +107,8 @@ export class InvitationsService {
       after: { email, roles: dto.roles, companyIds: dto.companyIds },
     });
 
+    await this.avisaPorEmail(inviter, user, token);
+
     return { invitation: paraContrato(invitation, user), token };
   }
 
@@ -163,7 +170,41 @@ export class InvitationsService {
       reason: 'token anterior invalidado',
     });
 
+    await this.avisaPorEmail(inviter, atualizado.user, token);
+
     return { invitation: paraContrato(atualizado, atualizado.user), token };
+  }
+
+  /**
+   * O link vai por e-mail, e o token em claro **nunca** volta na resposta HTTP:
+   * devolvê-lo daria a quem convida um atalho para assumir o acesso alheio.
+   *
+   * O envio é o último passo e não participa da transação. Se o provedor falhar,
+   * o convite continua existindo e a tela oferece reenviar — o contrário
+   * (desfazer o convite porque o e-mail caiu) seria pior.
+   */
+  private async avisaPorEmail(
+    inviter: SessionScope,
+    convidado: { name: string; email: string },
+    token: string,
+  ): Promise<void> {
+    const [quemConvidou, conta] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: inviter.userId }, select: { name: true } }),
+      this.prisma.account.findUnique({
+        where: { id: inviter.accountId },
+        select: { name: true },
+      }),
+    ]);
+
+    const base = this.config.get('APP_URL', { infer: true });
+
+    await this.mail.enviarConvite({
+      to: convidado.email,
+      nome: convidado.name,
+      convidadoPor: quemConvidou?.name ?? 'A equipe',
+      conta: conta?.name ?? 'Normatiza',
+      link: `${base}/accept-invite?token=${encodeURIComponent(token)}`,
+    });
   }
 
   async revoke(inviter: SessionScope, invitationId: string): Promise<void> {

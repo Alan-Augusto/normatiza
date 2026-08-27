@@ -73,6 +73,41 @@ export class EnvironmentVariables {
   @IsIn(['true', 'false'])
   COOKIE_CROSS_SITE: string = 'false';
 
+  // ── E-mail ──────────────────────────────────────────────────────────────────
+
+  /**
+   * `console` imprime o e-mail no log, com o link, e **não envia nada**. É o
+   * padrão porque o elenco de testes e o seed usam endereços de domínios que não
+   * existem: disparar para eles produz *hard bounces*, e reputação de remetente
+   * queimada não se conserta com deploy.
+   */
+  @IsOptional()
+  @IsIn(['console', 'resend'])
+  MAIL_TRANSPORT: string = 'console';
+
+  @IsOptional()
+  @IsString()
+  RESEND_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  MAIL_FROM: string = 'Normatiza <onboarding@resend.dev>';
+
+  /**
+   * Endereços que podem receber de verdade fora de produção, separados por
+   * vírgula. **Sem esta lista, fora de produção, nada é enviado** — o padrão
+   * seguro é o silêncio: "não enviei" se conserta com uma variável, "enviei para
+   * o cliente errado" não se conserta.
+   */
+  @IsOptional()
+  @IsString()
+  MAIL_ALLOWLIST?: string;
+
+  /** Raiz do painel web, usada para montar os links dos e-mails. */
+  @IsOptional()
+  @IsString()
+  APP_URL: string = 'http://localhost:8080';
+
   @IsOptional()
   @IsInt()
   PORT: number = 3000;
@@ -118,6 +153,25 @@ export function validate(raw: Record<string, unknown>): EnvironmentVariables {
           'dedicada no Neon.',
       );
     }
+  }
+
+  if (config.MAIL_TRANSPORT === 'resend' && !config.RESEND_API_KEY) {
+    throw new Error(
+      'MAIL_TRANSPORT=resend exige RESEND_API_KEY. Sem a chave, nada seria enviado ' +
+        'e a falha só apareceria quando alguém reclamasse de não receber o convite.',
+    );
+  }
+
+  if (
+    config.MAIL_TRANSPORT === 'resend' &&
+    config.NODE_ENV !== Environment.Production &&
+    !config.MAIL_ALLOWLIST
+  ) {
+    throw new Error(
+      'MAIL_TRANSPORT=resend fora de produção exige MAIL_ALLOWLIST. O seed e o ' +
+        'elenco de testes usam endereços de domínios inexistentes, e enviar para ' +
+        'eles queima a reputação do domínio remetente.',
+    );
   }
 
   return config;

@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Account, Membership, Prisma, User as UserRow } from '@prisma/client';
 import type {
   Account as AccountContract,
@@ -17,6 +18,8 @@ import { PasswordService } from './password.service';
 import { SessionContext, TokenService } from './token.service';
 import { AuditAction, AuditService } from '../audit/audit.service';
 import { SessionScope } from '../authorization/permission.service';
+import { EnvironmentVariables } from '../config/env.validation';
+import { MailService } from '../mail/mail.service';
 import { PlatformAdminService } from '../platform/platform-admin.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -49,6 +52,8 @@ export class AuthService {
     private readonly tokens: TokenService,
     private readonly audit: AuditService,
     private readonly platformAdmins: PlatformAdminService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService<EnvironmentVariables, true>,
   ) {}
 
   /**
@@ -251,7 +256,13 @@ export class AuthService {
         actorUserId: user.id,
       });
 
-      // TODO(feature de notificações): enviar o e-mail com o link do token.
+      // Um e-mail por conta em que a pessoa existe. O corpo não diz de qual
+      // consultoria se trata — o mesmo motivo da resposta genérica abaixo.
+      await this.mail.enviarRecuperacaoDeSenha({
+        to: user.email,
+        nome: user.name,
+        link: `${this.config.get('APP_URL', { infer: true })}/reset-password?token=${encodeURIComponent(token)}`,
+      });
     }
 
     return {
