@@ -5,6 +5,11 @@ import { AuthModule } from '../auth/auth.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
 import { MemberPolicyService } from './member-policy.service';
 import { ProfileService } from './profile.service';
+import {
+  CompanyMembersController,
+  MembershipsController,
+  UsersController,
+} from './team.controller';
 import { TeamService } from './team.service';
 import { UserLifecycleService } from './user-lifecycle.service';
 
@@ -17,6 +22,7 @@ import { UserLifecycleService } from './user-lifecycle.service';
  */
 @Module({
   imports: [AuthModule, AuthorizationModule, AuditModule],
+  controllers: [UsersController, CompanyMembersController, MembershipsController],
   providers: [MemberPolicyService, TeamService, UserLifecycleService, ProfileService],
   exports: [MemberPolicyService, TeamService, UserLifecycleService, ProfileService],
 })

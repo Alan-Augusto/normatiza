@@ -1,6 +1,6 @@
 # Plano — Gestão de Equipe
 
-> **Status:** Fases 0–2 concluídas (Fase 2 entrega os testes **vermelhos**) · **Criado em:** 2026-08-26
+> **Status:** Fases 0–3 concluídas — backend completo e verde · **Criado em:** 2026-08-26
 > **Regras de negócio:** [01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md) · [03 — Navegação §3.3 e §4.5](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §1](../produto/04_modelo_de_dados.md)
 > **Arquitetura existente:** [Autenticação e Autorização](../backend/autenticacao.md)
 
@@ -32,11 +32,11 @@ Escopo desta feature:
 | :--- | :--- |
 | `POST /invitations` | Existe, com os dois tetos validados e trilha de auditoria. |
 | `POST /invitations/accept` · `/:id/resend` · `DELETE /:id` | Existem, com teste. |
-| Listar usuários da conta | **Não existe** — nenhum endpoint. |
-| Listar quem tem acesso a uma empresa | **Não existe.** |
-| Trocar papel / escopo | **Não existe.** |
-| Desligar usuário | **Não existe.** Os campos existem no schema (`disabledAt`, `succeededByUserId`); o fluxo, não. |
-| Envio de e-mail | **Não existe.** O convite gera o token e ninguém o recebe. |
+| Listar usuários da conta | `GET /users`, com filtros de papel, empresa e status. |
+| Listar quem tem acesso a uma empresa | `GET /companies/:companyId/members`. |
+| Trocar papel / escopo | `PATCH /memberships/:id` · `DELETE /memberships/:id`. |
+| Desligar usuário | `POST /users/:id/disable`, com `disable-preview` para a sucessão. |
+| Envio de e-mail | Existe, opt-in explícito, ligado a convite e recuperação de senha. |
 | Tela `/app/team` | **Não existe** a rota. |
 | Tela `/app/companies/:id/team` | **Não existe** a rota. |
 | `/app/profile` | Rota existe, componente é placeholder. |
@@ -62,6 +62,7 @@ Escopo desta feature:
 | D4 | Sucessor só quando a saída quebra uma invariante | Tirar o último Gestor da BRF **exige** sucessor; tirar um Executor entre cinco, não. Pedir sempre viraria burocracia em 90% dos casos, e burocracia inútil é o que faz gente contornar o fluxo. |
 | D5 | Desliga-se quem não se convidou | A alçada é **papel e escopo**, nunca a árvore de convites. Sem isto, um Executor convidado por alguém que já saiu ficaria ativo e órfão, sem ninguém com poder de encerrá-lo. [01 §5](../produto/01_papeis_e_permissoes.md) fecha as duas alçadas: remover da empresa é de "quem administra aquela empresa"; desligar da conta é "só o lado consultoria". |
 | D16 | Ninguém muda o próprio papel | Nem para menos. `CAN_INVITE` impede subir acima do próprio teto, mas não impede um Gestor de se dar Engenheiro do Cliente por conta própria — e alçada que a pessoa se concede sozinha deixa de ser alçada. Mexer no próprio vínculo é pedido a quem está acima. |
+| D18 | Sucessor herda do **mesmo lado**, e a remoção não cria empresa órfã | Duas regras que apareceram ao implementar. (a) O sucessor de um Gestor tem de já ter papel do lado cliente naquela empresa: oferecer a Carla, que é da consultoria, apagaria a fronteira entre quem produz a análise e quem responde pela empresa. (b) **Remover da empresa** recusa tirar a última pessoa com papel de escopo-empresa — sem isso, a porta dos fundos produziria exatamente o que D4 proíbe pela porta da frente. A recusa aponta o caminho certo (desligar com sucessão) em vez de só barrar. |
 | D17 | Suceder **não** concede empresa nova | O sucessor precisa já ter vínculo ativo com a empresa em questão: a sucessão adiciona o papel que faltava, nunca o acesso à empresa. Conceder empresa como efeito colateral de um desligamento seria ampliar escopo sem ninguém ter convidado — e escondido dentro de outro ato. Quem não tem candidato elegível resolve convidando antes, que é o caminho visível. |
 | D6 | **Não existe *delete*** | Desligar é `disabledAt` + sucessão. Apagar a pessoa apagaria a autoria das evidências que ela entregou — e evidência é prova. |
 | D7 | E-mail é imutável | Nome e telefone o próprio dono edita; papel e escopo, quem tem alçada. **Ninguém edita o e-mail de outra pessoa**: mudar o e-mail alheio é, na prática, assumir a conta dela — o link de redefinição passa a chegar na caixa nova. Troca de e-mail, se um dia existir, é fluxo com confirmação nos dois endereços. |
@@ -207,7 +208,7 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 - [x] **2.6** Desligar quem não se convidou funciona (D5); desligar o dono da conta é recusado (§4).
 - [x] **2.7** Perfil: o dono edita nome e telefone; **ninguém edita e-mail** (D7); ninguém edita o perfil de outro; trocar a senha exige a senha atual.
 - [x] **2.9** `actions` e *preview* (D13/D14) concordam com a mutação: o que vier `false` na listagem tem de ser recusado pelo endpoint correspondente, e o que o *preview* disser exigir sucessor tem de falhar sem ele. Um botão oferecido e recusado é o mesmo defeito que um botão escondido sem motivo.
-- [ ] **2.8** E2E **de transporte** dos endpoints novos — guardas, códigos HTTP, os dois transportes. Fica para a Fase 3, quando os controladores existirem; as regras de negócio já estão cobertas em `test/team.e2e-spec.ts`, no nível de serviço.
+- [x] **2.8** E2E **de transporte** dos endpoints novos — `test/team-http.e2e-spec.ts`, entregue junto da Fase 3 porque depende dos controladores. As regras de negócio ficam em `test/team.e2e-spec.ts`, no nível de serviço.
 
 > **Estado: vermelho, como deve ser.** 20 testes de unidade (`member-policy.service.spec.ts`) e 40 e2e (`team.e2e-spec.ts`) falham contra esqueletos que só lançam. Os 99 testes que já existiam seguem verdes, e a API compila.
 >
@@ -217,14 +218,20 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 ### Fase 3 — Implementação do backend
 
-- [ ] **3.1** `GET /users` (conta, com filtros) e `GET /companies/:companyId/members`.
-- [ ] **3.2** `PATCH /memberships/:id` — papel e tipo de executor.
-- [ ] **3.3** `DELETE /memberships/:id` — remover da empresa.
-- [ ] **3.4** `POST /users/:id/disable` — com `successorUserId` opcional, exigido só quando a invariante manda.
-- [ ] **3.5** `PATCH /users/me` — perfil próprio; `POST /users/me/password` — troca da própria senha.
-- [ ] **3.6** `GET /invitations` — pendentes, para a coluna de status.
-- [ ] **3.7** Auditoria em todas as mutações acima.
-- [ ] **3.8** `GET /users/:id/disable-preview` (D14) e o cálculo de `actions` por linha (D13) — a mesma função de alçada serve às duas projeções e à validação da mutação, para não haver três respostas para a mesma pergunta.
+- [x] **3.1** `GET /users` (conta, com filtros) e `GET /companies/:companyId/members`.
+- [x] **3.2** `PATCH /memberships/:id` — papel e tipo de executor.
+- [x] **3.3** `DELETE /memberships/:id` — remover da empresa.
+- [x] **3.4** `POST /users/:id/disable` — com `successorUserId` opcional, exigido só quando a invariante manda.
+- [x] **3.5** `PATCH /users/me` — perfil próprio; `POST /users/me/password` — troca da própria senha.
+- [x] **3.6** `GET /invitations` — **dispensado**. O convite pendente já viaja dentro de `TeamMember.invitation`, que é onde a coluna de status o consome; uma segunda rota para o mesmo dado seria uma segunda verdade a manter em dia.
+- [x] **3.7** Auditoria em todas as mutações acima.
+- [x] **3.8** `GET /users/:id/disable-preview` (D14) e o cálculo de `actions` por linha (D13) — `MemberPolicyService` é a única resposta, e serve às duas projeções, ao *preview* e à validação da mutação.
+
+> **Estado: verde.** 119 testes de unidade e 141 e2e. Os 60 vermelhos da Fase 2 fecharam sem que nenhum precisasse ser afrouxado.
+>
+> **Nenhuma rota carrega guarda de papel, e é de propósito.** A alçada desta feature não é "quem entra na tela", é "o que cada um pode fazer com **cada linha**" — pergunta que o `MemberPolicyService` responde por pessoa, dentro do serviço. Uma guarda na porta daria uma segunda resposta, mais grossa, para a mesma pergunta.
+>
+> **Duas invariantes foram traduzidas para linguagem de negócio antes de o banco reclamar:** o papel de escopo-empresa em duas empresas e a remoção do último Gestor. Os dois casos chegariam como erro de constraint ou como empresa órfã — o §7 chama isso de falha de desenho.
 
 ### Fase 4 — Testes de frontend (vermelhos primeiro)
 

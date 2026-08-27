@@ -336,6 +336,19 @@ describe('Gestão de equipe (e2e)', () => {
       expect(sessões.every((s) => s.revokedAt !== null)).toBe(true);
     });
 
+    it('não deve deixar a empresa sem Gestor pela porta dos fundos (D18)', async () => {
+      // Remover da empresa não pede sucessor — mas tirar o último Gestor da BRF
+      // por aqui produziria exatamente o que D4 proíbe fazer pela porta da
+      // frente. A saída é o desligamento com sucessão, e a recusa diz isso.
+      const josué = await escopoDe(ctx.prisma, elenco.josué.id);
+      const vínculo = await vínculoDe(elenco.marcos.id, elenco.brf.id);
+
+      const recusa = team.removeFromCompany(josué, vínculo.id);
+
+      await expect(recusa).rejects.toBeInstanceOf(BadRequestException);
+      await expect(recusa).rejects.toThrow(/sucess/i);
+    });
+
     it('não deve apagar a pessoa (D6)', async () => {
       // A autoria das evidências que ela entregou tem de sobreviver a ela.
       const josué = await escopoDe(ctx.prisma, elenco.josué.id);
@@ -394,6 +407,19 @@ describe('Gestão de equipe (e2e)', () => {
       expect(candidatos).toContain('Antonio');
       expect(candidatos).not.toContain('Gestor da Seara');
       expect(candidatos).not.toContain('Marcos');
+    });
+
+    it('não deve oferecer alguém da consultoria para herdar um papel do cliente', async () => {
+      // A Carla atende a BRF, mas Gestor é cargo do cliente. Oferecê-la como
+      // sucessora do Marcos apagaria a fronteira que separa quem produz a
+      // análise de quem responde pela empresa.
+      const josué = await escopoDe(ctx.prisma, elenco.josué.id);
+
+      const prévia = await lifecycle.disablePreview(josué, elenco.marcos.id);
+      const candidatos = prévia.eligibleSuccessors.map((p) => p.name);
+
+      expect(candidatos).not.toContain('Carla');
+      expect(candidatos).not.toContain('Josué');
     });
 
     it('não deve oferecer quem já é Gestor de outra empresa', async () => {
