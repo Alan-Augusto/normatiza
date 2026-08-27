@@ -39,6 +39,8 @@ export function vínculo(
 export function sessão(
   memberships: MembershipWithCompany[] = [vínculo(BRF.id, ['MANAGER'])],
   isPlatformAdmin = false,
+  /** Titular da conta — `Account.ownerUserId` apontando para a própria pessoa. */
+  éDono = false,
 ): SessionUser {
   return {
     isPlatformAdmin,
@@ -54,6 +56,7 @@ export function sessão(
       name: 'Normatiza',
       document: '11.111.111/0001-11',
       status: 'ACTIVE',
+      ownerUserId: éDono ? 'u-1' : 'outra-pessoa',
     },
     memberships,
   };

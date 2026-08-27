@@ -1,6 +1,6 @@
 # Plano — Gestão de Equipe
 
-> **Status:** não iniciado · **Criado em:** 2026-08-26
+> **Status:** Fase 0 concluída · **Criado em:** 2026-08-26
 > **Regras de negócio:** [01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md) · [03 — Navegação §3.3 e §4.5](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §1](../produto/04_modelo_de_dados.md)
 > **Arquitetura existente:** [Autenticação e Autorização](../backend/autenticacao.md)
 
@@ -70,6 +70,13 @@ Escopo desta feature:
 | :-- | :--- | :--- |
 | D8 | São duas ações diferentes, em duas telas diferentes | **Remover da empresa** desativa *aquele* vínculo (`Membership.isActive = false`) e vive na Equipe da Empresa. **Desligar da conta** marca `User.disabledAt`, encerra as sessões e derruba todos os vínculos — e vive na Equipe da consultoria. A Carla sair da carteira da BRF não é a Carla sair da Normatiza. |
 
+### Executor terceiro e titular da conta
+
+| # | Decisão | Definição |
+| :-- | :--- | :--- |
+| D11 | Executor terceiro sem fornecedor | O convite de Executor pergunta apenas **interno × terceiro**; **não** pergunta de qual empresa prestadora. `Membership.supplierId` continua existindo e sem uso. Fornecedor pertence à feature de custos — é ele que alimenta a Tabela de Preços ([03 §4.6](../produto/03_navegacao_e_telas.md)) —, e fazer meio cadastro aqui significaria refazê-lo lá. |
+| D12 | O titular da conta não é desligável | **Por ninguém** — nem por outro Engenheiro Responsável, nem pelo Admin do Sistema. Não é alçada insuficiente: desligar o titular deixaria a consultoria sem dono, e sem dono não há quem convide, administre ou responda por ela. Trocar o titular é **transferência de titularidade**, caso particular com fluxo próprio, fora desta feature. Regra escrita em [01 §5](../produto/01_papeis_e_permissoes.md). |
+
 ### Infraestrutura
 
 | # | Decisão | Definição |
@@ -81,10 +88,9 @@ Escopo desta feature:
 
 ## 4. Decisões pendentes
 
-| Pendência | Por que importa | Encaminhamento |
-| :--- | :--- | :--- |
-| **Executor terceiro sem `Supplier`** | `Membership.supplierId` existe como texto solto. O formulário de convite ([03 §3.3](../produto/03_navegacao_e_telas.md)) prevê "vincular à empresa prestadora", e não há a quem vincular. | Ou o campo fica oculto nesta feature, ou `Supplier` entra com modelagem mínima. **Decidir antes da Fase 1.** |
-| **Transferência de propriedade da conta** | `Account.ownerUserId` aponta para o Engenheiro Responsável. Desligá-lo exige transferir a conta, e isso é mais que sucessão de escopo. | Bloquear o desligamento do dono nesta feature, com mensagem clara, e tratar a transferência à parte. |
+Nenhuma. As duas que bloqueavam a Fase 1 foram resolvidas em D11 e D12, e a regra de negócio de D12 está escrita em [01 §5](../produto/01_papeis_e_permissoes.md).
+
+> Se surgir uma decisão de negócio durante a implementação, ela **não se resolve no código**: escreva em `docs/produto` primeiro.
 
 ---
 
@@ -148,7 +154,7 @@ O endpoint já existe. Tabela: Nome · E-mail · Conta de origem · Quem concede
 
 **Desligar** — o passo de sucessão só aparece quando a saída quebra algo (D4):
 - último Gestor de uma empresa ativa → **exige** sucessor;
-- Engenheiro Responsável dono da conta → **bloqueado** nesta feature (§4);
+- **titular da conta → a ação não existe** (D12). Não é botão desabilitado com aviso: é ação que a tela não oferece, porque não há caminho para ela;
 - demais casos → confirmação simples.
 
 O que o sucessor herda e o que acontece com o que estava no nome de quem saiu precisa estar escrito na tela, não implícito.
@@ -172,7 +178,7 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 ### Fase 1 — Contratos e modelagem
 
-- [ ] **1.1** Resolver as duas pendências do §4 antes de escrever código.
+- [ ] **1.1** Confirmar que D11 e D12 não exigem migration — a expectativa é que não: `supplierId` já existe e fica sem uso, e `Account.ownerUserId` já identifica o titular.
 - [ ] **1.2** Contratos em `packages/shared`: `TeamMember`, `CompanyMember`, `UpdateMembershipRequest`, `DisableUserRequest`, `UpdateProfileRequest`. **Nenhuma interface de API no front.**
 - [ ] **1.3** Migration só se as pendências exigirem (`Supplier`). O ciclo de vida já cabe no schema atual.
 - [ ] **1.4** Novas ações de auditoria: `membership.role_changed`, `membership.removed`, `user.disabled`, `user.succeeded`.
@@ -230,6 +236,6 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 - **A invariante do índice parcial vai aparecer para o usuário.** Papel de escopo-empresa em um vínculo ativo só é garantido pelo Postgres. Se a tela não antecipar, o usuário vê erro de constraint. É o principal ponto de atrito de UX desta feature.
 - **Sucessão é regra de negócio pouco exercitada.** "Não se remove o último Gestor sem sucessor" está escrito em [01 §5](../produto/01_papeis_e_permissoes.md) e nunca rodou. Provável que a implementação levante casos que o documento não previu — eles voltam para `docs/produto`, não se resolvem no código.
-- **`Supplier` inexistente pode contaminar o convite de terceiro.** Sem decidir §4, o formulário fica com um campo que não vincula a nada.
+- ~~**`Supplier` inexistente pode contaminar o convite de terceiro**~~ — resolvido em D11: o campo não entra nesta feature.
 - **E-mail é dependência externa nova.** Primeira do projeto. O modo de desenvolvimento sem chave (0.3) existe para que o time não fique refém dela.
 - **Desligamento toca sessão ativa.** Precisa revogar refresh tokens junto, ou a pessoa desligada continua trabalhando por até 30 dias. O `TokenService.revokeAllForUser` já existe — falta chamá-lo.

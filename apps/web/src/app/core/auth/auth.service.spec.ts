@@ -101,6 +101,32 @@ describe('AuthService', () => {
     });
   });
 
+  describe('titular da conta', () => {
+    async function entrar(éDono: boolean) {
+      const promessa = firstValueFrom(service.login({ email: 'x@y.com', password: 'z' }));
+      http
+        .expectOne(`${API}/auth/login`)
+        .flush(respostaDeLogin({ session: sessão(undefined, false, éDono) }));
+      await promessa;
+    }
+
+    it('deve reconhecer quem é o titular da conta', async () => {
+      await entrar(true);
+      expect(service.isAccountOwner()).toBe(true);
+    });
+
+    it('não deve reconhecer quem apenas trabalha na conta', async () => {
+      // A pergunta é "quem responde pela conta", não "quem tem papel graúdo".
+      // Faturamento é do titular.
+      await entrar(false);
+      expect(service.isAccountOwner()).toBe(false);
+    });
+
+    it('não deve reconhecer ninguém antes de alguém entrar', () => {
+      expect(service.isAccountOwner()).toBe(false);
+    });
+  });
+
   describe('o token vive só na memória', () => {
     it('não deve gravar o access token em storage nenhum', async () => {
       // Token em localStorage é token legível por qualquer script que entre na

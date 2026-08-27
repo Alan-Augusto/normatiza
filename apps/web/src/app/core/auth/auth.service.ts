@@ -47,6 +47,17 @@ export class AuthService {
    */
   readonly isPlatformAdmin = computed(() => this._session()?.isPlatformAdmin === true);
 
+  /**
+   * Titular da conta — quem responde por ela, e por isso quem cuida de plano e
+   * faturamento. Não é o mesmo que "tem o papel mais graúdo": hoje o titular é
+   * sempre o Engenheiro Responsável, mas perguntar pelo papel amarraria a regra
+   * a essa coincidência.
+   */
+  readonly isAccountOwner = computed(() => {
+    const sessão = this._session();
+    return !!sessão && sessão.account.ownerUserId === sessão.user.id;
+  });
+
   token(): string | null {
     return this.accessToken;
   }

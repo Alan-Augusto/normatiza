@@ -24,15 +24,27 @@ export const CONTEXTO_2: readonly Role[] = ['MANAGER', 'CLIENT_ENGINEER', 'DIREC
 export const VÊ_A_EMPRESA: readonly Role[] = [...CONTEXTO_1, ...CONTEXTO_2];
 
 export function rotaDeEntrada(session: SessionUser): string {
-  const ativos = session.memberships.filter((vínculo) => vínculo.isActive);
-  const tem = (papéis: readonly Role[]) =>
-    ativos.filter((vínculo) => vínculo.roles.some((papel) => papéis.includes(papel)));
-
   // O Contexto 0 não é papel de vínculo: é a dimensão de plataforma, sobreposta
   // ao login normal. Quem é as duas coisas — dono da plataforma e Engenheiro
   // Responsável da própria consultoria — entra pelo backoffice e transita para
   // a consultoria pelo menu, sem trocar de login.
   if (session.isPlatformAdmin) return '/admin';
+
+  return rotaDaConsultoria(session);
+}
+
+/**
+ * A porta de entrada **do lado da aplicação**, ignorando a dimensão de
+ * plataforma. É o topo do contexto de quem está dentro de `/app`.
+ *
+ * Existe separada porque o admin da plataforma precisa de um destino em `/app`
+ * quando volta do backoffice — e `rotaDeEntrada` sempre o mandaria de volta
+ * para `/admin`.
+ */
+export function rotaDaConsultoria(session: SessionUser): string {
+  const ativos = session.memberships.filter((vínculo) => vínculo.isActive);
+  const tem = (papéis: readonly Role[]) =>
+    ativos.filter((vínculo) => vínculo.roles.some((papel) => papéis.includes(papel)));
 
   if (tem(CONTEXTO_1).length > 0) return '/app/dashboard';
 

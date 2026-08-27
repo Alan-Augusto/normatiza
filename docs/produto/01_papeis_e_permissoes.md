@@ -206,6 +206,21 @@ Isso resolve o cliente pequeno sem inventar exceção no fluxo: a etapa de aprov
 
 Nada fica órfão. O fluxo dessa tela está em [03 — Navegação e Telas](./03_navegacao_e_telas.md).
 
+> **Sucessor só quando a saída quebra alguma coisa.** Tirar o último Gestor de uma empresa ativa **exige** sucessor; tirar um Executor entre cinco, não. Exigir sempre viraria burocracia na maioria dos casos — e burocracia inútil é o que faz gente contornar o fluxo em vez de usá-lo.
+
+**O titular da conta não é desligável.** O dono da conta — o Engenheiro Responsável que a titulariza — **não pode ser desligado por ninguém**, nem por outro Engenheiro Responsável, nem pelo Admin do Sistema. Não é uma questão de alçada: desligar o titular deixaria a consultoria sem dono, e sem dono não há quem convide, administre ou responda por ela.
+
+Trocar quem é o titular é **caso particular**, não desligamento: é transferência de titularidade, com fluxo próprio, e só depois de transferida a pessoa anterior pode ser desligada como qualquer outra.
+
+**Desligar da empresa ≠ desligar da conta.** São dois atos distintos, com alçadas distintas:
+
+| Ato | O que faz | Quem pode |
+| :--- | :--- | :--- |
+| **Remover da empresa** | Encerra o vínculo com *aquela* empresa. A pessoa continua no sistema. | Quem administra aquela empresa |
+| **Desligar da conta** | Encerra o acesso ao sistema e derruba todos os vínculos e sessões. | Só o lado consultoria |
+
+O Gestor da BRF pode tirar alguém da BRF; ele não tem alçada para apagar essa pessoa da consultoria que a atende.
+
 ---
 
 ## 6. Autorização bidimensional

@@ -13,6 +13,7 @@ import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { ROLE_LABEL } from '@normatiza/shared';
 import { AuthService } from '@core/auth/auth.service';
+import { rotaDaConsultoria } from '@core/auth/entry-route';
 
 @Component({
   selector: 'app-sidebar',
@@ -45,10 +46,63 @@ export class SidebarComponent {
     { initialValue: this.router.url }
   );
 
+  /**
+   * O topo do contexto em que a pessoa está — o destino do ícone de início.
+   *
+   * Dentro de `/app` **não pode ser `/app` fixo**: essa rota redireciona para
+   * `/app/dashboard`, guardado pelo Contexto 1, e o lado cliente cairia no laço
+   * `/app → dashboard → recusa → /app`, que trava a aba. `rotaDaConsultoria`
+   * devolve o topo real de cada um.
+   */
   protected readonly baseRoute = computed<string>(() => {
-    const url = this.currentUrl();
-    if (url.startsWith('/admin')) return '/admin';
-    return '/app';
+    if (this.currentUrl().startsWith('/admin')) return '/admin';
+
+    const sessão = this.auth.session();
+    return sessão ? rotaDaConsultoria(sessão) : '/app';
+  });
+
+  /**
+   * A travessia entre o backoffice e a consultoria, para quem é as duas coisas.
+   *
+   * Fica vazio para quem não é admin da plataforma — e também para o admin sem
+   * vínculo ativo nenhum quando ele já está no `/admin`: oferecer "voltar para a
+   * consultoria" a quem não tem consultoria é oferecer um caminho que só
+   * devolveria a pessoa para onde ela já está.
+   */
+  private readonly blocoDaPlataforma = computed<MenuItem[]>(() => {
+    const sessão = this.auth.session();
+    if (!sessão?.isPlatformAdmin) return [];
+
+    if (this.baseRoute() !== '/admin') {
+      return [
+        {
+          label: 'Plataforma',
+          items: [
+            {
+              label: 'Acessar Painel Admin',
+              icon: 'pi pi-shield',
+              command: () => this.router.navigate(['/admin']),
+            },
+          ],
+        },
+      ];
+    }
+
+    const temVínculoAtivo = sessão.memberships.some((v) => v.isActive);
+    if (!temVínculoAtivo) return [];
+
+    return [
+      {
+        label: 'Plataforma',
+        items: [
+          {
+            label: 'Voltar para a Consultoria',
+            icon: 'pi pi-arrow-left',
+            command: () => this.router.navigateByUrl(rotaDaConsultoria(sessão)),
+          },
+        ],
+      },
+    ];
   });
 
   // Menu e migalhas: MenuContextService
@@ -77,6 +131,17 @@ export class SidebarComponent {
    */
   protected readonly userMenuItems = computed<MenuItem[]>(() => [
     {
+      // A porta para o contexto de Configurações. As telas em si vivem lá — aqui
+      // ficam só ações rápidas, que se resolvem sem sair de onde a pessoa está.
+      items: [
+        {
+          label: 'Configurações',
+          icon: 'pi pi-cog',
+          command: () => this.router.navigate(['/app/profile'])
+        }
+      ]
+    },
+    {
       label: 'Aparência',
       items: [
         { label: 'Tema Claro', icon: 'pi pi-sun', command: () => this.themeService.setDarkMode(false) },
@@ -84,36 +149,7 @@ export class SidebarComponent {
         { label: 'Sistema', icon: 'pi pi-desktop', command: () => this.themeService.setSystemTheme() }
       ]
     },
-    {
-      label: 'Conta',
-      items: [
-        { label: 'Meu Perfil', icon: 'pi pi-user', command: () => this.router.navigate(['/app/profile']) },
-        { label: 'Plano / Créditos', icon: 'pi pi-star', command: () => this.router.navigate(['/app/billing']) }
-      ]
-    },
-    ...(this.auth.isPlatformAdmin()
-      ? [
-          {
-            label: 'Plataforma',
-            items:
-              this.baseRoute() === '/admin'
-                ? [
-                    {
-                      label: 'Voltar para a Consultoria',
-                      icon: 'pi pi-arrow-left',
-                      command: () => this.router.navigate(['/app'])
-                    }
-                  ]
-                : [
-                    {
-                      label: 'Acessar Painel Admin',
-                      icon: 'pi pi-shield',
-                      command: () => this.router.navigate(['/admin'])
-                    }
-                  ]
-          }
-        ]
-      : []),
+    ...this.blocoDaPlataforma(),
     {
       separator: true
     },

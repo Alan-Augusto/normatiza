@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from '../auth/auth.service';
+import { rotaDeEntrada } from '../auth/entry-route';
 
 /**
  * O Contexto 0 é o backoffice da plataforma.
@@ -18,5 +19,9 @@ export const adminGuard: CanActivateFn = (_route, state) => {
     return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
   }
 
-  return auth.isPlatformAdmin() || router.createUrlTree(['/app']);
+  if (auth.isPlatformAdmin()) return true;
+
+  // Pelo mesmo motivo do `roleGuard`: `/app` fixo joga o lado cliente num laço
+  // de redirecionamento que trava a aba.
+  return router.parseUrl(rotaDeEntrada(auth.session()!));
 };

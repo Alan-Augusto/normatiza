@@ -13,7 +13,9 @@ import { firstValueFrom } from 'rxjs';
 
 import { API_BASE_URL } from '../auth/api.config';
 import { AuthService } from '../auth/auth.service';
+import { CONTEXTO_1 } from '../auth/entry-route';
 import { BRF, SEARA, respostaDeLogin, sessão, vínculo } from '../auth/testing/sessao';
+import { accountOwnerGuard } from './account-owner.guard';
 import { adminGuard } from './admin.guard';
 import { authGuard } from './auth.guard';
 import { roleGuard } from './role.guard';
@@ -103,8 +105,65 @@ describe('guardas de rota', () => {
       expect(rodar(adminGuard, '/admin/accounts')).not.toBe(true);
     });
 
+    it('não deve devolver um destino que outra guarda recusaria', async () => {
+      // O mesmo laço do `roleGuard`: barrar um Gestor no `/admin` e mandá-lo
+      // para `/app` o joga no ciclo do Contexto 1.
+      await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+
+      const destino = rodar(adminGuard, '/admin/accounts');
+      const url = router.serializeUrl(destino as UrlTree);
+
+      expect(url).not.toBe('/app');
+      expect(url).toBe(`/app/companies/${BRF.id}/dashboard`);
+    });
+
     it('deve barrar o anônimo', () => {
       expect(rodar(adminGuard, '/admin/accounts')).not.toBe(true);
+    });
+  });
+
+  describe('accountOwnerGuard', () => {
+    async function entrarComoDono(éDono: boolean) {
+      const promessa = firstValueFrom(auth.login({ email: 'x@y.com', password: 'z' }));
+      http
+        .expectOne(`${API}/auth/login`)
+        .flush(
+          respostaDeLogin({
+            session: sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])], false, éDono),
+          }),
+        );
+      await promessa;
+    }
+
+    it('deve deixar passar o titular da conta', async () => {
+      await entrarComoDono(true);
+      expect(rodar(accountOwnerGuard, '/app/billing')).toBe(true);
+    });
+
+    it('deve barrar quem trabalha na conta mas não a titulariza', async () => {
+      // Faturamento é de quem responde pela conta. Ter papel graúdo não é o
+      // mesmo que pagar a fatura.
+      await entrarComoDono(false);
+      expect(rodar(accountOwnerGuard, '/app/billing')).not.toBe(true);
+    });
+
+    it('deve barrar o lado cliente', async () => {
+      await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+      expect(rodar(accountOwnerGuard, '/app/billing')).not.toBe(true);
+    });
+
+    it('deve mandar o recusado para a porta de entrada dele, e não para /app', async () => {
+      await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+
+      const destino = rodar(accountOwnerGuard, '/app/billing');
+      expect(router.serializeUrl(destino as UrlTree)).toBe(
+        `/app/companies/${BRF.id}/dashboard`,
+      );
+    });
+
+    it('deve mandar o anônimo para o login', () => {
+      const destino = rodar(accountOwnerGuard, '/app/billing');
+      expect(router.serializeUrl(destino as UrlTree)).toContain('/login');
     });
   });
 
@@ -127,6 +186,44 @@ describe('guardas de rota', () => {
       expect(rodar(roleGuard(['MANAGER']), '/app/companies/y', { companyId: SEARA.id })).not.toBe(
         true,
       );
+    });
+
+    /**
+     * O destino da recusa não pode ser uma rota que a mesma guarda recusaria.
+     *
+     * `/app` redireciona para `/app/dashboard`, que é guardado pelo Contexto 1.
+     * Mandar para lá quem acabou de ser recusado pelo Contexto 1 fecha um ciclo
+     * — `/app` → `dashboard` → recusa → `/app` — e o roteador não tem freio
+     * para isso: o laço é síncrono e trava a aba do navegador.
+     */
+    it('não deve devolver um destino que ela mesma recusaria', async () => {
+      await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+
+      const destino = rodar(roleGuard(CONTEXTO_1), '/app/dashboard');
+      const url = router.serializeUrl(destino as UrlTree);
+
+      expect(url).not.toBe('/app');
+      expect(url).not.toBe('/app/dashboard');
+    });
+
+    it('deve mandar o recusado para a porta de entrada dele', async () => {
+      await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+
+      const destino = rodar(roleGuard(CONTEXTO_1), '/app/dashboard');
+
+      expect(router.serializeUrl(destino as UrlTree)).toBe(
+        `/app/companies/${BRF.id}/dashboard`,
+      );
+    });
+
+    it('deve mandar para o perfil quem não tem porta de entrada nenhuma', async () => {
+      // Sem vínculo ativo não há dashboard nem empresa para onde ir, e `/app`
+      // seria o laço de novo. O perfil não é guardado por papel.
+      await entrarComo([]);
+
+      const destino = rodar(roleGuard(CONTEXTO_1), '/app/dashboard');
+
+      expect(router.serializeUrl(destino as UrlTree)).toBe('/app/profile');
     });
 
     it('deve mandar o anônimo para o login, e não para uma tela de acesso negado', async () => {

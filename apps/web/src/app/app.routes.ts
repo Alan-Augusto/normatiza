@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { accountOwnerGuard } from './core/guards/account-owner.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { CONTEXTO_1, VÊ_A_EMPRESA } from './core/auth/entry-route';
@@ -180,7 +181,10 @@ export const routes: Routes = [
         }
       },
 
-      // UTILITÁRIOS TRANSVERSAIS
+      // CONFIGURAÇÕES — transversais a todos os contextos, com menu próprio
+      // (menu-context.service.ts). Não pertencem ao Contexto 1: o cliente também
+      // tem perfil, e mostrá-lo dentro do menu da consultoria revelaria a ele um
+      // universo que não é dele.
       {
         path: 'profile',
         loadComponent: () => import('./features/app/profile/profile.component').then(m => m.ProfileComponent),
@@ -188,6 +192,18 @@ export const routes: Routes = [
           label: 'Meu Perfil',
           icon: 'pi pi-user',
           subtitle: 'Dados da conta, registro profissional e preferências de acesso.'
+        }
+      },
+      {
+        // Só o titular da conta. Faturamento é de quem responde pela conta, não
+        // de quem tem o papel mais graúdo dentro dela.
+        path: 'billing',
+        canActivate: [accountOwnerGuard],
+        loadComponent: () => import('./features/app/billing/billing.component').then(m => m.BillingComponent),
+        data: {
+          label: 'Plano / Créditos',
+          icon: 'pi pi-star',
+          subtitle: 'Plano contratado, créditos disponíveis e histórico de cobrança da consultoria.'
         }
       }
     ]
