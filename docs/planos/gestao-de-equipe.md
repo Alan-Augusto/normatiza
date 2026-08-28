@@ -1,6 +1,6 @@
 # Plano — Gestão de Equipe
 
-> **Status:** Fases 0–3 concluídas — backend completo e verde · **Criado em:** 2026-08-26
+> **Status:** Fases 0–4 concluídas — backend verde, frontend com 61 testes vermelhos esperando a Fase 5 · **Criado em:** 2026-08-26
 > **Regras de negócio:** [01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md) · [03 — Navegação §3.3 e §4.5](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §1](../produto/04_modelo_de_dados.md)
 > **Arquitetura existente:** [Autenticação e Autorização](../backend/autenticacao.md)
 
@@ -37,10 +37,11 @@ Escopo desta feature:
 | Trocar papel / escopo | `PATCH /memberships/:id` · `DELETE /memberships/:id`. |
 | Desligar usuário | `POST /users/:id/disable`, com `disable-preview` para a sucessão. |
 | Envio de e-mail | Existe, opt-in explícito, ligado a convite e recuperação de senha. |
-| Tela `/app/team` | **Não existe** a rota. |
-| Tela `/app/companies/:id/team` | **Não existe** a rota. |
-| `/app/profile` | Rota existe, componente é placeholder. |
-| `GET/POST/DELETE /platform/admins` | Existem; **sem tela**. |
+| Tela `/app/team` | Componente esqueleto e **23 testes vermelhos**; rota ainda não registrada. |
+| Tela `/app/companies/:id/team` | Componente esqueleto e **11 testes vermelhos**; rota ainda não registrada. |
+| `/app/profile` | Rota existe, componente é placeholder — **12 testes vermelhos** descrevem o que ele precisa ser. |
+| `GET/POST/DELETE /platform/admins` | Existem; tela com esqueleto e **5 testes vermelhos** (conceder está fora deles — ver D19). |
+| `TeamService` (web) | Esqueleto em `core/services/`, com **10 testes vermelhos** de contrato de rede. |
 | `Supplier` (executor terceiro) | Não existe. `Membership.supplierId` é `String?` solto, sem relação. |
 
 ---
@@ -99,7 +100,11 @@ Escopo desta feature:
 
 ## 4. Decisões pendentes
 
-Nenhuma. As duas que bloqueavam a Fase 1 foram resolvidas em D11 e D12, e a regra de negócio de D12 está escrita em [01 §5](../produto/01_papeis_e_permissoes.md).
+| # | Pergunta | Por que ela apareceu |
+| :-- | :--- | :--- |
+| D19 | **Como se concede acesso à plataforma?** | O §5.4 pede "conceder por e-mail". A API concede por `userId` (`POST /platform/admins`), e não existe — nem deveria existir sem ser decidido — nenhuma consulta de pessoa que **atravesse contas** no Contexto 0: ela seria um oráculo capaz de responder "quem trabalha na consultoria tal". Ou o Contexto 0 ganha uma busca própria, deliberada e auditada, ou a concessão passa a aceitar e-mail e resolve no servidor, sem devolver nada quando não achar. Enquanto não se decide, a Fase 4 testou listar e revogar, e **não** testou conceder — travar no teste um formulário cuja forma ainda não foi escolhida é decidir no código. A tabela do §5.4 também pede "Conta de origem", que `PlatformAdmin` não carrega; entra na mesma decisão. |
+
+As duas que bloqueavam a Fase 1 foram resolvidas em D11 e D12, e a regra de negócio de D12 está escrita em [01 §5](../produto/01_papeis_e_permissoes.md).
 
 > Se surgir uma decisão de negócio durante a implementação, ela **não se resolve no código**: escreva em `docs/produto` primeiro.
 
@@ -235,12 +240,14 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 ### Fase 4 — Testes de frontend (vermelhos primeiro)
 
-- [ ] **4.1** Equipe (Contexto 1): lista, filtros, e **a lista de papéis oferecida reflete a alçada de quem olha**.
-- [ ] **4.2** Equipe da Empresa: escopo pré-preenchido; o botão diz "Remover da empresa"; não há "desligar da conta".
-- [ ] **4.3** Troca de papel: o conflito de papel de escopo-empresa é explicado **antes** do envio.
-- [ ] **4.4** Desligamento: pede sucessor só quando é o caso; bloqueia o dono da conta.
-- [ ] **4.5** Perfil: e-mail em leitura; salvar nome e telefone.
-- [ ] **4.6** Admins da plataforma: lista, conceder, revogar.
+- [x] **4.1** Equipe (Contexto 1): lista, filtros, e **a lista de papéis oferecida reflete a alçada de quem olha**.
+- [x] **4.2** Equipe da Empresa: escopo pré-preenchido; o botão diz "Remover da empresa"; não há "desligar da conta".
+- [x] **4.3** Troca de papel: o conflito de papel de escopo-empresa é explicado **antes** do envio.
+- [x] **4.4** Desligamento: pede sucessor só quando é o caso; bloqueia o dono da conta.
+- [x] **4.5** Perfil: e-mail em leitura; salvar nome e telefone.
+- [x] **4.6** Admins da plataforma: lista e revogar. **Conceder ficou de fora** — depende de D19.
+
+> 61 testes vermelhos, em cinco arquivos. Os esqueletos existem para que os testes compilem e falhem pelo motivo certo; nenhum deles decide nada. Os `data-testid` usados são o contrato que a Fase 5 precisa honrar.
 
 ### Fase 5 — Implementação do frontend
 
@@ -249,7 +256,7 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 - [ ] **5.3** Tela Equipe da Empresa.
 - [ ] **5.4** Fluxos de troca de papel e de desligamento com sucessão.
 - [ ] **5.5** Meu Perfil.
-- [ ] **5.6** Admins da plataforma.
+- [ ] **5.6** Admins da plataforma. A concessão só entra depois de D19 resolvido.
 
 ### Fase 6 — Fechamento
 
