@@ -3,7 +3,6 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
-import { TableModule } from 'primeng/table';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { map } from 'rxjs/operators';
@@ -20,6 +19,12 @@ import {
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { mensagemDoServidor } from '../../../../../core/http/mensagem-de-erro';
 import { TeamService } from '../../../../../core/services/team.service';
+import { DataTable } from '../../../../../shared/components/data-table/data-table.component';
+import {
+  AcaoVazia,
+  CabecalhoDaTabela,
+  LinhaDaTabela,
+} from '../../../../../shared/components/data-table/data-table.directives';
 import { InviteFormComponent } from '../../../../../shared/components/team/invite-form.component';
 import {
   RoleEditorComponent,
@@ -45,7 +50,18 @@ import {
 @Component({
   selector: 'app-company-team',
   standalone: true,
-  imports: [DatePipe, Button, Dialog, Message, TableModule, InviteFormComponent, RoleEditorComponent],
+  imports: [
+    DatePipe,
+    Button,
+    Dialog,
+    Message,
+    DataTable,
+    CabecalhoDaTabela,
+    LinhaDaTabela,
+    AcaoVazia,
+    InviteFormComponent,
+    RoleEditorComponent,
+  ],
   templateUrl: './company-team.component.html',
   styleUrl: './company-team.component.css',
 })
@@ -68,7 +84,7 @@ export class CompanyTeamComponent {
   readonly editando = signal<CompanyMember | null>(null);
   readonly removendo = signal<CompanyMember | null>(null);
 
-  /** Ver a nota em `team.component.ts`: o `p-table` entrega a linha como `any`. */
+  /** Rótulo por método — o template não indexa mapa, e um papel novo quebra aqui. */
   rotuloDoPapel(papel: Role): string {
     return ROLE_LABEL[papel];
   }
@@ -85,6 +101,14 @@ export class CompanyTeamComponent {
   readonly papeisQuePossoConceder = computed<Role[]>(() =>
     invitableRoles(this.auth.rolesInCompany(this.companyId())),
   );
+
+  /**
+   * O Diretor é o caso desta tela: `CAN_INVITE.DIRECTOR` é vazio, e ele
+   * continua vendo quem tem acesso à empresa dele — numa ferramenta de
+   * conformidade, essa lista é material de auditoria, não privilégio de quem
+   * administra. O que some é só o botão que não poderia dar em nada.
+   */
+  readonly podeConvidar = computed(() => this.papeisQuePossoConceder().length > 0);
 
   /**
    * Um vínculo só — o desta empresa. Os outros a pessoa até pode ter, mas esta

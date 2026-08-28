@@ -48,7 +48,9 @@
       </div>
     </div>
 
-    <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+    @if (podeConvidar()) {
+      <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+    }
   </div>
 
   @if (aviso()) {
@@ -58,8 +60,13 @@
     <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
   }
 
-  <p-table [value]="membros()" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '100%' }">
-    <ng-template pTemplate="header">
+  <app-data-table
+    [dados]="membros()"
+    [carregando]="carregando()"
+    [vazio]="tituloDoVazio()"
+    [vazioDetalhe]="detalheDoVazio()"
+  >
+    <ng-template appCabecalho>
       <tr>
         <th>Nome</th>
         <th>Papéis</th>
@@ -71,7 +78,7 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-membro>
+    <ng-template appLinha [appLinhaDe]="membros()" let-membro>
       <tr data-testid="linha" [attr.data-user]="membro.id">
         <td>
           <div class="font-medium text-surface-900 dark:text-surface-0">
@@ -186,14 +193,20 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="7" class="py-8 text-center text-muted-color">
-          {{ carregando() ? 'Carregando…' : 'Ninguém encontrado com esses filtros.' }}
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+    <!--
+      A tela vazia por falta de gente oferece o convite; a tela vazia por
+      filtro, não — ali o caminho é afrouxar o filtro, não convidar alguém.
+    -->
+    @if (podeConvidar() && !filtrando()) {
+      <ng-template appAcaoVazia>
+        <p-button
+          data-testid="convidar-vazio"
+          label="Convidar a primeira pessoa"
+          (onClick)="convidando.set(true)"
+        />
+      </ng-template>
+    }
+  </app-data-table>
 </div>
 
 <p-dialog

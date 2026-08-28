@@ -92,7 +92,69 @@ As cores de status (sucesso, erro, alerta, info) utilizam as paletas de cores pa
 
 ---
 
-## 🎨 6. Diretrizes para Uso de Ícones (PrimeIcons vs. Lucide)
+## 📋 6. Tabelas: sempre `app-data-table`
+
+Nenhuma tela monta `p-table` por conta própria. Toda lista passa por
+[`shared/components/data-table`](../../apps/web/src/app/shared/components/data-table/data-table.component.ts).
+
+O que o componente encapsula **não é a marcação** — é a decisão sobre os três
+estados que toda lista tem e que nenhuma tela lembrava de ter:
+
+| Estado | O que aparece |
+| :--- | :--- |
+| **Carregando** | Barras no lugar das linhas. O desenho já mostra que ali vai nascer uma lista, e a tela não salta quando ela chega. |
+| **Vazia** | Título, uma linha de apoio e — opcionalmente — a ação que resolve. |
+| **Com dados** | A tabela, rolando dentro da própria caixa: a página nunca rola de lado. |
+
+> Antes dele, as três telas mostravam zero linha em silêncio nos três casos.
+> "Ainda buscando", "não existe nada" e "a requisição falhou" ficavam
+> visualmente idênticos, e quem olhava não sabia se esperava, se agia, ou se o
+> sistema tinha quebrado.
+
+### Dirigido por template, nunca por configuração
+
+```html
+<app-data-table
+  [dados]="membros()"
+  [carregando]="carregando()"
+  vazio="Sua equipe ainda está vazia."
+  vazioDetalhe="Convide quem vai trabalhar com você."
+>
+  <ng-template appCabecalho>
+    <tr><th>Nome</th><th>Papéis</th></tr>
+  </ng-template>
+
+  <ng-template appLinha [appLinhaDe]="membros()" let-membro>
+    <tr><td>{{ membro.name }}</td><td>…</td></tr>
+  </ng-template>
+
+  <!-- Opcional: só aparece na tela vazia. -->
+  <ng-template appAcaoVazia>
+    <p-button label="Convidar a primeira pessoa" (onClick)="convidar()" />
+  </ng-template>
+</app-data-table>
+```
+
+**Por que não `[colunas]="[{ campo: 'name', titulo: 'Nome' }]"`:** parece mais
+limpo por duas semanas, até a primeira coluna que precisa de um badge. Aí nasce
+`cellTemplate`, depois `formatter`, depois `pipeArgs` — e no fim se reinventou a
+sintaxe de template do Angular, pior e sem verificação de tipo, porque
+`campo: 'name'` é uma string que ninguém confere.
+
+**Por que `[appLinhaDe]` repete a mesma coleção:** é dali que o compilador tira
+o tipo de `let-membro`. Sem isso ele chega como `any`, e `any` desliga a
+checagem em silêncio — foi assim que um `ROLE_LABEL[papel]` indexado por `any`
+passou a compilar sem aviso. É o mesmo recurso que o `ngFor` usa, pela mesma
+razão.
+
+O `p-table` continua embaixo, à vista. O que se encapsula é a decisão sobre ele,
+não o acesso a ele.
+
+> Os três estados estão lado a lado na vitrine em `/admin/design-system`.
+
+---
+
+## 🎨 7. Diretrizes para Uso de Ícones (PrimeIcons vs. Lucide)
 
 Para manter o design limpo, consistente e de alta performance, adotamos uma estratégia híbrida para o uso de ícones:
 

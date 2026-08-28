@@ -1,10 +1,19 @@
 <div class="space-y-4">
+  <div class="flex justify-end">
+    <p-button data-testid="conceder" label="Conceder acesso" (onClick)="abrirConcessao()" />
+  </div>
+
   @if (erro()) {
     <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
   }
 
-  <p-table [value]="admins()" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '100%' }">
-    <ng-template pTemplate="header">
+  <app-data-table
+    [dados]="admins()"
+    [carregando]="carregando()"
+    vazio="Nenhum administrador cadastrado."
+    vazioDetalhe="Um sistema sem nenhum admin só se recupera com acesso ao banco."
+  >
+    <ng-template appCabecalho>
       <tr>
         <th>Nome</th>
         <th>E-mail</th>
@@ -14,7 +23,7 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-admin>
+    <ng-template appLinha [appLinhaDe]="admins()" let-admin>
       <tr data-testid="linha" [attr.data-user]="admin.userId">
         <td class="font-medium text-surface-900 dark:text-surface-0">
           {{ admin.name }}
@@ -60,13 +69,87 @@
         </td>
       </tr>
     </ng-template>
-
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="5" class="py-8 text-center text-muted-color">
-          {{ carregando() ? 'Carregando…' : 'Nenhum administrador cadastrado.' }}
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+  </app-data-table>
 </div>
+
+<p-dialog
+  header="Conceder acesso de admin"
+  [visible]="concedendo()"
+  (visibleChange)="concedendo.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '32rem' }"
+>
+  <div class="space-y-4">
+    <div>
+      <label for="email-do-admin" class="mb-2 block text-sm font-medium">E-mail da pessoa</label>
+      <input
+        id="email-do-admin"
+        data-testid="email-do-admin"
+        pInputText
+        type="email"
+        autocomplete="off"
+        class="w-full"
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+      />
+      <!--
+        O endereço completo, e não uma busca por trecho: quem promove alguém já
+        sabe quem é, e a busca parcial seria uma varredura do cadastro inteiro.
+      -->
+      <p class="mt-1 text-xs text-muted-color">
+        O endereço exato. Esta pessoa passará a enxergar o backoffice da plataforma.
+      </p>
+    </div>
+
+    @if (erroDaConcessao()) {
+      <p-message
+        data-testid="erro-da-concessao"
+        severity="error"
+        styleClass="w-full"
+        [text]="erroDaConcessao()!"
+      />
+    }
+
+    <!--
+      O mesmo e-mail pode ser duas pessoas em duas consultorias — `User.email` é
+      único por conta, não globalmente. Quando é, quem concede escolhe: promover
+      "a primeira que aparecer" daria acesso total à pessoa errada, em silêncio.
+    -->
+    @if (candidatos().length > 0) {
+      <div data-testid="desempate" class="rounded-lg border border-surface-200 p-3 dark:border-surface-700">
+        <p class="mb-3 text-sm text-surface-700 dark:text-surface-200">
+          Esse e-mail pertence a mais de uma pessoa. Qual delas?
+        </p>
+
+        <div class="space-y-2">
+          @for (candidato of candidatos(); track candidato.userId) {
+            <button
+              data-testid="candidato"
+              [attr.data-user]="candidato.userId"
+              type="button"
+              class="flex w-full items-center justify-between rounded-md border border-surface-200 px-3 py-2 text-left text-sm hover:border-primary dark:border-surface-700"
+              [disabled]="concedendoEmAndamento()"
+              (click)="conceder(candidato.userId)"
+            >
+              <span class="font-medium text-surface-900 dark:text-surface-0">
+                {{ candidato.name }}
+              </span>
+              <span class="text-xs text-muted-color">{{ candidato.accountName }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="flex justify-end">
+        <p-button
+          data-testid="confirmar-concessao"
+          [label]="concedendoEmAndamento() ? 'Concedendo…' : 'Conceder'"
+          [disabled]="concedendoEmAndamento() || email().trim().length === 0"
+          (onClick)="conceder()"
+        />
+      </div>
+    }
+  </div>
+</p-dialog>

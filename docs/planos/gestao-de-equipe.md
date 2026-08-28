@@ -40,7 +40,7 @@ Escopo desta feature:
 | Tela `/app/team` | Existe, com rota, item de menu e 23 testes. |
 | Tela `/app/companies/:id/team` | Existe, com rota, item de menu e 11 testes. |
 | `/app/profile` | Tela real: dados, senha e os próprios vínculos. 12 testes. |
-| `/admin/admins` | Existe — listar e revogar. **Conceder depende de D19.** |
+| `/admin/admins` | Existe — listar, conceder por e-mail exato e revogar. |
 | `TeamService` (web) | Em `core/services/`, servindo as duas telas de equipe. |
 | `Supplier` (executor terceiro) | Não existe. `Membership.supplierId` é `String?` solto, sem relação. |
 
@@ -100,11 +100,16 @@ Escopo desta feature:
 
 ## 4. Decisões pendentes
 
-| # | Pergunta | Por que ela apareceu |
-| :-- | :--- | :--- |
-| D19 | **Como se concede acesso à plataforma?** | O §5.4 pede "conceder por e-mail". A API concede por `userId` (`POST /platform/admins`), e não existe — nem deveria existir sem ser decidido — nenhuma consulta de pessoa que **atravesse contas** no Contexto 0: ela seria um oráculo capaz de responder "quem trabalha na consultoria tal". Ou o Contexto 0 ganha uma busca própria, deliberada e auditada, ou a concessão passa a aceitar e-mail e resolve no servidor, sem devolver nada quando não achar. Enquanto não se decide, a Fase 4 testou listar e revogar, e **não** testou conceder — travar no teste um formulário cuja forma ainda não foi escolhida é decidir no código. A tabela do §5.4 também pede "Conta de origem", que `PlatformAdmin` não carrega; entra na mesma decisão. |
+Nenhuma. As duas que bloqueavam a Fase 1 viraram D11 e D12; **D19 e D20 foram decididas** e estão registradas abaixo.
 
-As duas que bloqueavam a Fase 1 foram resolvidas em D11 e D12, e a regra de negócio de D12 está escrita em [01 §5](../produto/01_papeis_e_permissoes.md).
+| # | Decisão | Definição |
+| :-- | :--- | :--- |
+| D19 | Concessão de admin **por e-mail exato** | `POST /platform/admins` passa a receber `{ email }` e resolve no servidor. Sem busca por trecho: não por sigilo — o Contexto 0 enxerga as contas por definição —, mas porque busca parcial é varredura do cadastro inteiro, e quem promove alguém já sabe o endereço. E-mail sem dono é recusa explícita (promover quem não tem conta seria um convite de plataforma, fluxo próprio que não existe). E-mail que alcança **duas** pessoas devolve 409 com os candidatos e a **conta** de cada uma — `User.email` é único por conta, não globalmente, a mesma ambiguidade do login (D16). Pessoa desligada é recusada: o acesso não sobrevive ao desligamento, e conceder gravaria linha inerte. Regra de negócio em [01](../produto/01_papeis_e_permissoes.md). |
+| D20 | Ver a equipe ≠ poder convidar | Duas capacidades, não uma. Vê a lista todo papel com posição na empresa — Técnico e Diretor inclusive —, já recortada pelo escopo de quem pergunta; o Executor fica de fora. O que some para quem não concede papel nenhum é **o botão**, não a tela: `CAN_INVITE` vazio abriria um formulário sem uma única opção, e oferecer o que será recusado é o mesmo gesto do botão cinza. Amarrar a visibilidade a "quem convida" tiraria da Débora — Diretora, que não convida ninguém — a lista de quem tem acesso à empresa dela, que numa ferramenta de conformidade é material de auditoria. Regra de negócio em [01](../produto/01_papeis_e_permissoes.md). |
+
+A regra de negócio de D12 está escrita em [01 §5](../produto/01_papeis_e_permissoes.md).
+
+> Ainda em aberto, mas fora do escopo desta feature: a tabela do §5.4 pede "Conta de origem" na lista de admins, e `PlatformAdmin` não carrega esse campo.
 
 > Se surgir uma decisão de negócio durante a implementação, ela **não se resolve no código**: escreva em `docs/produto` primeiro.
 
@@ -245,7 +250,7 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 - [x] **4.3** Troca de papel: o conflito de papel de escopo-empresa é explicado **antes** do envio.
 - [x] **4.4** Desligamento: pede sucessor só quando é o caso; bloqueia o dono da conta.
 - [x] **4.5** Perfil: e-mail em leitura; salvar nome e telefone.
-- [x] **4.6** Admins da plataforma: lista e revogar. **Conceder ficou de fora** — depende de D19.
+- [x] **4.6** Admins da plataforma: lista e revogar. Conceder por e-mail entrou depois, com D19 decidida.
 
 > 61 testes vermelhos, em cinco arquivos. Os esqueletos existem para que os testes compilem e falhem pelo motivo certo; nenhum deles decide nada. Os `data-testid` usados são o contrato que a Fase 5 precisa honrar.
 
@@ -256,7 +261,7 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 - [x] **5.3** Tela Equipe da Empresa.
 - [x] **5.4** Fluxos de troca de papel e de desligamento com sucessão.
 - [x] **5.5** Meu Perfil.
-- [x] **5.6** Admins da plataforma — listar e revogar. A concessão espera D19.
+- [x] **5.6** Admins da plataforma — listar e revogar. A concessão por e-mail entrou depois, com D19 decidida.
 
 > Os 61 vermelhos fecharam sem que nenhum precisasse ser afrouxado.
 >

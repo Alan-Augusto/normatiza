@@ -1,9 +1,19 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type { User } from '@prisma/client';
 
-import type { PlatformAdmin } from '@normatiza/shared';
+import type { GrantPlatformAdminRequest, PlatformAdmin } from '@normatiza/shared';
 
+import { UserSelectionRequiredException } from './user-selection-required.exception';
 import { AuditAction, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+
+/** A pessoa alcançada pelo e-mail, com a conta a que ela pertence. */
+type UsuárioAlvo = User & { account: { name: string } };
 
 /**
  * O Contexto 0 — o backoffice da plataforma.
@@ -62,12 +72,27 @@ export class PlatformAdminService {
    *
    * Se um Engenheiro Responsável pudesse conceder, o teto de papel — hoje uma
    * tabela fechada e auditável — ganharia uma aresta que leva ao topo.
+   *
+   * A entrada é o **e-mail exato**, e a resolução até a pessoa acontece aqui:
+   * um e-mail pode não achar ninguém, achar uma pessoa, ou achar duas em
+   * consultorias diferentes. Cada um desses três é uma resposta diferente, e
+   * nenhum deles é "erro genérico".
    */
-  async grant(userId: string, byUserId: string): Promise<void> {
+  async grant(pedido: GrantPlatformAdminRequest, byUserId: string): Promise<void> {
     await this.assertÉAdmin(byUserId);
 
-    const alvo = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!alvo) throw new NotFoundException();
+    const alvo = await this.resolvePessoa(pedido);
+
+    // O Contexto 0 não sobrevive ao desligamento — `isPlatformAdmin` já recusa
+    // quem está `DISABLED`. Conceder aqui gravaria uma linha que não dá acesso
+    // nenhum, e quem concedeu iria embora achando que deu.
+    if (alvo.status === 'DISABLED') {
+      throw new BadRequestException(
+        'Esta pessoa está desligada. Reative o acesso dela antes de torná-la admin.',
+      );
+    }
+
+    const userId = alvo.id;
 
     await this.prisma.platformAdmin.upsert({
       where: { userId },
@@ -106,6 +131,46 @@ export class PlatformAdminService {
       entityId: userId,
       actorUserId: byUserId,
     });
+  }
+
+  /**
+   * Do e-mail até a pessoa.
+   *
+   * `User.email` é único por conta, então a busca é `findMany`: o mesmo
+   * endereço pode ser duas pessoas em duas consultorias. Quando é, quem concede
+   * escolhe — e a segunda tentativa chega com `userId`, que precisa pertencer
+   * àquele e-mail para não virar um jeito de promover qualquer id do banco.
+   */
+  private async resolvePessoa(pedido: GrantPlatformAdminRequest): Promise<UsuárioAlvo> {
+    const email = pedido.email.trim().toLowerCase();
+
+    const candidatos = await this.prisma.user.findMany({
+      where: { email },
+      include: { account: { select: { name: true } } },
+      orderBy: { name: 'asc' },
+    });
+
+    if (candidatos.length === 0) {
+      throw new NotFoundException('Nenhum usuário com esse e-mail.');
+    }
+
+    if (pedido.userId) {
+      const escolhido = candidatos.find((c) => c.id === pedido.userId);
+      if (!escolhido) throw new NotFoundException('Nenhum usuário com esse e-mail.');
+      return escolhido;
+    }
+
+    if (candidatos.length > 1) {
+      throw new UserSelectionRequiredException(
+        candidatos.map((c) => ({
+          userId: c.id,
+          name: c.name,
+          accountName: c.account.name,
+        })),
+      );
+    }
+
+    return candidatos[0];
   }
 
   private async assertÉAdmin(userId: string): Promise<void> {

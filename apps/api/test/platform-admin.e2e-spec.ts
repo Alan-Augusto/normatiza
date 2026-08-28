@@ -1,6 +1,6 @@
 import * as request from 'supertest';
 
-import { Elenco, SENHA_PADRÃO, montarElenco } from './helpers/elenco';
+import { Elenco, SENHA_PADRÃO, montarConsultoriaRival, montarElenco } from './helpers/elenco';
 import { TestApp, createTestApp } from './helpers/test-app';
 
 /**
@@ -104,7 +104,7 @@ describe('Admin da Plataforma (e2e)', () => {
       // Ser dono da consultoria não é ser dono da plataforma.
       const token = await entrar(elenco.josué.email);
       const res = await http().post('/platform/admins').set('Authorization', `Bearer ${token}`).send({
-        userId: elenco.carla.id,
+        email: elenco.carla.email,
       });
 
       expect(res.status).toBe(404);
@@ -120,7 +120,7 @@ describe('Admin da Plataforma (e2e)', () => {
       const res = await http()
         .post('/platform/admins')
         .set('Authorization', `Bearer ${token}`)
-        .send({ userId: elenco.carla.id });
+        .send({ email: elenco.carla.email });
 
       expect(res.status).toBe(204);
       const concessão = await ctx.prisma.platformAdmin.findUnique({
@@ -139,12 +139,147 @@ describe('Admin da Plataforma (e2e)', () => {
       await http()
         .post('/platform/admins')
         .set('Authorization', `Bearer ${token}`)
-        .send({ userId: elenco.marcos.id })
+        .send({ email: elenco.marcos.email })
         .expect(204);
 
       const marcos = await entrar(elenco.marcos.email);
       const res = await http().get('/auth/me').set('Authorization', `Bearer ${marcos}`);
       expect(res.body.isPlatformAdmin).toBe(true);
+    });
+
+    it('deve dizer que não há ninguém com aquele e-mail', async () => {
+      // Aqui a recusa pode ser específica: quem pergunta é o Contexto 0, e não
+      // há inquilino nenhum a proteger dele. Um erro genérico só faria a pessoa
+      // reler um endereço que estava certo.
+      await comoAdmin(elenco.josué.id);
+      const token = await entrar(elenco.josué.email);
+
+      const res = await http()
+        .post('/platform/admins')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'ninguem@lugar-nenhum.com' });
+
+      expect(res.status).toBe(404);
+      await expect(ctx.prisma.platformAdmin.count()).resolves.toBe(1);
+    });
+
+    it('deve achar a pessoa mesmo com o e-mail em outra caixa', async () => {
+      // Copiar e colar traz maiúscula e espaço junto. Sem normalizar, quem
+      // concede lê "nenhum usuário com esse e-mail" olhando para o e-mail certo.
+      await comoAdmin(elenco.josué.id);
+      const token = await entrar(elenco.josué.email);
+
+      await http()
+        .post('/platform/admins')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: `  ${elenco.carla.email.toUpperCase()} ` })
+        .expect(204);
+
+      await expect(
+        ctx.prisma.platformAdmin.findUnique({ where: { userId: elenco.carla.id } }),
+      ).resolves.not.toBeNull();
+    });
+
+    it('não deve conceder a quem está desligado', async () => {
+      // `isPlatformAdmin` já recusa quem está `DISABLED`: a concessão gravaria
+      // uma linha inerte, e quem concedeu sairia achando que deu.
+      await comoAdmin(elenco.josué.id);
+      const token = await entrar(elenco.josué.email);
+      await ctx.prisma.user.update({
+        where: { id: elenco.carla.id },
+        data: { status: 'DISABLED', disabledAt: new Date() },
+      });
+
+      const res = await http()
+        .post('/platform/admins')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: elenco.carla.email });
+
+      expect(res.status).toBe(400);
+      await expect(
+        ctx.prisma.platformAdmin.findUnique({ where: { userId: elenco.carla.id } }),
+      ).resolves.toBeNull();
+    });
+
+    describe('quando o e-mail alcança mais de uma pessoa', () => {
+      /**
+       * O mesmo endereço em duas consultorias. Só o banco de verdade prova que
+       * isto é possível — `User.email` é único **por conta**, e um teste com
+       * Prisma dublado acreditaria em qualquer coisa que o dublê dissesse.
+       */
+      async function homônimaEmOutraConta() {
+        const { conta } = await montarConsultoriaRival(ctx.prisma);
+        return ctx.prisma.user.create({
+          data: {
+            accountId: conta.id,
+            name: 'Carla da Rival',
+            email: elenco.carla.email,
+            status: 'ACTIVE',
+            emailConfirmedAt: new Date(),
+          },
+        });
+      }
+
+      it('deve pedir a escolha em vez de promover a primeira que aparecer', async () => {
+        await comoAdmin(elenco.josué.id);
+        const token = await entrar(elenco.josué.email);
+        const rival = await homônimaEmOutraConta();
+
+        const res = await http()
+          .post('/platform/admins')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ email: elenco.carla.email });
+
+        expect(res.status).toBe(409);
+        expect(res.body.reason).toBe('USER_SELECTION_REQUIRED');
+        expect(res.body.candidates.map((c: { userId: string }) => c.userId).sort()).toEqual(
+          [elenco.carla.id, rival.id].sort(),
+        );
+        // A conta é a única coisa que distingue as duas — o nome pode ser igual.
+        expect(res.body.candidates.map((c: { accountName: string }) => c.accountName)).toContain(
+          'Consultoria Rival',
+        );
+        // E nada foi concedido enquanto a pergunta não é respondida.
+        await expect(ctx.prisma.platformAdmin.count()).resolves.toBe(1);
+      });
+
+      it('deve conceder à pessoa escolhida no desempate', async () => {
+        await comoAdmin(elenco.josué.id);
+        const token = await entrar(elenco.josué.email);
+        const rival = await homônimaEmOutraConta();
+
+        await http()
+          .post('/platform/admins')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ email: elenco.carla.email, userId: rival.id })
+          .expect(204);
+
+        await expect(
+          ctx.prisma.platformAdmin.findUnique({ where: { userId: rival.id } }),
+        ).resolves.not.toBeNull();
+        // E a homônima da outra conta continua sem acesso nenhum.
+        await expect(
+          ctx.prisma.platformAdmin.findUnique({ where: { userId: elenco.carla.id } }),
+        ).resolves.toBeNull();
+      });
+
+      it('não deve promover um id que não pertence àquele e-mail', async () => {
+        // Sem esta conferência, `userId` viraria um jeito de promover qualquer
+        // linha do banco, bastando passar junto um e-mail que exista.
+        await comoAdmin(elenco.josué.id);
+        const token = await entrar(elenco.josué.email);
+        await homônimaEmOutraConta();
+
+        const res = await http()
+          .post('/platform/admins')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ email: elenco.carla.email, userId: elenco.marcos.id });
+
+        expect(res.status).toBe(404);
+        await expect(
+          ctx.prisma.platformAdmin.findUnique({ where: { userId: elenco.marcos.id } }),
+        ).resolves.toBeNull();
+      });
     });
 
     it('deve revogar sem apagar a linha', async () => {
@@ -182,7 +317,7 @@ describe('Admin da Plataforma (e2e)', () => {
       await http()
         .post('/platform/admins')
         .set('Authorization', `Bearer ${token}`)
-        .send({ userId: elenco.carla.id })
+        .send({ email: elenco.carla.email })
         .expect(204);
       await http()
         .delete(`/platform/admins/${elenco.carla.id}`)

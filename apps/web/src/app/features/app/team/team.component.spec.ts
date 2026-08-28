@@ -83,6 +83,9 @@ describe('TeamComponent', () => {
   const comoCarla = (equipe?: TeamMember[]) =>
     abrirComo([vínculo(BRF.id, ['CONSULTANT_ENGINEER'])], equipe);
 
+  const comoTécnico = (equipe?: TeamMember[]) =>
+    abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], equipe);
+
   const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
   const el = (seletor: string) => elemento(fixture, seletor);
   const todos = (seletor: string) => elementos(fixture, seletor);
@@ -254,6 +257,24 @@ describe('TeamComponent', () => {
         (caixa) => caixa.parentElement?.textContent?.trim(),
       );
       expect(empresas).toEqual(['BRF']);
+    });
+
+    it('não deve oferecer convite a quem não concede papel nenhum', async () => {
+      // `CAN_INVITE.TECHNICIAN` é vazio: o modal abriria sem uma única opção.
+      // Oferecer a ação e recusá-la no passo seguinte é o mesmo gesto do botão
+      // cinza — quem clica acha que o sistema quebrou.
+      await comoTécnico();
+
+      expect(el('[data-testid="convidar"]')).toBeNull();
+    });
+
+    it('deve continuar mostrando a equipe a quem não pode convidar', async () => {
+      // Some o botão, não a tela. Saber quem é o Engenheiro Responsável não é
+      // privilégio de quem administra, e a lista já vem recortada pelo escopo
+      // de quem pergunta — o Técnico da BRF não enxerga ninguém da Seara.
+      await comoTécnico();
+
+      expect(todos('[data-testid="linha"]').length).toBe(EQUIPE.length);
     });
   });
 

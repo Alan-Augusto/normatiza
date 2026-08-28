@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -25,7 +25,12 @@ import { Select } from 'primeng/select';
 import { Checkbox } from 'primeng/checkbox';
 import { RadioButton } from 'primeng/radiobutton';
 import { ToggleSwitch } from 'primeng/toggleswitch';
-import { TableModule } from 'primeng/table';
+import { DataTable } from '../../../shared/components/data-table/data-table.component';
+import {
+  AcaoVazia,
+  CabecalhoDaTabela,
+  LinhaDaTabela,
+} from '../../../shared/components/data-table/data-table.directives';
 import { Dialog } from 'primeng/dialog';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Tooltip } from 'primeng/tooltip';
@@ -47,7 +52,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     Checkbox,
     RadioButton,
     ToggleSwitch,
-    TableModule,
+    DataTable,
+    CabecalhoDaTabela,
+    LinhaDaTabela,
+    AcaoVazia,
     Dialog,
     ConfirmDialog,
     Tooltip,
@@ -105,6 +113,13 @@ export class DesignSystemComponent {
     { name: 'Maria Silva', email: 'maria@brworks.com', role: 'Editor', status: 'Pendente' },
     { name: 'João Santos', email: 'joao@brworks.com', role: 'Visualizador', status: 'Inativo' }
   ];
+
+  /** A vitrine dos três estados da tabela — carregando, vazia e com dados. */
+  estadoDaTabela = signal<'dados' | 'carregando' | 'vazia'>('dados');
+
+  usuariosDaVitrine = computed(() =>
+    this.estadoDaTabela() === 'dados' ? this.usersList : [],
+  );
 
   activitiesList = [
     { title: 'Documento assinado', user: 'Alan Augusto', time: 'Há 5 minutos' },

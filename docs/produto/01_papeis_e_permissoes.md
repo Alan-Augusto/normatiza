@@ -108,6 +108,16 @@ Cada papel pertence explicitamente a um **lado** da operação. O lado não é u
 
 > **A regra de escopo mais importante do sistema:** múltiplas empresas existem **só do lado consultoria**. Todo papel do lado cliente pertence a uma única empresa. É o que garante que a BRF nunca enxergue nada da Seara.
 
+#### Ver quem tem acesso ≠ poder convidar
+
+São capacidades diferentes, e não se derivam uma da outra.
+
+**Quem vê a lista de acesso:** todo papel com posição na empresa — incluindo Técnico e Diretor, que não convidam ninguém. A lista já chega recortada pelo escopo de quem pergunta: o Técnico alocado só na BRF não enxerga ninguém da Seara. O **Executor** fica de fora, porque o escopo dele são as próprias tarefas e ele não tem posição na empresa.
+
+A razão: numa ferramenta de conformidade, "quem tem acesso aos dados desta empresa" é material de auditoria, não privilégio administrativo. A Débora — Diretora da BRF, que não convida ninguém — é provavelmente **quem mais precisa** dessa lista. Amarrar a visibilidade à coluna "Convida" a deixaria de fora.
+
+**O botão de convidar some** para quem a coluna "Convida" deixa vazia — Técnico, Diretor e Executor. Não é desabilitado: oferecer a ação e recusá-la no passo seguinte é o mesmo gesto do botão cinza, e quem clica acha que o sistema quebrou. Quem não concede papel nenhum abriria um formulário sem uma única opção.
+
 ---
 
 ### Admin do Sistema — plataforma
@@ -116,6 +126,24 @@ Não é uma pessoa dentro da operação do cliente: é a plataforma. Gerencia co
 > **Não é um papel de vínculo**, e por isso não aparece na matriz de permissões abaixo — ela é sempre "…nesta empresa". O acesso é uma dimensão **sobreposta** ao login normal: quem é dono da plataforma e Engenheiro Responsável da própria consultoria tem **um** login, e transita entre os dois pelo menu. É concedido por linha de comando ou por outro admin, nunca por convite — o convite é a porta do produto, e a plataforma não é uma consultoria.
 >
 > **O admin não enxerga dado de cliente.** O isolamento de conta vale para ele como para qualquer outro; para olhar dentro de uma consultoria ele usa a impersonação auditada (§2.1 de [03](./03_navegacao_e_telas.md)), que grava quem acessou como quem. E ele **não define a senha de ninguém** — dispara a redefinição, e a pessoa escolhe a própria. Poder escolher a senha de um engenheiro seria poder emitir laudo assinado com o CREA dele.
+
+#### Como se concede o acesso de admin
+
+Um admin promove **qualquer pessoa já cadastrada**, informando o **e-mail exato**.
+
+**Não há busca por trecho de nome ou de e-mail.** A razão não é sigilo — o Contexto 0 enxerga as contas por definição: é que uma busca parcial seria uma ferramenta de varredura do cadastro de todas as consultorias, e quem promove alguém já sabe o endereço dessa pessoa.
+
+Três respostas possíveis, e nenhuma delas é "erro genérico":
+
+| Situação | Resposta |
+| :--- | :--- |
+| Nenhuma pessoa com aquele e-mail | Recusa dizendo isso. Promover quem ainda não tem conta seria um convite de plataforma — fluxo próprio, que não existe hoje. |
+| Uma pessoa | Concede. |
+| Duas ou mais | Pergunta qual, nomeando a **conta** de cada uma. `User.email` é único **por conta**, não globalmente: o mesmo endereço pode ser duas pessoas em duas consultorias — é a mesma ambiguidade que o login resolve pedindo a conta. Escolher sozinho daria acesso total à pessoa errada, em silêncio. |
+
+Pessoa **desligada** não recebe a concessão: o acesso de plataforma não sobrevive ao desligamento, então gravar a concessão criaria uma linha inerte e quem concedeu sairia achando que deu.
+
+Reconceder a quem teve o acesso revogado reativa a mesma linha e registra quem reconcedeu — a revogação anterior continua na trilha, porque quem audita precisa achar que houve.
 
 ### Engenheiro Responsável — consultoria · Josué
 Dono da conta e responsável técnico final. **Também atua operacionalmente**: cadastra empresas e equipamentos, faz análise de risco, valida evidências, assina laudo. Escopo: todas as empresas da conta.

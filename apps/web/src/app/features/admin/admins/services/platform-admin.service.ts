@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import type { PlatformAdmin } from '@normatiza/shared';
+import type { GrantPlatformAdminRequest, PlatformAdmin } from '@normatiza/shared';
 
 import { API_BASE_URL } from '../../../../core/auth/api.config';
 
@@ -22,8 +22,13 @@ export class PlatformAdminService {
     return this.http.get<PlatformAdmin[]>(`${this.api}/platform/admins`);
   }
 
-  grant(userId: string): Observable<void> {
-    return this.http.post<void>(`${this.api}/platform/admins`, { userId });
+  /**
+   * Concede pelo **e-mail exato**. O `userId` só aparece na segunda tentativa,
+   * quando o servidor respondeu 409 dizendo que aquele endereço alcança mais de
+   * uma pessoa — `User.email` é único por conta, não globalmente.
+   */
+  grant(pedido: GrantPlatformAdminRequest): Observable<void> {
+    return this.http.post<void>(`${this.api}/platform/admins`, pedido);
   }
 
   revoke(userId: string): Observable<void> {

@@ -220,6 +220,16 @@ describe('CompanyTeamComponent', () => {
       ]);
     });
 
+    it('não deve oferecer convite ao Diretor, que não concede papel nenhum', async () => {
+      // `CAN_INVITE.DIRECTOR` é vazio — a Débora acompanha, não administra.
+      await abrirComo([vínculo(BRF.id, ['DIRECTOR'])]);
+
+      expect(el('[data-testid="convidar"]')).toBeNull();
+      // Mas ela continua vendo quem tem acesso à empresa dela: numa ferramenta
+      // de conformidade, essa lista é material de auditoria.
+      expect(todos('[data-testid="linha"]').length).toBe(EQUIPE_DA_BRF.length);
+    });
+
     it('deve oferecer à consultoria, dentro da empresa, a alçada maior dela', async () => {
       // A mesma tela, outro olhar: o Engenheiro Responsável entra na empresa e
       // continua podendo alocar gente da consultoria nela.

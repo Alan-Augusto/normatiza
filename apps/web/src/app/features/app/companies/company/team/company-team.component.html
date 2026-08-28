@@ -4,7 +4,9 @@
       Quem tem acesso a esta empresa — consultoria alocada, equipe própria e terceiros.
     </p>
 
-    <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+    @if (podeConvidar()) {
+      <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+    }
   </div>
 
   @if (aviso()) {
@@ -14,8 +16,13 @@
     <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
   }
 
-  <p-table [value]="membros()" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '100%' }">
-    <ng-template pTemplate="header">
+  <app-data-table
+    [dados]="membros()"
+    [carregando]="carregando()"
+    vazio="Ninguém tem acesso a esta empresa ainda."
+    vazioDetalhe="Convide quem precisa trabalhar aqui — o acesso chega por e-mail."
+  >
+    <ng-template appCabecalho>
       <tr>
         <th>Nome</th>
         <th>Papel</th>
@@ -26,7 +33,7 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-membro>
+    <ng-template appLinha [appLinhaDe]="membros()" let-membro>
       <tr data-testid="linha" [attr.data-user]="membro.id">
         <td>
           <div class="font-medium text-surface-900 dark:text-surface-0">{{ membro.name }}</div>
@@ -122,14 +129,16 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="6" class="py-8 text-center text-muted-color">
-          {{ carregando() ? 'Carregando…' : 'Ninguém tem acesso a esta empresa ainda.' }}
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+    @if (podeConvidar()) {
+      <ng-template appAcaoVazia>
+        <p-button
+          data-testid="convidar-vazio"
+          label="Convidar a primeira pessoa"
+          (onClick)="convidando.set(true)"
+        />
+      </ng-template>
+    }
+  </app-data-table>
 </div>
 
 <p-dialog

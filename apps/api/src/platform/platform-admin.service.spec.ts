@@ -1,6 +1,7 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 import { PlatformAdminService } from './platform-admin.service';
+import { UserSelectionRequiredException } from './user-selection-required.exception';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -16,7 +17,7 @@ function fakePrisma() {
       upsert: jest.fn().mockResolvedValue({}),
       update: jest.fn().mockResolvedValue({}),
     },
-    user: { findUnique: jest.fn() },
+    user: { findMany: jest.fn().mockResolvedValue([]) },
   } as unknown as PrismaService & {
     platformAdmin: {
       findUnique: jest.Mock;
@@ -24,9 +25,19 @@ function fakePrisma() {
       upsert: jest.Mock;
       update: jest.Mock;
     };
-    user: { findUnique: jest.Mock };
+    user: { findMany: jest.Mock };
   };
 }
+
+/** Uma pessoa alcançada pelo e-mail, já com a conta a que ela pertence. */
+const pessoa = (over: Record<string, unknown> = {}) => ({
+  id: 'u-novo',
+  name: 'Beatriz',
+  email: 'beatriz@normatiza.com',
+  status: 'ACTIVE',
+  account: { name: 'Normatiza' },
+  ...over,
+});
 
 const ATIVO = { id: 'pa-1', userId: 'u-josue', grantedByUserId: null, revokedAt: null };
 const REVOGADO = { ...ATIVO, revokedAt: new Date('2026-01-01') };
@@ -73,11 +84,13 @@ describe('PlatformAdminService', () => {
   });
 
   describe('conceder', () => {
-    it('deve registrar quem concedeu', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'u-novo', status: 'ACTIVE' });
-      prisma.platformAdmin.findUnique.mockResolvedValue(ATIVO);
+    /** Quem concede é admin, salvo quando o teste disser o contrário. */
+    beforeEach(() => prisma.platformAdmin.findUnique.mockResolvedValue(ATIVO));
 
-      await service.grant('u-novo', 'u-josue');
+    it('deve registrar quem concedeu', async () => {
+      prisma.user.findMany.mockResolvedValue([pessoa()]);
+
+      await service.grant({ email: 'beatriz@normatiza.com' }, 'u-josue');
 
       expect(prisma.platformAdmin.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -88,10 +101,9 @@ describe('PlatformAdminService', () => {
     });
 
     it('deve deixar a concessão em trilha de auditoria', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'u-novo', status: 'ACTIVE' });
-      prisma.platformAdmin.findUnique.mockResolvedValue(ATIVO);
+      prisma.user.findMany.mockResolvedValue([pessoa()]);
 
-      await service.grant('u-novo', 'u-josue');
+      await service.grant({ email: 'beatriz@normatiza.com' }, 'u-josue');
 
       expect(audit.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -102,32 +114,115 @@ describe('PlatformAdminService', () => {
       );
     });
 
+    it('deve procurar pelo e-mail normalizado', async () => {
+      // Copiar e colar traz espaço e maiúscula junto. Um e-mail que não casa
+      // por causa disso responde "nenhum usuário com esse e-mail" — a mensagem
+      // mais enganosa possível, porque a pessoa está olhando para o endereço
+      // certo enquanto lê que ele não existe.
+      prisma.user.findMany.mockResolvedValue([pessoa()]);
+
+      await service.grant({ email: '  Beatriz@Normatiza.com ' }, 'u-josue');
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { email: 'beatriz@normatiza.com' } }),
+      );
+    });
+
     it('deve recusar quem não é admin da plataforma', async () => {
       // Só admin faz admin. Se um Engenheiro Responsável pudesse conceder, o
       // teto de papel — hoje uma tabela fechada — ganharia uma aresta para o topo.
-      prisma.user.findUnique.mockResolvedValue({ id: 'u-novo', status: 'ACTIVE' });
       prisma.platformAdmin.findUnique.mockResolvedValue(null);
+      prisma.user.findMany.mockResolvedValue([pessoa()]);
 
-      await expect(service.grant('u-novo', 'u-marcos')).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.grant({ email: 'beatriz@normatiza.com' }, 'u-marcos'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
       expect(prisma.platformAdmin.upsert).not.toHaveBeenCalled();
     });
 
-    it('deve recusar usuário que não existe', async () => {
-      prisma.platformAdmin.findUnique.mockResolvedValue(ATIVO);
-      prisma.user.findUnique.mockResolvedValue(null);
+    it('deve dizer que não há ninguém com esse e-mail', async () => {
+      // Aqui a recusa pode ser específica: quem pergunta é o Contexto 0, e não
+      // há inquilino nenhum a proteger dele. Um "erro genérico" só faria a
+      // pessoa reler um e-mail que estava certo.
+      prisma.user.findMany.mockResolvedValue([]);
 
-      await expect(service.grant('u-fantasma', 'u-josue')).rejects.toBeInstanceOf(
+      await expect(service.grant({ email: 'ninguem@lugar.com' }, 'u-josue')).rejects.toBeInstanceOf(
         NotFoundException,
       );
+      expect(prisma.platformAdmin.upsert).not.toHaveBeenCalled();
+    });
+
+    it('deve pedir a escolha quando o e-mail alcança mais de uma pessoa', async () => {
+      // `User.email` é único por conta, não globalmente: o mesmo endereço pode
+      // ser duas pessoas em duas consultorias. Promover "a primeira que
+      // aparecer" daria acesso total à pessoa errada, em silêncio.
+      prisma.user.findMany.mockResolvedValue([
+        pessoa({ id: 'u-a', account: { name: 'Normatiza' } }),
+        pessoa({ id: 'u-b', account: { name: 'Outra Consultoria' } }),
+      ]);
+
+      await expect(
+        service.grant({ email: 'beatriz@normatiza.com' }, 'u-josue'),
+      ).rejects.toBeInstanceOf(UserSelectionRequiredException);
+      expect(prisma.platformAdmin.upsert).not.toHaveBeenCalled();
+    });
+
+    it('deve nomear as contas dos candidatos, para haver como escolher', async () => {
+      prisma.user.findMany.mockResolvedValue([
+        pessoa({ id: 'u-a', account: { name: 'Normatiza' } }),
+        pessoa({ id: 'u-b', account: { name: 'Outra Consultoria' } }),
+      ]);
+
+      const falha = await service
+        .grant({ email: 'beatriz@normatiza.com' }, 'u-josue')
+        .catch((e: UserSelectionRequiredException) => e);
+
+      expect((falha as UserSelectionRequiredException).getResponse()).toMatchObject({
+        candidates: [
+          { userId: 'u-a', accountName: 'Normatiza' },
+          { userId: 'u-b', accountName: 'Outra Consultoria' },
+        ],
+      });
+    });
+
+    it('deve conceder à pessoa escolhida no desempate', async () => {
+      prisma.user.findMany.mockResolvedValue([pessoa({ id: 'u-a' }), pessoa({ id: 'u-b' })]);
+
+      await service.grant({ email: 'beatriz@normatiza.com', userId: 'u-b' }, 'u-josue');
+
+      expect(prisma.platformAdmin.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId: 'u-b' } }),
+      );
+    });
+
+    it('não deve promover um id que não pertence àquele e-mail', async () => {
+      // Sem esta conferência, `userId` viraria um jeito de promover qualquer
+      // linha do banco passando um e-mail qualquer que exista.
+      prisma.user.findMany.mockResolvedValue([pessoa({ id: 'u-a' })]);
+
+      await expect(
+        service.grant({ email: 'beatriz@normatiza.com', userId: 'u-outro-qualquer' }, 'u-josue'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.platformAdmin.upsert).not.toHaveBeenCalled();
+    });
+
+    it('deve recusar quem está desligado, em vez de gravar acesso que não vale', async () => {
+      // `isPlatformAdmin` já recusa quem está `DISABLED`. Conceder assim mesmo
+      // gravaria uma linha inerte, e quem concedeu sairia achando que deu.
+      prisma.user.findMany.mockResolvedValue([pessoa({ status: 'DISABLED' })]);
+
+      await expect(
+        service.grant({ email: 'beatriz@normatiza.com' }, 'u-josue'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.platformAdmin.upsert).not.toHaveBeenCalled();
     });
 
     it('deve reativar concessão revogada em vez de duplicar', async () => {
       // `userId` é único: uma segunda linha nem seria possível. O que importa é
       // que reconceder limpe o `revokedAt` e volte a valer.
-      prisma.user.findUnique.mockResolvedValue({ id: 'u-josue', status: 'ACTIVE' });
-      prisma.platformAdmin.findUnique.mockResolvedValue(ATIVO);
+      prisma.user.findMany.mockResolvedValue([pessoa({ id: 'u-josue' })]);
 
-      await service.grant('u-josue', 'u-josue');
+      await service.grant({ email: 'josue@normatiza.com' }, 'u-josue');
 
       expect(prisma.platformAdmin.upsert).toHaveBeenCalledWith(
         expect.objectContaining({ update: expect.objectContaining({ revokedAt: null }) }),

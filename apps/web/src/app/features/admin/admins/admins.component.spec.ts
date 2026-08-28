@@ -9,7 +9,7 @@ import type { PlatformAdmin } from '@normatiza/shared';
 import { API_BASE_URL } from '../../../core/auth/api.config';
 import { AuthService } from '../../../core/auth/auth.service';
 import { BRF, respostaDeLogin, sessão, vínculo } from '../../../core/auth/testing/sessao';
-import { elemento, elementos } from '../../../core/testing/prime';
+import { clicar, digitar, elemento, elementos } from '../../../core/testing/prime';
 import { AdminsComponent } from './admins.component';
 
 /**
@@ -80,6 +80,7 @@ describe('AdminsComponent', () => {
 
   const el = (seletor: string) => elemento(fixture, seletor);
   const todos = (seletor: string) => elementos(fixture, seletor);
+  const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
   const linhaDe = (userId: string) => el(`[data-testid="linha"][data-user="${userId}"]`);
 
   describe('a lista', () => {
@@ -105,6 +106,115 @@ describe('AdminsComponent', () => {
 
       expect(linhaDe(outro.userId)!.textContent).toContain('Revogado');
       expect(linhaDe(outro.userId)!.querySelector('[data-testid="acao-revogar"]')).toBeNull();
+    });
+  });
+
+  describe('a concessão', () => {
+    function abrirFormulario() {
+      clicar(fixture, '[data-testid="conceder"] button');
+    }
+
+    it('deve conceder pelo e-mail exato', async () => {
+      await abrir();
+      abrirFormulario();
+      digitar(fixture, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
+      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+
+      const req = http.expectOne(`${API}/platform/admins`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ email: 'beatriz@normatiza.com' });
+
+      req.flush(null);
+      fixture.detectChanges();
+
+      http.expectOne(`${API}/platform/admins`).flush([euMesmo, outro]);
+    });
+
+    it('não deve procurar por trecho — o campo é o endereço inteiro', async () => {
+      // Uma busca parcial seria uma varredura do cadastro de todas as
+      // consultorias. Quem promove alguém já sabe o e-mail dessa pessoa.
+      await abrir();
+      abrirFormulario();
+      digitar(fixture, '[data-testid="email-do-admin"]', 'bea');
+      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+
+      const req = http.expectOne(`${API}/platform/admins`);
+      expect(req.request.body).toEqual({ email: 'bea' });
+      req.flush(null, { status: 404, statusText: 'Not Found' });
+      fixture.detectChanges();
+
+      // E o 404 aparece como a notícia que é, não como falha genérica.
+      expect(el('[data-testid="erro-da-concessao"]')).not.toBeNull();
+    });
+
+    it('deve dizer quando não há ninguém com aquele e-mail', async () => {
+      await abrir();
+      abrirFormulario();
+      digitar(fixture, '[data-testid="email-do-admin"]', 'ninguem@lugar.com');
+      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+
+      http
+        .expectOne(`${API}/platform/admins`)
+        .flush({ message: 'Nenhum usuário com esse e-mail.' }, { status: 404, statusText: 'NF' });
+      fixture.detectChanges();
+
+      expect(texto()).toContain('Nenhum usuário com esse e-mail.');
+    });
+
+    it('deve perguntar qual pessoa quando o e-mail alcança mais de uma', async () => {
+      // `User.email` é único por conta, não globalmente: o mesmo endereço pode
+      // ser duas pessoas em duas consultorias. Escolher sozinho daria acesso
+      // total à pessoa errada, em silêncio.
+      await abrir();
+      abrirFormulario();
+      digitar(fixture, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
+      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+
+      http.expectOne(`${API}/platform/admins`).flush(
+        {
+          reason: 'USER_SELECTION_REQUIRED',
+          candidates: [
+            { userId: 'u-a', name: 'Beatriz', accountName: 'Normatiza' },
+            { userId: 'u-b', name: 'Beatriz', accountName: 'Outra Consultoria' },
+          ],
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+      fixture.detectChanges();
+
+      expect(todos('[data-testid="candidato"]').length).toBe(2);
+      // O nome não distingue as duas — a conta é a única coisa que distingue.
+      expect(texto()).toContain('Outra Consultoria');
+      // E 409 não é falha: não pode aparecer como erro.
+      expect(el('[data-testid="erro-da-concessao"]')).toBeNull();
+    });
+
+    it('deve conceder à pessoa escolhida no desempate', async () => {
+      await abrir();
+      abrirFormulario();
+      digitar(fixture, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
+      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+
+      http.expectOne(`${API}/platform/admins`).flush(
+        {
+          reason: 'USER_SELECTION_REQUIRED',
+          candidates: [
+            { userId: 'u-a', name: 'Beatriz', accountName: 'Normatiza' },
+            { userId: 'u-b', name: 'Beatriz', accountName: 'Outra Consultoria' },
+          ],
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+      fixture.detectChanges();
+
+      clicar(fixture, '[data-testid="candidato"][data-user="u-b"]');
+
+      const req = http.expectOne(`${API}/platform/admins`);
+      expect(req.request.body).toEqual({ email: 'beatriz@normatiza.com', userId: 'u-b' });
+      req.flush(null);
+      fixture.detectChanges();
+
+      http.expectOne(`${API}/platform/admins`).flush([euMesmo, outro]);
     });
   });
 

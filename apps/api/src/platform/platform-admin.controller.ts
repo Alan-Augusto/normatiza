@@ -35,7 +35,7 @@ export class PlatformAdminController {
   @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
   grant(@Req() req: AuthenticatedRequest, @Body() dto: GrantPlatformAdminDto): Promise<void> {
-    return this.platformAdmins.grant(dto.userId, req.auth!.userId);
+    return this.platformAdmins.grant(dto, req.auth!.userId);
   }
 
   @Delete(':userId')

@@ -5,7 +5,6 @@ import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
-import { TableModule } from 'primeng/table';
 
 import {
   ROLE_LABEL,
@@ -19,6 +18,12 @@ import {
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { TeamService } from '../../../core/services/team.service';
+import { DataTable } from '../../../shared/components/data-table/data-table.component';
+import {
+  AcaoVazia,
+  CabecalhoDaTabela,
+  LinhaDaTabela,
+} from '../../../shared/components/data-table/data-table.directives';
 import { InviteFormComponent } from '../../../shared/components/team/invite-form.component';
 import {
   RoleEditorComponent,
@@ -47,7 +52,10 @@ import { DisableDialogComponent } from './components/disable-dialog.component';
     Dialog,
     Message,
     Select,
-    TableModule,
+    DataTable,
+    CabecalhoDaTabela,
+    LinhaDaTabela,
+    AcaoVazia,
     InviteFormComponent,
     RoleEditorComponent,
     DisableDialogComponent,
@@ -70,11 +78,7 @@ export class TeamComponent implements OnInit {
   readonly editando = signal<TeamMember | null>(null);
   readonly desligando = signal<TeamMember | null>(null);
 
-  /**
-   * Rótulo por método, e não `rotulo[papel]` no template: o `p-table` entrega a
-   * linha como `any`, e indexar com `any` desliga a checagem de tipo bem no
-   * ponto em que um papel novo no enum deveria quebrar a compilação.
-   */
+  /** Rótulo por método — o template não indexa mapa, e um papel novo quebra aqui. */
   rotuloDoPapel(papel: Role): string {
     return ROLE_LABEL[papel];
   }
@@ -110,6 +114,29 @@ export class TeamComponent implements OnInit {
         .filter((vinculo) => vinculo.isActive)
         .flatMap((vinculo) => vinculo.roles),
     ),
+  );
+
+  /**
+   * Quem não concede papel nenhum não vê o botão.
+   *
+   * O Técnico é o caso: `CAN_INVITE.TECHNICIAN` é vazio, então o convite dele
+   * nunca poderia dar em nada. Ele continua vendo a equipe — saber quem é o
+   * Engenheiro Responsável não é privilégio administrativo —, mas oferecer uma
+   * ação impossível é pior do que não oferecer: quem clica acha que quebrou.
+   */
+  readonly podeConvidar = computed(() => this.papeisQuePossoConceder().length > 0);
+
+  /** Lista vazia por filtro e lista vazia por não haver ninguém não são a mesma notícia. */
+  readonly filtrando = computed(() => Object.values(this.filtros()).some(Boolean));
+
+  readonly tituloDoVazio = computed(() =>
+    this.filtrando() ? 'Ninguém encontrado com esses filtros.' : 'Sua equipe ainda está vazia.',
+  );
+
+  readonly detalheDoVazio = computed(() =>
+    this.filtrando()
+      ? 'Tente uma combinação mais ampla, ou limpe os filtros para ver todo mundo.'
+      : 'Convide as pessoas que vão trabalhar com você — elas recebem o acesso por e-mail.',
   );
 
   ngOnInit(): void {
