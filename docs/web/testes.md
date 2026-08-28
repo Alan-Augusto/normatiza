@@ -13,6 +13,12 @@ Este documento estabelece as ferramentas, comandos e estruturas técnicas de arq
 *   **Ambiente de DOM:** `jsdom`.
 *   **Testes E2E (End-to-End):** [Playwright](https://playwright.dev/) — **ainda não instalado.** A seção 2.B e o comando correspondente descrevem o destino, não o estado atual.
 
+> **Sobre o `matchMedia`.** O jsdom não implementa `window.matchMedia`, e os
+> componentes do PrimeNG a consultam ao montar — sem ela, um teste que renderize
+> `p-select` ou `p-dialog` explode antes de a tela aparecer. O polyfill vive em
+> [`src/test-setup.ts`](../../apps/web/src/test-setup.ts), registrado em
+> `setupFiles` no alvo `test` do `angular.json`.
+>
 > **Sobre o `zone.js`.** A aplicação é *zoneless* e continua sendo. O pacote existe como dependência de desenvolvimento apenas porque o `init-testbed` do builder contém um `import('zone.js/testing')` que o Vite precisa resolver em tempo de build, mesmo dentro de um ramo que nunca executa.
 
 ---
@@ -56,7 +62,29 @@ it('deve autenticar o usuário com credenciais válidas', async () => {
 });
 ```
 
-### 2. Isolamento e Mocking de Requisições HTTP
+### 2. Dirigindo componentes do PrimeNG
+
+Um `p-select` não é um `<select>`: escrever `.value = 'MANAGER'` nele não faz
+nada, porque ele monta a própria lista. O mesmo vale para `p-checkbox` (o clique
+vai no `<input>` interno) e para `p-button` (o `<button>` de verdade fica
+**dentro** do elemento marcado, e é ele que carrega o `disabled`).
+
+Esse conhecimento vive num lugar só —
+[`core/testing/prime.ts`](../../apps/web/src/app/core/testing/prime.ts) — e os
+testes falam de intenção:
+
+```typescript
+escolher(fixture, 'filtro-papel', 'Gestor');       // abre e escolhe pelo rótulo
+expect(opcoesDe(fixture, 'convite-papel')).toEqual(['Técnico']);
+marcar(fixture, 'papel-DIRECTOR');
+clicar(fixture, '[data-testid="salvar-papeis"] button');
+```
+
+Note que `opcoesDe` devolve **rótulos**, não valores: um teste que afirmasse
+`['TECHNICIAN']` estaria conferindo o enum do banco. O que importa é que a
+Carla vê "Técnico" e mais nada.
+
+### 3. Isolamento e Mocking de Requisições HTTP
 *   **Nunca** faça requisições reais para APIs nos testes unitários do frontend.
 *   Utilize o `HttpTestingController` do Angular ou crie *spies/mocks* usando funções do Vitest (`vi.fn()`, `vi.spyOn()`) para simular respostas de serviços de dados.
 

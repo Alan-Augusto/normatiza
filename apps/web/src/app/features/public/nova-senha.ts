@@ -1,10 +1,16 @@
 import { AbstractControl, ValidationErrors } from '@angular/forms';
 
+import { SENHA_MINIMA } from '@normatiza/shared';
+
 /**
- * O mesmo mínimo que a API exige. Repetido aqui para dar retorno imediato a
- * quem digita — a validação que vale continua sendo a do servidor.
+ * O mesmo mínimo que a API exige — **importado dela**, não copiado.
+ *
+ * Já foi uma cópia, e as duas se separaram: aqui valia 8, no servidor valia 10,
+ * e quem digitava 9 recebia uma recusa que a tela chamava de "convite
+ * expirado". A validação que vale continua sendo a do servidor; esta serve só
+ * para dar retorno imediato a quem digita.
  */
-export const SENHA_MÍNIMA = 8;
+export const SENHA_MÍNIMA = SENHA_MINIMA;
 
 /**
  * Duas telas definem senha pela primeira vez — aceitar convite e redefinir — e

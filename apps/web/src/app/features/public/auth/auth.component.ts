@@ -8,6 +8,8 @@ import { map } from 'rxjs';
 import type { AccountChoice, AmbiguousLoginResponse, SessionUser } from '@normatiza/shared';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { aparaEmail } from '../../../core/forms/email';
+import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { rotaDeEntrada } from '../../../core/auth/entry-route';
 
 const FALHA_GENÉRICA = 'Não foi possível entrar agora. Tente de novo em instantes.';
@@ -46,6 +48,10 @@ export class AuthComponent {
   readonly contas = signal<AccountChoice[]>([]);
 
   submit(accountId?: string): void {
+    // O e-mail é aparado; a senha, jamais. Espaço é caractere legítimo de senha,
+    // e cortá-lo em silêncio recusaria quem escolheu usar um.
+    aparaEmail(this.form.controls.email);
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -98,6 +104,8 @@ export class AuthComponent {
       return;
     }
 
-    this.erro.set(FALHA_GENÉRICA);
+    // Um 429 do limite de tentativas dizia apenas "não foi possível entrar", e
+    // a pessoa relia a própria senha procurando um erro que não estava lá.
+    this.erro.set(mensagemDoServidor(erro, FALHA_GENÉRICA));
   }
 }

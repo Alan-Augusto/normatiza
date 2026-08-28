@@ -1,1 +1,72 @@
-<!-- Fase 5 do plano de gestão de equipe preenche esta tela. -->
+<div class="space-y-4">
+  @if (erro()) {
+    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
+
+  <p-table [value]="admins()" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '100%' }">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Nome</th>
+        <th>E-mail</th>
+        <th>Desde</th>
+        <th>Situação</th>
+        <th></th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-admin>
+      <tr data-testid="linha" [attr.data-user]="admin.userId">
+        <td class="font-medium text-surface-900 dark:text-surface-0">
+          {{ admin.name }}
+          @if (admin.userId === euMesmo()) {
+            <span class="ml-1 text-xs font-normal text-muted-color">· você</span>
+          }
+        </td>
+
+        <td>{{ admin.email }}</td>
+
+        <!--
+          Um booleano responderia "é admin?". A pergunta de uma auditoria de
+          verdade é "desde quando, e por obra de quem" — e ninguém reconstrói
+          isso depois.
+        -->
+        <td data-testid="concedido-em">{{ admin.grantedAt | date: 'dd/MM/yyyy' }}</td>
+
+        <td>
+          @if (admin.revokedAt) {
+            <span
+              class="rounded-full bg-surface-200 px-2 py-0.5 text-xs font-bold text-muted-color dark:bg-surface-800"
+            >
+              Revogado
+            </span>
+          } @else {
+            <span class="rounded-full bg-success/15 px-2 py-0.5 text-xs font-bold text-success">
+              Ativo
+            </span>
+          }
+        </td>
+
+        <td class="text-right">
+          @if (podeRevogar(admin)) {
+            <p-button
+              data-testid="acao-revogar"
+              label="Revogar acesso"
+              severity="secondary"
+              [text]="true"
+              size="small"
+              (onClick)="revogar(admin)"
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="5" class="py-8 text-center text-muted-color">
+          {{ carregando() ? 'Carregando…' : 'Nenhum administrador cadastrado.' }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

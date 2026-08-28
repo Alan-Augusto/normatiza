@@ -86,6 +86,29 @@ describe('AuthComponent', () => {
       http.expectNone(`${API}/auth/login`);
     });
 
+    it('deve aceitar e-mail colado com espaço em volta', () => {
+      // `Validators.email` é ancorado: `" a@b.com "` reprova, o `submit` volta
+      // sem fazer nada e o botão fica mudo. Aparar só na hora de enviar não
+      // resolve — a validação já aconteceu.
+      preencher('  marcos@brf.com  ', 'a-senha');
+      enviar();
+
+      const req = http.expectOne(`${API}/auth/login`);
+      expect(req.request.body.email).toBe('marcos@brf.com');
+      req.flush(respostaDeLogin());
+    });
+
+    it('não deve aparar a senha, nem quando ela tem espaço nas pontas', () => {
+      // Espaço é caractere legítimo de senha. Cortá-lo em silêncio recusaria
+      // quem escolheu usar um — e a recusa seria "senha inválida", sem pista.
+      preencher('marcos@brf.com', '  com espaco  ');
+      enviar();
+
+      const req = http.expectOne(`${API}/auth/login`);
+      expect(req.request.body.password).toBe('  com espaco  ');
+      req.flush(respostaDeLogin());
+    });
+
     it('deve oferecer o caminho de quem esqueceu a senha', () => {
       expect(el('[data-testid="forgot-password"]')).not.toBeNull();
     });

@@ -1,0 +1,98 @@
+<div class="space-y-4">
+  @if (vinculos().length > 1) {
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-medium text-surface-900 dark:text-surface-0">Em qual empresa</label>
+      <p-select
+        data-testid="vinculo"
+        [options]="opcoesDeVinculo()"
+        [ngModel]="vinculo().membershipId"
+        (ngModelChange)="selecionar($event)"
+        optionLabel="label"
+        optionValue="value"
+        class="w-full"
+      />
+    </div>
+  }
+
+  <div class="space-y-2">
+    <span class="text-sm font-medium text-surface-900 dark:text-surface-0">
+      O que {{ memberName() }} é na {{ vinculo().companyName }}
+    </span>
+
+    <div class="grid gap-3 sm:grid-cols-2">
+      @for (papel of oferecidos(); track papel) {
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            data-testid="papel"
+            [binary]="true"
+            [inputId]="'papel-' + papel"
+            [ngModel]="temPapel(papel)"
+            (ngModelChange)="alternar(papel, $event)"
+          />
+          <label
+            [for]="'papel-' + papel"
+            class="text-sm font-medium text-surface-900 dark:text-surface-0"
+          >
+            {{ rotulo[papel] }}
+          </label>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!--
+    O aviso que evita o erro de constraint. Ele nomeia a empresa de propósito:
+    "conflito de papéis" informa que existe um problema; "já responde pela
+    Seara" diz o que fazer a respeito.
+  -->
+  @if (conflito(); as impedimento) {
+    <p-message
+      data-testid="conflito-de-papel"
+      severity="warn"
+      styleClass="w-full"
+      [text]="
+        memberName() +
+        ' já responde pela ' +
+        impedimento.companyName +
+        '. Gestor, Engenheiro do Cliente e Diretor valem em uma empresa só — encerre o vínculo anterior antes.'
+      "
+    />
+  }
+
+  @if (erro()) {
+    <p-message data-testid="erro-papeis" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
+
+  <div class="flex items-center justify-between gap-3">
+    @if (allowRemoval()) {
+      @if (confirmandoRemocao()) {
+        <p-button
+          data-testid="editor-confirmar-remocao"
+          [label]="'Confirmar remoção da ' + vinculo().companyName"
+          severity="danger"
+          [text]="true"
+          [disabled]="salvando()"
+          (onClick)="remover()"
+        />
+      } @else {
+        <p-button
+          data-testid="editor-remover"
+          label="Remover da empresa"
+          severity="secondary"
+          [text]="true"
+          (onClick)="confirmandoRemocao.set(true)"
+        />
+      }
+    } @else {
+      <span></span>
+    }
+
+    <p-button
+      data-testid="salvar-papeis"
+      label="Salvar"
+      [disabled]="!podeSalvar()"
+      [loading]="salvando()"
+      (onClick)="salvar()"
+    />
+  </div>
+</div>

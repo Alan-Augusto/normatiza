@@ -85,6 +85,19 @@ export const routes: Routes = [
         }
       },
       {
+        // Gestão de gente **da conta** — Contexto 1, e só dele. O lado cliente
+        // administra a própria empresa pela tela do Contexto 2; esta lista
+        // nomeia todas as empresas atendidas.
+        path: 'team',
+        canActivate: [roleGuard(CONTEXTO_1)],
+        loadComponent: () => import('./features/app/team/team.component').then(m => m.TeamComponent),
+        data: {
+          label: 'Equipe',
+          icon: 'pi pi-users',
+          subtitle: 'Quem tem acesso à conta, com que papel e em quais empresas.'
+        }
+      },
+      {
         path: 'catalogs/solutions',
         canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/catalogs/solutions/solutions.component').then(m => m.SolutionsComponent),
@@ -120,6 +133,18 @@ export const routes: Routes = [
               label: 'Equipamentos',
               icon: 'pi pi-box',
               subtitle: 'Inventário da planta. Abrir um equipamento muda o contexto de navegação.'
+            }
+          },
+          {
+            // A mesma tela para os dois lados: o Gestor administra a equipe da
+            // planta dele, e a consultoria vê quem está alocado ali. O que ela
+            // não faz é desligar da conta — isso é ato do Contexto 1 (D8).
+            path: 'team',
+            loadComponent: () => import('./features/app/companies/company/team/company-team.component').then(m => m.CompanyTeamComponent),
+            data: {
+              label: 'Equipe da Empresa',
+              icon: 'pi pi-users',
+              subtitle: 'Quem tem acesso a esta empresa: consultoria alocada, equipe própria e terceiros.'
             }
           },
           {
@@ -232,6 +257,15 @@ export const routes: Routes = [
           label: 'Compras',
           icon: 'pi pi-shopping-cart',
           subtitle: 'Assinaturas e créditos contratados pelas contas.'
+        }
+      },
+      {
+        path: 'admins',
+        loadComponent: () => import('./features/admin/admins/admins.component').then(m => m.AdminsComponent),
+        data: {
+          label: 'Admins da Plataforma',
+          icon: 'pi pi-shield',
+          subtitle: 'Quem administra o produto, desde quando e por obra de quem.'
         }
       },
       {

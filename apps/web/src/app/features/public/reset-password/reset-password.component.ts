@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 
 import { AccountRecoveryService } from '../../../core/auth/account-recovery.service';
+import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { senhasIguais, SENHA_MÍNIMA } from '../nova-senha';
 
 @Component({
@@ -56,11 +56,8 @@ export class ResetPasswordComponent {
       },
       error: (erro: unknown) => {
         this.enviando.set(false);
-        const expirou = erro instanceof HttpErrorResponse && erro.status < 500;
         this.erro.set(
-          expirou
-            ? 'Este link não vale mais. Peça a recuperação de novo.'
-            : 'Não foi possível concluir agora. Tente de novo em instantes.',
+          mensagemDoServidor(erro, 'Não foi possível concluir agora. Tente de novo em instantes.'),
         );
       },
     });

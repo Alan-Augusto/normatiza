@@ -9,6 +9,7 @@ import type { MembershipWithCompany } from '@normatiza/shared';
 import { API_BASE_URL } from '../../../core/auth/api.config';
 import { AuthService } from '../../../core/auth/auth.service';
 import { BRF, SEARA, respostaDeLogin, sessão, vínculo } from '../../../core/auth/testing/sessao';
+import { clicar as clicarNo, digitar as digitarEm, elemento } from '../../../core/testing/prime';
 import { ProfileComponent } from './profile.component';
 
 /**
@@ -50,20 +51,12 @@ describe('ProfileComponent', () => {
   }
 
   const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
-  const el = (seletor: string) =>
-    (fixture.nativeElement as HTMLElement).querySelector(seletor) as HTMLElement | null;
+  const el = (seletor: string) => elemento(fixture, seletor);
 
-  function digitar(seletor: string, valor: string) {
-    const campo = el(seletor) as HTMLInputElement;
-    campo.value = valor;
-    campo.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-  }
+  const digitar = (seletor: string, valor: string) => digitarEm(fixture, seletor, valor);
 
-  function clicar(seletor: string) {
-    (el(seletor) as HTMLElement).click();
-    fixture.detectChanges();
-  }
+  /** O `p-button` envolve o `<button>` de verdade — é nele que o clique vale. */
+  const clicar = (seletor: string) => clicarNo(fixture, `${seletor} button`);
 
   describe('os dados próprios', () => {
     it('deve trazer o cadastro de quem está na sessão, já preenchido', async () => {

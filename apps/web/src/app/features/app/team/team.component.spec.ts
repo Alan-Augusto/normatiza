@@ -20,6 +20,15 @@ import {
   prévia,
   rafael,
 } from '../../../core/services/testing/equipe';
+import {
+  clicar as clicarNo,
+  elemento,
+  elementos,
+  escolher,
+  estaDesabilitado,
+  marcar as marcarCaixa,
+  opcoesDe,
+} from '../../../core/testing/prime';
 import { TeamComponent } from './team.component';
 
 /**
@@ -75,18 +84,26 @@ describe('TeamComponent', () => {
     abrirComo([vínculo(BRF.id, ['CONSULTANT_ENGINEER'])], equipe);
 
   const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
-  const el = (seletor: string) =>
-    (fixture.nativeElement as HTMLElement).querySelector(seletor) as HTMLElement | null;
-  const todos = (seletor: string) =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(seletor)) as HTMLElement[];
+  const el = (seletor: string) => elemento(fixture, seletor);
+  const todos = (seletor: string) => elementos(fixture, seletor);
 
   /** A linha de uma pessoa, pelo id — a tabela é lida como quem olha a lê. */
   const linhaDe = (userId: string) => el(`[data-testid="linha"][data-user="${userId}"]`);
 
-  function clicar(elemento: HTMLElement | null) {
-    elemento!.click();
+  function clicar(alvo: HTMLElement | null) {
+    alvo!.click();
     fixture.detectChanges();
   }
+
+  /** A ação de uma linha — os botões do PrimeNG são marcados no elemento externo. */
+  function acao(userId: string, nome: string): HTMLElement {
+    const botao = linhaDe(userId)!.querySelector(`[data-testid="acao-${nome}"] button`);
+    if (!botao) throw new Error(`"${nome}" não é oferecido na linha de ${userId}.`);
+    return botao as HTMLElement;
+  }
+
+  const temAcao = (userId: string, nome: string) =>
+    linhaDe(userId)!.querySelector(`[data-testid="acao-${nome}"]`) !== null;
 
   describe('a lista', () => {
     it('deve mostrar quem tem acesso à conta', async () => {
@@ -134,7 +151,7 @@ describe('TeamComponent', () => {
 
       const linha = linhaDe(conviteExpirado.id)!;
       expect(linha.querySelector('[data-testid="convite-expirado"]')).not.toBeNull();
-      expect(linha.querySelector('[data-testid="acao-reenviar"]')).not.toBeNull();
+      expect(temAcao(conviteExpirado.id, 'reenviar')).toBe(true);
     });
 
     it('deve dizer quem sucedeu quem foi desligado', async () => {
@@ -152,10 +169,7 @@ describe('TeamComponent', () => {
     it('deve pedir ao servidor a lista filtrada por papel', async () => {
       await comoJosué();
 
-      const filtro = el('[data-testid="filtro-papel"]') as HTMLSelectElement;
-      filtro.value = 'MANAGER';
-      filtro.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
+      escolher(fixture, 'filtro-papel', 'Gestor');
 
       const req = http.expectOne((r) => r.url === `${API}/users`);
       expect(req.request.params.get('role')).toBe('MANAGER');
@@ -178,8 +192,8 @@ describe('TeamComponent', () => {
       // `actions` vem do servidor por linha. A tela não recalcula — ela obedece.
       await comoJosué();
 
-      expect(linhaDe(marcos.id)!.querySelector('[data-testid="acao-trocar-papel"]')).not.toBeNull();
-      expect(linhaDe(desligado.id)!.querySelector('[data-testid="acao-trocar-papel"]')).toBeNull();
+      expect(temAcao(marcos.id, 'trocar-papel')).toBe(true);
+      expect(temAcao(desligado.id, 'trocar-papel')).toBe(false);
     });
 
     it('não deve oferecer o desligamento do titular da conta', async () => {
@@ -187,21 +201,21 @@ describe('TeamComponent', () => {
       // não há caminho para ela.
       await comoJosué();
 
-      expect(linhaDe(josué.id)!.querySelector('[data-testid="acao-desligar"]')).toBeNull();
+      expect(temAcao(josué.id, 'desligar')).toBe(false);
     });
 
     it('deve oferecer reenvio e revogação só a quem tem convite aberto', async () => {
       await comoJosué();
 
-      expect(linhaDe(rafael.id)!.querySelector('[data-testid="acao-reenviar"]')).not.toBeNull();
-      expect(linhaDe(rafael.id)!.querySelector('[data-testid="acao-revogar"]')).not.toBeNull();
-      expect(linhaDe(carla.id)!.querySelector('[data-testid="acao-reenviar"]')).toBeNull();
+      expect(temAcao(rafael.id, 'reenviar')).toBe(true);
+      expect(temAcao(rafael.id, 'revogar')).toBe(true);
+      expect(temAcao(carla.id, 'reenviar')).toBe(false);
     });
 
     it('deve reenviar o convite pelo id do convite', async () => {
       await comoJosué();
 
-      clicar(linhaDe(rafael.id)!.querySelector('[data-testid="acao-reenviar"]') as HTMLElement);
+      clicar(acao(rafael.id, 'reenviar'));
 
       http.expectOne(`${API}/invitations/${rafael.invitation!.id}/resend`).flush(null);
     });
@@ -213,25 +227,20 @@ describe('TeamComponent', () => {
       // "Gestor" numa lista que o servidor vai recusar é convidar ao erro.
       await comoCarla();
 
-      clicar(el('[data-testid="convidar"]'));
+      clicarNo(fixture, '[data-testid="convidar"] button');
 
-      const oferecidos = todos('[data-testid="papel-oferecido"]').map((o) =>
-        (o as HTMLOptionElement).value,
-      );
-      expect(oferecidos).toEqual(['TECHNICIAN']);
+      expect(opcoesDe(fixture, 'convite-papel')).toEqual(['Técnico']);
     });
 
     it('deve oferecer ao Engenheiro Responsável a lista inteira que ele alcança', async () => {
       await comoJosué();
 
-      clicar(el('[data-testid="convidar"]'));
+      clicarNo(fixture, '[data-testid="convidar"] button');
 
-      const oferecidos = todos('[data-testid="papel-oferecido"]').map((o) =>
-        (o as HTMLOptionElement).value,
-      );
-      expect(oferecidos).toContain('MANAGER');
-      expect(oferecidos).toContain('EXECUTOR');
-      expect(oferecidos).not.toContain('LEAD_ENGINEER');
+      const oferecidos = opcoesDe(fixture, 'convite-papel');
+      expect(oferecidos).toContain('Gestor');
+      expect(oferecidos).toContain('Executor');
+      expect(oferecidos).not.toContain('Engenheiro Responsável');
     });
 
     it('deve oferecer como escopo apenas as empresas de quem convida', async () => {
@@ -239,12 +248,12 @@ describe('TeamComponent', () => {
       // numa empresa que ela mesma não atende.
       await comoCarla();
 
-      clicar(el('[data-testid="convidar"]'));
+      clicarNo(fixture, '[data-testid="convidar"] button');
 
-      const empresas = todos('[data-testid="empresa-oferecida"]').map((o) =>
-        (o as HTMLOptionElement).value,
+      const empresas = todos('[data-testid="empresa-oferecida"]').map(
+        (caixa) => caixa.parentElement?.textContent?.trim(),
       );
-      expect(empresas).toEqual([BRF.id]);
+      expect(empresas).toEqual(['BRF']);
     });
   });
 
@@ -252,9 +261,9 @@ describe('TeamComponent', () => {
     it('deve declarar o conjunto final de papéis do vínculo', async () => {
       await comoJosué();
 
-      clicar(linhaDe(marcos.id)!.querySelector('[data-testid="acao-trocar-papel"]') as HTMLElement);
+      clicar(acao(marcos.id, 'trocar-papel'));
       marcar('DIRECTOR');
-      clicar(el('[data-testid="salvar-papeis"]'));
+      clicarNo(fixture, '[data-testid="salvar-papeis"] button');
 
       const req = http.expectOne(`${API}/memberships/${marcos.memberships[0].id}`);
       expect(req.request.body.roles).toEqual(expect.arrayContaining(['MANAGER', 'DIRECTOR']));
@@ -271,16 +280,14 @@ describe('TeamComponent', () => {
       // é falha de desenho — a tela avisa antes, e nem tenta.
       await comoJosué();
 
-      clicar(
-        linhaDe(fernando.id)!.querySelector('[data-testid="acao-trocar-papel"]') as HTMLElement,
-      );
+      clicar(acao(fernando.id, 'trocar-papel'));
       marcar('MANAGER');
       fixture.detectChanges();
 
       const aviso = el('[data-testid="conflito-de-papel"]');
       expect(aviso).not.toBeNull();
       expect(aviso!.textContent).toContain('Seara');
-      expect((el('[data-testid="salvar-papeis"]') as HTMLButtonElement).disabled).toBe(true);
+      expect(estaDesabilitado(fixture, '[data-testid="salvar-papeis"]')).toBe(true);
 
       http.expectNone((r) => r.method === 'PATCH');
     });
@@ -290,12 +297,12 @@ describe('TeamComponent', () => {
       // esbarra em nada — avisar aqui seria burocracia inventada.
       await comoJosué();
 
-      clicar(linhaDe(marcos.id)!.querySelector('[data-testid="acao-trocar-papel"]') as HTMLElement);
+      clicar(acao(marcos.id, 'trocar-papel'));
       marcar('DIRECTOR');
       fixture.detectChanges();
 
       expect(el('[data-testid="conflito-de-papel"]')).toBeNull();
-      expect((el('[data-testid="salvar-papeis"]') as HTMLButtonElement).disabled).toBe(false);
+      expect(estaDesabilitado(fixture, '[data-testid="salvar-papeis"]')).toBe(false);
     });
   });
 
@@ -303,7 +310,7 @@ describe('TeamComponent', () => {
     it('deve consultar o que a saída quebra antes de perguntar qualquer coisa', async () => {
       await comoJosué();
 
-      clicar(linhaDe(carla.id)!.querySelector('[data-testid="acao-desligar"]') as HTMLElement);
+      clicar(acao(carla.id, 'desligar'));
 
       http.expectOne(`${API}/users/${carla.id}/disable-preview`).flush(prévia());
       fixture.detectChanges();
@@ -315,7 +322,7 @@ describe('TeamComponent', () => {
     it('deve pedir sucessor quando a saída deixa uma empresa sem quem responda', async () => {
       await comoJosué();
 
-      clicar(linhaDe(marcos.id)!.querySelector('[data-testid="acao-desligar"]') as HTMLElement);
+      clicar(acao(marcos.id, 'desligar'));
 
       http.expectOne(`${API}/users/${marcos.id}/disable-preview`).flush(
         prévia({
@@ -330,15 +337,13 @@ describe('TeamComponent', () => {
       // para quem, e não só que "falta um campo".
       expect(texto()).toContain('Único Gestor da BRF.');
       expect(el('[data-testid="escolher-sucessor"]')).not.toBeNull();
-      expect((el('[data-testid="confirmar-desligamento"]') as HTMLButtonElement).disabled).toBe(
-        true,
-      );
+      expect(estaDesabilitado(fixture, '[data-testid="confirmar-desligamento"]')).toBe(true);
     });
 
     it('deve enviar o sucessor escolhido junto do desligamento', async () => {
       await comoJosué();
 
-      clicar(linhaDe(marcos.id)!.querySelector('[data-testid="acao-desligar"]') as HTMLElement);
+      clicar(acao(marcos.id, 'desligar'));
       http.expectOne(`${API}/users/${marcos.id}/disable-preview`).flush(
         prévia({
           requiresSuccessor: true,
@@ -348,12 +353,8 @@ describe('TeamComponent', () => {
       );
       fixture.detectChanges();
 
-      const escolha = el('[data-testid="escolher-sucessor"]') as HTMLSelectElement;
-      escolha.value = fernando.id;
-      escolha.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
-
-      clicar(el('[data-testid="confirmar-desligamento"]'));
+      escolher(fixture, 'escolher-sucessor', 'Fernando');
+      clicarNo(fixture, '[data-testid="confirmar-desligamento"] button');
 
       const req = http.expectOne(`${API}/users/${marcos.id}/disable`);
       expect(req.request.body.successorUserId).toBe(fernando.id);
@@ -366,7 +367,7 @@ describe('TeamComponent', () => {
     it('deve explicar quando o servidor recusa o desligamento', async () => {
       await comoJosué();
 
-      clicar(linhaDe(carla.id)!.querySelector('[data-testid="acao-desligar"]') as HTMLElement);
+      clicar(acao(carla.id, 'desligar'));
 
       http
         .expectOne(`${API}/users/${carla.id}/disable-preview`)
@@ -380,9 +381,6 @@ describe('TeamComponent', () => {
 
   /** Marca um papel na caixa de troca de papéis. */
   function marcar(papel: string) {
-    const caixa = el(`[data-testid="papel"][value="${papel}"]`) as HTMLInputElement;
-    caixa.checked = true;
-    caixa.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    marcarCaixa(fixture, `papel-${papel}`);
   }
 });

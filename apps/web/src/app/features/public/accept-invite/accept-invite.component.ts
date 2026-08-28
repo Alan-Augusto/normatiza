@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 
 import { AccountRecoveryService } from '../../../core/auth/account-recovery.service';
+import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { SENHA_MÍNIMA, senhasIguais } from '../nova-senha';
 
 /**
@@ -56,11 +56,10 @@ export class AcceptInviteComponent {
       next: () => void this.router.navigateByUrl('/login'),
       error: (erro: unknown) => {
         this.enviando.set(false);
-        const recusado = erro instanceof HttpErrorResponse && erro.status < 500;
+        // O servidor distingue "convite já usado" de "senha curta demais". A
+        // tela repete o que ele disse em vez de chamar tudo de convite vencido.
         this.erro.set(
-          recusado
-            ? 'Este convite não vale mais. Peça um novo a quem convidou você.'
-            : 'Não foi possível concluir agora. Tente de novo em instantes.',
+          mensagemDoServidor(erro, 'Não foi possível concluir agora. Tente de novo em instantes.'),
         );
       },
     });

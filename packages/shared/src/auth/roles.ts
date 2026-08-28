@@ -117,3 +117,24 @@ export function invitableRoles(inviterRoles: readonly Role[]): Role[] {
   }
   return [...união];
 }
+
+/**
+ * Papéis que assinam responsabilidade técnica, e por isso têm registro
+ * profissional — CREA para engenheiro, CFT para técnico.
+ *
+ * É a regra do "quando Engenheiro/Técnico" de
+ * [03 §3.3](../../../../docs/produto/03_navegacao_e_telas.md), escrita uma vez:
+ * o formulário de convite e a tela de perfil precisam concordar sobre a quem
+ * perguntar isso. Gestor, Diretor e Executor ficam de fora porque não emitem
+ * laudo — pedir-lhes um número de conselho é pedir documento que não existe.
+ */
+export const REGISTRY_ROLES: readonly Role[] = [
+  'LEAD_ENGINEER',
+  'CONSULTANT_ENGINEER',
+  'TECHNICIAN',
+  'CLIENT_ENGINEER',
+];
+
+export function hasProfessionalRegistry(roles: readonly Role[]): boolean {
+  return roles.some((papel) => REGISTRY_ROLES.includes(papel));
+}

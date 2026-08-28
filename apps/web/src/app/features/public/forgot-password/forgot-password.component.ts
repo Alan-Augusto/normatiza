@@ -3,6 +3,8 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 
 import { AccountRecoveryService } from '../../../core/auth/account-recovery.service';
+import { aparaEmail } from '../../../core/forms/email';
+import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 
 @Component({
   selector: 'app-forgot-password',
@@ -20,26 +22,43 @@ export class ForgotPasswordComponent {
 
   readonly enviando = signal(false);
   readonly enviado = signal(false);
+  readonly erro = signal<string | null>(null);
 
   submit(): void {
+    aparaEmail(this.form.controls.email);
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
     this.enviando.set(true);
+    this.erro.set(null);
 
-    // O desfecho é o mesmo para e-mail existente e inexistente — inclusive
-    // quando a API falha. Uma tela que se comportasse diferente nos dois casos
-    // seria o oráculo que a resposta da API foi desenhada para não ser.
+    /*
+     * O sigilo desta tela é sobre **existir ou não a conta** — e disso ela nem
+     * fica sabendo: a API responde 202 nos dois casos, com o mesmo corpo.
+     *
+     * O que ela não pode fazer é estender esse silêncio à falha de transporte.
+     * Engolir o erro aqui, como se fazia antes, manda a pessoa esperar um
+     * e-mail que ninguém chegou a tentar mandar — e some com o único sinal de
+     * que havia algo errado. Foi assim que um pedido que nunca saiu do
+     * navegador passou por "enviado".
+     */
     this.recovery.forgotPassword(this.form.getRawValue().email).subscribe({
-      next: () => this.concluir(),
-      error: () => this.concluir(),
+      next: () => {
+        this.enviando.set(false);
+        this.enviado.set(true);
+      },
+      error: (falha: unknown) => {
+        this.enviando.set(false);
+        this.erro.set(
+          mensagemDoServidor(
+            falha,
+            'Não foi possível pedir a redefinição agora. Tente de novo em instantes.',
+          ),
+        );
+      },
     });
-  }
-
-  private concluir(): void {
-    this.enviando.set(false);
-    this.enviado.set(true);
   }
 }

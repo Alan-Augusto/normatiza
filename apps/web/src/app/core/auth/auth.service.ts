@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, of, shareReplay, tap } from 'rxjs';
 
-import type { LoginRequest, LoginResponse, Role, SessionUser } from '@normatiza/shared';
+import type { LoginRequest, LoginResponse, Role, SessionUser, User } from '@normatiza/shared';
 
 import { API_BASE_URL } from './api.config';
 
@@ -104,6 +104,20 @@ export class AuthService {
    */
   restoreSession(): Observable<unknown> {
     return this.refresh().pipe(catchError(() => of(null)));
+  }
+
+  /**
+   * Reflete na sessão o que a própria pessoa acabou de mudar no cadastro dela.
+   *
+   * O nome aparece no menu e na saudação. Sem isto, quem salvasse "Marcos
+   * Silva" continuaria vendo "Marcos" até o próximo refresh — e a tela pareceria
+   * não ter salvado. Não é fonte da verdade: é a mesma verdade que o servidor
+   * acabou de aceitar, sem uma segunda ida à rede para buscá-la de volta.
+   */
+  atualizarPerfil(dados: Partial<User>): void {
+    this._session.update((sessão) =>
+      sessão ? { ...sessão, user: { ...sessão.user, ...dados } } : sessão,
+    );
   }
 
   rolesInCompany(companyId: string): Role[] {

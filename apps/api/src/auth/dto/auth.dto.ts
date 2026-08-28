@@ -1,4 +1,5 @@
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { MENSAGEM_SENHA_CURTA, SENHA_MINIMA } from '@normatiza/shared';
 import type {
   AcceptInvitationRequest,
   ForgotPasswordRequest,
@@ -6,12 +7,9 @@ import type {
   ResetPasswordRequest,
 } from '@normatiza/shared';
 
-/**
- * Tamanho mínimo de senha. Regra de composição (maiúscula, símbolo, dígito) fica
- * de fora de propósito: obriga a senha ruim e memorizável. Comprimento é o que
- * mede resistência.
- */
-export const SENHA_MINIMA = 10;
+// O mínimo e a frase vêm do pacote compartilhado: o formulário do front precisa
+// recusar exatamente o que o servidor recusaria, com o mesmo número.
+export { SENHA_MINIMA };
 
 /** `implements` é o que garante que a validação e o contrato não se separem. */
 export class LoginDto implements LoginRequest {
@@ -37,7 +35,7 @@ export class ResetPasswordDto implements ResetPasswordRequest {
   token: string;
 
   @IsString()
-  @MinLength(SENHA_MINIMA, { message: `A senha precisa de ao menos ${SENHA_MINIMA} caracteres.` })
+  @MinLength(SENHA_MINIMA, { message: MENSAGEM_SENHA_CURTA })
   password: string;
 }
 
@@ -46,6 +44,6 @@ export class AcceptInvitationDto implements AcceptInvitationRequest {
   token: string;
 
   @IsString()
-  @MinLength(SENHA_MINIMA, { message: `A senha precisa de ao menos ${SENHA_MINIMA} caracteres.` })
+  @MinLength(SENHA_MINIMA, { message: MENSAGEM_SENHA_CURTA })
   password: string;
 }

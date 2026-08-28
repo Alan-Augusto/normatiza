@@ -1,6 +1,6 @@
 # Plano — Gestão de Equipe
 
-> **Status:** Fases 0–4 concluídas — backend verde, frontend com 61 testes vermelhos esperando a Fase 5 · **Criado em:** 2026-08-26
+> **Status:** Fases 0–5 concluídas — backend e frontend verdes (158 testes no front); falta só o fechamento · **Criado em:** 2026-08-26
 > **Regras de negócio:** [01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md) · [03 — Navegação §3.3 e §4.5](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §1](../produto/04_modelo_de_dados.md)
 > **Arquitetura existente:** [Autenticação e Autorização](../backend/autenticacao.md)
 
@@ -37,11 +37,11 @@ Escopo desta feature:
 | Trocar papel / escopo | `PATCH /memberships/:id` · `DELETE /memberships/:id`. |
 | Desligar usuário | `POST /users/:id/disable`, com `disable-preview` para a sucessão. |
 | Envio de e-mail | Existe, opt-in explícito, ligado a convite e recuperação de senha. |
-| Tela `/app/team` | Componente esqueleto e **23 testes vermelhos**; rota ainda não registrada. |
-| Tela `/app/companies/:id/team` | Componente esqueleto e **11 testes vermelhos**; rota ainda não registrada. |
-| `/app/profile` | Rota existe, componente é placeholder — **12 testes vermelhos** descrevem o que ele precisa ser. |
-| `GET/POST/DELETE /platform/admins` | Existem; tela com esqueleto e **5 testes vermelhos** (conceder está fora deles — ver D19). |
-| `TeamService` (web) | Esqueleto em `core/services/`, com **10 testes vermelhos** de contrato de rede. |
+| Tela `/app/team` | Existe, com rota, item de menu e 23 testes. |
+| Tela `/app/companies/:id/team` | Existe, com rota, item de menu e 11 testes. |
+| `/app/profile` | Tela real: dados, senha e os próprios vínculos. 12 testes. |
+| `/admin/admins` | Existe — listar e revogar. **Conceder depende de D19.** |
+| `TeamService` (web) | Em `core/services/`, servindo as duas telas de equipe. |
 | `Supplier` (executor terceiro) | Não existe. `Membership.supplierId` é `String?` solto, sem relação. |
 
 ---
@@ -251,16 +251,40 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 ### Fase 5 — Implementação do frontend
 
-- [ ] **5.1** Rotas e itens de menu nos dois contextos.
-- [ ] **5.2** Tela Equipe + formulário de convite (compartilhado com 5.3).
-- [ ] **5.3** Tela Equipe da Empresa.
-- [ ] **5.4** Fluxos de troca de papel e de desligamento com sucessão.
-- [ ] **5.5** Meu Perfil.
-- [ ] **5.6** Admins da plataforma. A concessão só entra depois de D19 resolvido.
+- [x] **5.1** Rotas e itens de menu nos dois contextos.
+- [x] **5.2** Tela Equipe + formulário de convite (compartilhado com 5.3).
+- [x] **5.3** Tela Equipe da Empresa.
+- [x] **5.4** Fluxos de troca de papel e de desligamento com sucessão.
+- [x] **5.5** Meu Perfil.
+- [x] **5.6** Admins da plataforma — listar e revogar. A concessão espera D19.
+
+> Os 61 vermelhos fecharam sem que nenhum precisasse ser afrouxado.
+>
+> **Duas peças ficaram em `shared/components/team/`** por serem exercidas pelas
+> duas telas de equipe: o formulário de convite e o editor de papéis. A
+> diferença entre os dois contextos não é o formulário — é o escopo, e ela cabe
+> num `input`.
+>
+> **As telas usam os componentes do PrimeNG**, como manda o
+> [design system](../web/design_system.md): `p-table`, `p-select`, `p-checkbox`,
+> `p-dialog`, `pInputText`, `p-button`, `p-message`.
+>
+> A primeira versão desta fase foi escrita com elementos nativos, sob a
+> justificativa de que o `p-dialog` dependia de animações ausentes no teste e
+> montava o conteúdo fora da árvore do componente. **As duas coisas eram
+> falsas** e foram verificadas depois: o `primeng-dialog` da v21 não importa
+> `@angular/animations`, e `overlayAppendTo` já vem como `'self'`. O que
+> faltava era só `window.matchMedia`, que o jsdom não tem — resolvido em
+> `src/test-setup.ts`, registrado no `angular.json`.
+>
+> Como se aperta cada componente num teste está em
+> `core/testing/prime.ts`, num lugar só: um `p-select` não responde a
+> `.value = 'MANAGER'`, e esse detalhe não pode estar espalhado por quatro
+> arquivos de teste.
 
 ### Fase 6 — Fechamento
 
-- [ ] **6.1** Suíte completa verde (`test`, `test:e2e`, front).
+- [ ] **6.1** Suíte completa verde (`test`, `test:e2e`, front). *Parcial: 119 unitários e 158 do front verdes; falta rodar `test:e2e` no fechamento.*
 - [ ] **6.2** Conferir que nenhuma regra é aplicada só no front.
 - [ ] **6.3** Estender [`docs/backend/autenticacao.md`](../backend/autenticacao.md) com o ciclo de vida, ou abrir `docs/backend/equipe.md` se ficar grande demais. **Levar junto o índice D1–D15**: o código já cita `(D8)`, `(D12)`, `(D13)` em comentário, e apagar este plano sem o índice deixa essas siglas sem referente — foi o motivo do §14 da autenticação.
 - [ ] **6.4** Atualizar `docs/produto` com o que for decidido durante a implementação.

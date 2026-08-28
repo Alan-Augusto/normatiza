@@ -21,6 +21,14 @@ import {
   carlaNaBrf,
   terceiroNaBrf,
 } from '../../../../../core/services/testing/equipe';
+import {
+  clicar as clicarNo,
+  digitar as digitarEm,
+  elemento,
+  elementos,
+  escolher,
+  opcoesDe,
+} from '../../../../../core/testing/prime';
 import { CompanyTeamComponent } from './company-team.component';
 
 /**
@@ -81,16 +89,24 @@ describe('CompanyTeamComponent', () => {
     abrirComo([vínculo(BRF.id, ['LEAD_ENGINEER']), vínculo(SEARA.id, ['LEAD_ENGINEER'])], equipe);
 
   const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
-  const el = (seletor: string) =>
-    (fixture.nativeElement as HTMLElement).querySelector(seletor) as HTMLElement | null;
-  const todos = (seletor: string) =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(seletor)) as HTMLElement[];
+  const el = (seletor: string) => elemento(fixture, seletor);
+  const todos = (seletor: string) => elementos(fixture, seletor);
   const linhaDe = (userId: string) => el(`[data-testid="linha"][data-user="${userId}"]`);
 
-  function clicar(elemento: HTMLElement | null) {
-    elemento!.click();
+  function clicar(alvo: HTMLElement | null) {
+    alvo!.click();
     fixture.detectChanges();
   }
+
+  /** A ação de uma linha: o `<button>` real mora dentro do `p-button`. */
+  function acao(userId: string, nome: string): HTMLElement {
+    const botao = linhaDe(userId)!.querySelector(`[data-testid="acao-${nome}"] button`);
+    if (!botao) throw new Error(`"${nome}" não é oferecido na linha de ${userId}.`);
+    return botao as HTMLElement;
+  }
+
+  const temAcao = (userId: string, nome: string) =>
+    linhaDe(userId)!.querySelector(`[data-testid="acao-${nome}"]`) !== null;
 
   describe('a lista', () => {
     it('deve mostrar quem tem acesso a esta empresa', async () => {
@@ -126,7 +142,7 @@ describe('CompanyTeamComponent', () => {
 
       // A remoção existe e está à vista; o desligamento não. É a diferença que
       // precisa aparecer, e não a ausência de tudo.
-      expect(linhaDe(terceiroNaBrf.id)!.querySelector('[data-testid="acao-remover"]')).not.toBeNull();
+      expect(temAcao(terceiroNaBrf.id, 'remover')).toBe(true);
       expect(el('[data-testid="acao-desligar"]')).toBeNull();
       expect(texto()).not.toContain('Desligar da conta');
     });
@@ -136,9 +152,7 @@ describe('CompanyTeamComponent', () => {
       // acesso dela a **esta** empresa, e o cadastro segue existindo.
       await comoMarcos();
 
-      const botão = linhaDe(terceiroNaBrf.id)!.querySelector(
-        '[data-testid="acao-remover"]',
-      ) as HTMLElement;
+      const botão = acao(terceiroNaBrf.id, 'remover');
       expect(botão.textContent).toContain('Remover da empresa');
       expect(botão.textContent).not.toContain('Excluir');
     });
@@ -146,8 +160,8 @@ describe('CompanyTeamComponent', () => {
     it('deve remover desativando o vínculo desta empresa', async () => {
       await comoMarcos();
 
-      clicar(linhaDe(terceiroNaBrf.id)!.querySelector('[data-testid="acao-remover"]'));
-      clicar(el('[data-testid="confirmar-remocao"]'));
+      clicar(acao(terceiroNaBrf.id, 'remover'));
+      clicarNo(fixture, '[data-testid="confirmar-remocao"] button');
 
       const req = http.expectOne(`${API}/memberships/${terceiroNaBrf.membershipId}`);
       expect(req.request.method).toBe('DELETE');
@@ -163,8 +177,8 @@ describe('CompanyTeamComponent', () => {
       // tela só obedece.
       await comoMarcos();
 
-      expect(linhaDe(carlaNaBrf.id)!.querySelector('[data-testid="acao-remover"]')).toBeNull();
-      expect(linhaDe(carlaNaBrf.id)!.querySelector('[data-testid="acao-trocar-papel"]')).toBeNull();
+      expect(temAcao(carlaNaBrf.id, 'remover')).toBe(false);
+      expect(temAcao(carlaNaBrf.id, 'trocar-papel')).toBe(false);
     });
   });
 
@@ -172,7 +186,7 @@ describe('CompanyTeamComponent', () => {
     it('não deve perguntar em qual empresa — já se sabe qual', async () => {
       await comoMarcos();
 
-      clicar(el('[data-testid="convidar"]'));
+      clicarNo(fixture, '[data-testid="convidar"] button');
 
       expect(el('[data-testid="convite-papel"]')).not.toBeNull();
       expect(el('[data-testid="empresa-oferecida"]')).toBeNull();
@@ -181,10 +195,10 @@ describe('CompanyTeamComponent', () => {
     it('deve convidar para esta empresa, sem que ninguém escolha', async () => {
       await comoMarcos();
 
-      clicar(el('[data-testid="convidar"]'));
+      clicarNo(fixture, '[data-testid="convidar"] button');
       preencher('novo@brf.com', 'Novo');
-      escolherPapel('EXECUTOR');
-      clicar(el('[data-testid="enviar-convite"]'));
+      escolher(fixture, 'convite-papel', 'Executor');
+      clicarNo(fixture, '[data-testid="enviar-convite"] button');
 
       const req = http.expectOne(`${API}/invitations`);
       expect(req.request.body.companyIds).toEqual([BRF.id]);
@@ -197,12 +211,13 @@ describe('CompanyTeamComponent', () => {
     it('deve oferecer ao Gestor apenas os papéis que ele concede', async () => {
       await comoMarcos();
 
-      clicar(el('[data-testid="convidar"]'));
+      clicarNo(fixture, '[data-testid="convidar"] button');
 
-      const oferecidos = todos('[data-testid="papel-oferecido"]').map(
-        (o) => (o as HTMLOptionElement).value,
-      );
-      expect(oferecidos.sort()).toEqual(['CLIENT_ENGINEER', 'DIRECTOR', 'EXECUTOR']);
+      expect(opcoesDe(fixture, 'convite-papel').sort()).toEqual([
+        'Diretor',
+        'Engenheiro do Cliente',
+        'Executor',
+      ]);
     });
 
     it('deve oferecer à consultoria, dentro da empresa, a alçada maior dela', async () => {
@@ -210,30 +225,16 @@ describe('CompanyTeamComponent', () => {
       // continua podendo alocar gente da consultoria nela.
       await comoJosué();
 
-      clicar(el('[data-testid="convidar"]'));
+      clicarNo(fixture, '[data-testid="convidar"] button');
 
-      const oferecidos = todos('[data-testid="papel-oferecido"]').map(
-        (o) => (o as HTMLOptionElement).value,
-      );
-      expect(oferecidos).toContain('TECHNICIAN');
-      expect(oferecidos).toContain('MANAGER');
+      const oferecidos = opcoesDe(fixture, 'convite-papel');
+      expect(oferecidos).toContain('Técnico');
+      expect(oferecidos).toContain('Gestor');
     });
   });
 
   function preencher(email: string, nome: string) {
-    const campoEmail = el('[data-testid="convite-email"]') as HTMLInputElement;
-    const campoNome = el('[data-testid="convite-nome"]') as HTMLInputElement;
-    campoEmail.value = email;
-    campoEmail.dispatchEvent(new Event('input'));
-    campoNome.value = nome;
-    campoNome.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-  }
-
-  function escolherPapel(papel: string) {
-    const seleção = el('[data-testid="convite-papel"]') as HTMLSelectElement;
-    seleção.value = papel;
-    seleção.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    digitarEm(fixture, '[data-testid="convite-email"]', email);
+    digitarEm(fixture, '[data-testid="convite-nome"]', nome);
   }
 });

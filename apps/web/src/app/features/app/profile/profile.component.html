@@ -1,1 +1,239 @@
-<h1>Profile (/app/profile)</h1>
+<div class="grid gap-6 lg:grid-cols-3">
+  <!-- Meus dados -->
+  <section
+    class="space-y-4 rounded-lg border border-surface-200 bg-surface-0 p-5 shadow-sm lg:col-span-2 dark:border-surface-800 dark:bg-surface-900"
+  >
+    <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0">Meus dados</h2>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="flex flex-col gap-2">
+        <label for="nome" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+          Nome
+        </label>
+        <input
+          pInputText
+          id="nome"
+          data-testid="nome"
+          type="text"
+          class="w-full"
+          [ngModel]="nome()"
+          (ngModelChange)="nome.set($event)"
+        />
+      </div>
+
+      <!--
+        E-mail em leitura (D7). Ele é o login: quem o troca passa a receber os
+        links de redefinição da conta. Se um dia existir troca, é fluxo próprio,
+        com confirmação nos dois endereços — não um campo neste formulário.
+      -->
+      <div class="flex flex-col gap-2">
+        <label for="email" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+          E-mail
+        </label>
+        <input
+          pInputText
+          id="email"
+          data-testid="email"
+          type="email"
+          readonly
+          class="w-full cursor-not-allowed"
+          [value]="usuario()?.email ?? ''"
+        />
+        <span data-testid="email-nota" class="text-xs text-muted-color">
+          O e-mail é o seu login e não se altera por aqui. Fale com quem administra a conta.
+        </span>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="telefone" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+          Telefone
+        </label>
+        <input
+          pInputText
+          id="telefone"
+          data-testid="telefone"
+          type="tel"
+          class="w-full"
+          [ngModel]="telefone()"
+          (ngModelChange)="telefone.set($event)"
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="cargo" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+          Cargo
+        </label>
+        <input
+          pInputText
+          id="cargo"
+          data-testid="cargo"
+          type="text"
+          class="w-full"
+          [ngModel]="cargo()"
+          (ngModelChange)="cargo.set($event)"
+        />
+      </div>
+    </div>
+
+    @if (pedeRegistro()) {
+      <div data-testid="registro" class="grid gap-4 sm:grid-cols-2">
+        <div class="flex flex-col gap-2">
+          <label class="text-sm font-medium text-surface-900 dark:text-surface-0">Conselho</label>
+          <p-select
+            data-testid="tipo-registro"
+            [options]="opcoesDeConselho"
+            [ngModel]="tipoDeRegistro()"
+            (ngModelChange)="tipoDeRegistro.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          />
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label
+            for="numero-registro"
+            class="text-sm font-medium text-surface-900 dark:text-surface-0"
+          >
+            Número do registro
+          </label>
+          <input
+            pInputText
+            id="numero-registro"
+            data-testid="numero-registro"
+            type="text"
+            class="w-full"
+            [ngModel]="numeroDeRegistro()"
+            (ngModelChange)="numeroDeRegistro.set($event)"
+          />
+        </div>
+      </div>
+    }
+
+    @if (avisoDoPerfil()) {
+      <p-message
+        data-testid="aviso-perfil"
+        severity="success"
+        styleClass="w-full"
+        [text]="avisoDoPerfil()!"
+      />
+    }
+    @if (erroDoPerfil()) {
+      <p-message
+        data-testid="erro-perfil"
+        severity="error"
+        styleClass="w-full"
+        [text]="erroDoPerfil()!"
+      />
+    }
+
+    <div class="flex justify-end">
+      <p-button
+        data-testid="salvar-perfil"
+        label="Salvar"
+        [loading]="salvandoPerfil()"
+        (onClick)="salvarPerfil()"
+      />
+    </div>
+  </section>
+
+  <!-- Onde eu atuo -->
+  <section
+    class="space-y-4 rounded-lg border border-surface-200 bg-surface-0 p-5 shadow-sm dark:border-surface-800 dark:bg-surface-900"
+  >
+    <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0">Onde eu atuo</h2>
+
+    <ul data-testid="meus-vinculos" class="space-y-3">
+      @for (vinculo of vinculos(); track vinculo.id) {
+        <li class="border-b border-surface-100 pb-3 last:border-0 last:pb-0 dark:border-surface-800">
+          <div class="text-sm font-medium text-surface-900 dark:text-surface-0">
+            {{ vinculo.company.tradeName }}
+          </div>
+          <div class="text-xs text-muted-color">
+            @for (papel of vinculo.roles; track papel) {
+              <span class="mr-1">{{ rotulo[papel] }}</span>
+            }
+          </div>
+        </li>
+      } @empty {
+        <li class="text-sm text-muted-color">
+          Você não tem vínculo ativo com nenhuma empresa no momento.
+        </li>
+      }
+    </ul>
+  </section>
+
+  <!-- Minha senha -->
+  <section
+    class="space-y-4 rounded-lg border border-surface-200 bg-surface-0 p-5 shadow-sm lg:col-span-2 dark:border-surface-800 dark:bg-surface-900"
+  >
+    <h2 class="text-base font-semibold text-surface-900 dark:text-surface-0">Minha senha</h2>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="flex flex-col gap-2">
+        <label for="senha-atual" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+          Senha atual
+        </label>
+        <input
+          pInputText
+          id="senha-atual"
+          data-testid="senha-atual"
+          type="password"
+          class="w-full"
+          [ngModel]="senhaAtual()"
+          (ngModelChange)="senhaAtual.set($event)"
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="senha-nova" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+          Senha nova
+        </label>
+        <input
+          pInputText
+          id="senha-nova"
+          data-testid="senha-nova"
+          type="password"
+          class="w-full"
+          [ngModel]="senhaNova()"
+          (ngModelChange)="senhaNova.set($event)"
+        />
+        <span class="text-xs text-muted-color">Ao menos {{ tamanhoMinimo }} caracteres.</span>
+      </div>
+    </div>
+
+    <!--
+      O servidor derruba todas as sessões, inclusive a de quem trocou.
+      Descobrir isso sendo deslogado no meio do trabalho é pior do que ler antes.
+    -->
+    <p class="text-sm text-muted-color">
+      Ao trocar a senha, todas as sessões abertas são encerradas — inclusive esta.
+    </p>
+
+    @if (avisoDaSenha()) {
+      <p-message
+        data-testid="aviso-senha"
+        severity="success"
+        styleClass="w-full"
+        [text]="avisoDaSenha()!"
+      />
+    }
+    @if (erroDaSenha()) {
+      <p-message
+        data-testid="erro-senha"
+        severity="error"
+        styleClass="w-full"
+        [text]="erroDaSenha()!"
+      />
+    }
+
+    <div class="flex justify-end">
+      <p-button
+        data-testid="salvar-senha"
+        label="Trocar senha"
+        [loading]="salvandoSenha()"
+        (onClick)="salvarSenha()"
+      />
+    </div>
+  </section>
+</div>

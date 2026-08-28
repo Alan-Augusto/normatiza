@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Account, Membership, Prisma, User as UserRow } from '@prisma/client';
 import type {
@@ -46,6 +46,8 @@ type UsuárioComConta = UserRow & { account: Account };
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
@@ -236,6 +238,22 @@ export class AuthService {
     const usuários = await this.prisma.user.findMany({
       where: { email: normalizaEmail(email), status: 'ACTIVE' },
     });
+
+    /*
+     * Fora de produção, o silêncio é dito em voz alta.
+     *
+     * A resposta HTTP é 202 exista ou não a conta — é o que impede esta rota de
+     * virar um oráculo de quem é cliente de quem, e isso não muda. Mas em
+     * desenvolvimento o 202 sem link no log é indistinguível de um defeito, e
+     * já custou uma tarde: o pedido saía do navegador, voltava 202, e nada
+     * aparecia porque o e-mail digitado não era o de ninguém.
+     *
+     * A linha vive só no log do servidor de desenvolvimento — nunca atravessa a
+     * rede, nunca existe em produção.
+     */
+    if (usuários.length === 0 && this.config.get('NODE_ENV', { infer: true }) !== 'production') {
+      this.logger.log(`[recuperação] nenhum usuário ativo com ${normalizaEmail(email)} — nada a enviar.`);
+    }
 
     for (const user of usuários) {
       const token = randomBytes(32).toString('base64url');

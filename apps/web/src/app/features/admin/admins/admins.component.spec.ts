@@ -9,6 +9,7 @@ import type { PlatformAdmin } from '@normatiza/shared';
 import { API_BASE_URL } from '../../../core/auth/api.config';
 import { AuthService } from '../../../core/auth/auth.service';
 import { BRF, respostaDeLogin, sessão, vínculo } from '../../../core/auth/testing/sessao';
+import { elemento, elementos } from '../../../core/testing/prime';
 import { AdminsComponent } from './admins.component';
 
 /**
@@ -77,10 +78,8 @@ describe('AdminsComponent', () => {
     fixture.detectChanges();
   }
 
-  const el = (seletor: string) =>
-    (fixture.nativeElement as HTMLElement).querySelector(seletor) as HTMLElement | null;
-  const todos = (seletor: string) =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(seletor)) as HTMLElement[];
+  const el = (seletor: string) => elemento(fixture, seletor);
+  const todos = (seletor: string) => elementos(fixture, seletor);
   const linhaDe = (userId: string) => el(`[data-testid="linha"][data-user="${userId}"]`);
 
   describe('a lista', () => {
@@ -113,7 +112,7 @@ describe('AdminsComponent', () => {
     it('deve revogar pelo usuário, não pela concessão', async () => {
       await abrir();
 
-      (linhaDe(outro.userId)!.querySelector('[data-testid="acao-revogar"]') as HTMLElement).click();
+      (linhaDe(outro.userId)!.querySelector('[data-testid="acao-revogar"] button') as HTMLElement).click();
       fixture.detectChanges();
 
       const req = http.expectOne(`${API}/platform/admins/${outro.userId}`);

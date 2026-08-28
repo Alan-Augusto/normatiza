@@ -1,0 +1,154 @@
+<div class="space-y-4">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="flex flex-col gap-2">
+      <label for="convite-nome" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+        Nome
+      </label>
+      <input
+        pInputText
+        id="convite-nome"
+        data-testid="convite-nome"
+        type="text"
+        class="w-full"
+        [ngModel]="nome()"
+        (ngModelChange)="nome.set($event)"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="convite-email" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+        E-mail
+      </label>
+      <input
+        pInputText
+        id="convite-email"
+        data-testid="convite-email"
+        type="email"
+        class="w-full"
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+      />
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-medium text-surface-900 dark:text-surface-0">Papel</label>
+      <p-select
+        data-testid="convite-papel"
+        [options]="opcoesDePapel()"
+        [ngModel]="papel()"
+        (ngModelChange)="papel.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Escolha…"
+        class="w-full"
+      />
+    </div>
+
+    @if (ehExecutor()) {
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-surface-900 dark:text-surface-0">
+          Vínculo do executor
+        </label>
+        <p-select
+          data-testid="convite-tipo-executor"
+          [options]="opcoesDeExecutor"
+          [ngModel]="tipoDeExecutor()"
+          (ngModelChange)="tipoDeExecutor.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full"
+        />
+      </div>
+    }
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="flex flex-col gap-2">
+      <label for="convite-cargo" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+        Cargo <span class="font-normal text-muted-color">(opcional)</span>
+      </label>
+      <input
+        pInputText
+        id="convite-cargo"
+        data-testid="convite-cargo"
+        type="text"
+        class="w-full"
+        [ngModel]="cargo()"
+        (ngModelChange)="cargo.set($event)"
+      />
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="convite-telefone" class="text-sm font-medium text-surface-900 dark:text-surface-0">
+        Telefone <span class="font-normal text-muted-color">(opcional)</span>
+      </label>
+      <input
+        pInputText
+        id="convite-telefone"
+        data-testid="convite-telefone"
+        type="tel"
+        class="w-full"
+        [ngModel]="telefone()"
+        (ngModelChange)="telefone.set($event)"
+      />
+    </div>
+  </div>
+
+  <!--
+    O seletor de empresas só existe onde há escolha. Dentro de uma empresa, ela
+    já é a resposta — e uma lista de uma opção só é uma pergunta encenada.
+  -->
+  @if (!fixedCompanyId()) {
+    <div class="space-y-2">
+      <span class="text-sm font-medium text-surface-900 dark:text-surface-0">
+        Em quais empresas
+      </span>
+
+      <div class="flex flex-wrap gap-4">
+        @for (empresa of companies(); track empresa.id) {
+          <div class="flex items-center gap-2">
+            <p-checkbox
+              data-testid="empresa-oferecida"
+              [binary]="true"
+              [inputId]="'empresa-' + empresa.id"
+              [ngModel]="empresasEscolhidas().includes(empresa.id)"
+              (ngModelChange)="alternarEmpresa(empresa.id, $event)"
+            />
+            <label
+              [for]="'empresa-' + empresa.id"
+              class="text-sm font-medium text-surface-900 dark:text-surface-0"
+            >
+              {{ empresa.tradeName }}
+            </label>
+          </div>
+        }
+      </div>
+
+      @if (escopoDemaisDeUma()) {
+        <p data-testid="escopo-demais" class="text-sm text-warning">
+          Gestor, Engenheiro do Cliente e Diretor respondem por uma empresa só. Escolha uma.
+        </p>
+      }
+    </div>
+  }
+
+  @if (erro()) {
+    <p data-testid="erro-convite" class="text-sm text-danger">{{ erro() }}</p>
+  }
+
+  <p class="text-sm text-muted-color">
+    A pessoa recebe um e-mail e define a própria senha. O convite vale por 7 dias.
+  </p>
+
+  <div class="flex justify-end">
+    <p-button
+      data-testid="enviar-convite"
+      label="Enviar convite"
+      [disabled]="!podeEnviar()"
+      [loading]="enviando()"
+      (onClick)="enviar()"
+    />
+  </div>
+</div>

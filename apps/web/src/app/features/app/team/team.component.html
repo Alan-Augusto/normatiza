@@ -1,1 +1,247 @@
-<!-- Fase 5 do plano de gestão de equipe preenche esta tela. -->
+<div class="space-y-4">
+  <!-- Filtros e a porta de entrada de gente nova -->
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div class="flex flex-wrap gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-muted-color">Papel</label>
+        <p-select
+          data-testid="filtro-papel"
+          [options]="opcoesDePapel"
+          [ngModel]="filtros().role ?? null"
+          (ngModelChange)="filtrar('role', $event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos os papéis"
+          [showClear]="true"
+          styleClass="w-48"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-muted-color">Empresa</label>
+        <p-select
+          data-testid="filtro-empresa"
+          [options]="opcoesDeEmpresa()"
+          [ngModel]="filtros().companyId ?? null"
+          (ngModelChange)="filtrar('companyId', $event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas as empresas"
+          [showClear]="true"
+          styleClass="w-48"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-muted-color">Situação</label>
+        <p-select
+          data-testid="filtro-status"
+          [options]="opcoesDeStatus"
+          [ngModel]="filtros().status ?? null"
+          (ngModelChange)="filtrar('status', $event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas as situações"
+          [showClear]="true"
+          styleClass="w-48"
+        />
+      </div>
+    </div>
+
+    <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+  </div>
+
+  @if (aviso()) {
+    <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
+  }
+  @if (erro()) {
+    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
+
+  <p-table [value]="membros()" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '100%' }">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Nome</th>
+        <th>Papéis</th>
+        <th>Empresas</th>
+        <th>Convidou</th>
+        <th>Último acesso</th>
+        <th>Situação</th>
+        <th></th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-membro>
+      <tr data-testid="linha" [attr.data-user]="membro.id">
+        <td>
+          <div class="font-medium text-surface-900 dark:text-surface-0">
+            {{ membro.name }}
+            @if (membro.isAccountOwner) {
+              <span class="ml-1 text-xs font-normal text-muted-color">· titular</span>
+            }
+          </div>
+          <div class="text-xs text-muted-color">{{ membro.email }}</div>
+        </td>
+
+        <td>
+          @for (papel of papeisDe(membro); track papel) {
+            <span class="mr-1">{{ rotuloDoPapel(papel) }}</span>
+          } @empty {
+            <span class="text-muted-color">—</span>
+          }
+        </td>
+
+        <td>{{ empresasDe(membro) || '—' }}</td>
+
+        <td>{{ membro.invitedBy?.name ?? '—' }}</td>
+
+        <td>{{ membro.lastAccessAt ? (membro.lastAccessAt | date: 'dd/MM/yyyy') : '—' }}</td>
+
+        <td>
+          @switch (membro.status) {
+            @case ('ACTIVE') {
+              <span class="rounded-full bg-success/15 px-2 py-0.5 text-xs font-bold text-success">
+                Ativo
+              </span>
+            }
+            @case ('INVITED') {
+              @if (expirado(membro)) {
+                <span
+                  data-testid="convite-expirado"
+                  class="rounded-full bg-warning/15 px-2 py-0.5 text-xs font-bold text-warning"
+                >
+                  Convite expirado
+                </span>
+              } @else {
+                <span
+                  data-testid="convite-pendente"
+                  class="rounded-full bg-surface-200 px-2 py-0.5 text-xs font-bold text-muted-color dark:bg-surface-800"
+                >
+                  Convite · expira em {{ diasParaExpirar(membro) }}d
+                </span>
+              }
+            }
+            @case ('DISABLED') {
+              <span
+                class="rounded-full bg-surface-200 px-2 py-0.5 text-xs font-bold text-muted-color dark:bg-surface-800"
+              >
+                Desligado
+              </span>
+              @if (membro.succeededBy) {
+                <span data-testid="sucessor" class="mt-1 block text-xs text-muted-color">
+                  Sucedido por {{ membro.succeededBy.name }}
+                </span>
+              }
+            }
+          }
+        </td>
+
+        <!--
+          O que aparece aqui é o que veio do servidor em `actions`. A ação que a
+          alçada não alcança **não é renderizada** — botão cinza com aviso é
+          oferecer e recusar no mesmo gesto.
+        -->
+        <td>
+          <div class="flex justify-end gap-1">
+            @if (membro.actions.resendInvitation) {
+              <p-button
+                data-testid="acao-reenviar"
+                label="Reenviar"
+                [text]="true"
+                size="small"
+                (onClick)="reenviar(membro)"
+              />
+            }
+            @if (membro.actions.revokeInvitation) {
+              <p-button
+                data-testid="acao-revogar"
+                label="Revogar"
+                severity="secondary"
+                [text]="true"
+                size="small"
+                (onClick)="revogar(membro)"
+              />
+            }
+            @if (membro.actions.changeRoles) {
+              <p-button
+                data-testid="acao-trocar-papel"
+                label="Trocar papel"
+                [text]="true"
+                size="small"
+                (onClick)="editando.set(membro)"
+              />
+            }
+            @if (membro.actions.disableFromAccount) {
+              <p-button
+                data-testid="acao-desligar"
+                label="Desligar"
+                severity="secondary"
+                [text]="true"
+                size="small"
+                (onClick)="desligando.set(membro)"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" class="py-8 text-center text-muted-color">
+          {{ carregando() ? 'Carregando…' : 'Ninguém encontrado com esses filtros.' }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  header="Convidar pessoa"
+  [visible]="convidando()"
+  (visibleChange)="convidando.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '38rem' }"
+>
+  <app-invite-form
+    [roles]="papeisQuePossoConceder()"
+    [companies]="minhasEmpresas()"
+    (created)="concluir()"
+  />
+</p-dialog>
+
+@if (editando(); as membro) {
+  <p-dialog
+    [header]="'Papéis de ' + membro.name"
+    [visible]="true"
+    (visibleChange)="editando.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '34rem' }"
+  >
+    <app-role-editor
+      [memberName]="membro.name"
+      [vinculos]="vinculosDoEditando()"
+      [allowRemoval]="membro.actions.removeFromCompany"
+      (saved)="concluir()"
+      (removed)="concluir()"
+    />
+  </p-dialog>
+}
+
+@if (desligando(); as membro) {
+  <p-dialog
+    [header]="'Desligar ' + membro.name + ' da conta'"
+    [visible]="true"
+    (visibleChange)="desligando.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '34rem' }"
+  >
+    <app-disable-dialog [member]="membro" (disabled)="concluir()" />
+  </p-dialog>
+}

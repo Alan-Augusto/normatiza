@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -34,7 +34,7 @@ export class TeamService {
 
   /** A equipe **da conta** — Contexto 1. */
   listTeam(filtros: TeamListQuery = {}): Observable<TeamMember[]> {
-    throw new Error('não implementado');
+    return this.http.get<TeamMember[]>(`${this.api}/users`, { params: paramsDe(filtros) });
   }
 
   /**
@@ -44,36 +44,50 @@ export class TeamService {
    * não nomeia nenhuma outra empresa, nem a conta.
    */
   listCompanyMembers(companyId: string): Observable<CompanyMember[]> {
-    throw new Error('não implementado');
+    return this.http.get<CompanyMember[]>(`${this.api}/companies/${companyId}/members`);
   }
 
   updateMembership(membershipId: string, dados: UpdateMembershipRequest): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.patch<void>(`${this.api}/memberships/${membershipId}`, dados);
   }
 
   /** Remove da **empresa**, não da conta (D8). O vínculo é desativado, não apagado. */
   removeFromCompany(membershipId: string): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.delete<void>(`${this.api}/memberships/${membershipId}`);
   }
 
   /** O que a tela precisa saber antes de oferecer o desligamento (D14). */
   disablePreview(userId: string): Observable<DisableUserPreview> {
-    throw new Error('não implementado');
+    return this.http.get<DisableUserPreview>(`${this.api}/users/${userId}/disable-preview`);
   }
 
   disable(userId: string, dados: DisableUserRequest = {}): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.post<void>(`${this.api}/users/${userId}/disable`, dados);
   }
 
   invite(dados: CreateInvitationRequest): Observable<InvitationSummary> {
-    throw new Error('não implementado');
+    return this.http.post<InvitationSummary>(`${this.api}/invitations`, dados);
   }
 
   resendInvitation(invitationId: string): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.post<void>(`${this.api}/invitations/${invitationId}/resend`, {});
   }
 
   revokeInvitation(invitationId: string): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.delete<void>(`${this.api}/invitations/${invitationId}`);
   }
+}
+
+/**
+ * Filtro não escolhido **não vira parâmetro**.
+ *
+ * `?role=` vazio não é "todos os papéis" para o servidor: é um valor fora do
+ * enum, e a resposta seria 400 numa listagem que a pessoa nem filtrou.
+ */
+function paramsDe(filtros: TeamListQuery): HttpParams {
+  let params = new HttpParams();
+  for (const [chave, valor] of Object.entries(filtros)) {
+    if (valor) params = params.set(chave, valor);
+  }
+  return params;
 }

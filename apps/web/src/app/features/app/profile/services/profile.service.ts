@@ -12,8 +12,6 @@ import { API_BASE_URL } from '../../../../core/auth/api.config';
  * Não recebe id de usuário: "editar o perfil de outro" não existe. Quem é o
  * dono destes dados vem do token, no servidor — um id na rota criaria um
  * caminho que a regra de negócio não tem.
- *
- * Esqueleto: a Fase 5 do plano de gestão de equipe preenche.
  */
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
@@ -22,10 +20,10 @@ export class ProfileService {
 
   /** Sem `email` (D7): trocar o e-mail de um login é passar a receber os links dele. */
   updateProfile(dados: UpdateProfileRequest): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.patch<void>(`${this.api}/users/me`, dados);
   }
 
   changePassword(dados: ChangePasswordRequest): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.post<void>(`${this.api}/users/me/password`, dados);
   }
 }

@@ -9,7 +9,9 @@ import { API_BASE_URL } from '../../../../core/auth/api.config';
 /**
  * As concessões de acesso ao Contexto 0.
  *
- * Esqueleto: a Fase 5 do plano de gestão de equipe preenche.
+ * A revogação é **pelo usuário**, não pela concessão: o que se tira é o acesso
+ * da pessoa, e a linha de `PlatformAdmin` continua existindo com `revokedAt`
+ * preenchido — quem auditar precisa achar que houve, não que nunca houve.
  */
 @Injectable({ providedIn: 'root' })
 export class PlatformAdminService {
@@ -17,14 +19,14 @@ export class PlatformAdminService {
   private readonly api = inject(API_BASE_URL);
 
   list(): Observable<PlatformAdmin[]> {
-    throw new Error('não implementado');
+    return this.http.get<PlatformAdmin[]>(`${this.api}/platform/admins`);
   }
 
   grant(userId: string): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.post<void>(`${this.api}/platform/admins`, { userId });
   }
 
   revoke(userId: string): Observable<void> {
-    throw new Error('não implementado');
+    return this.http.delete<void>(`${this.api}/platform/admins/${userId}`);
   }
 }

@@ -1,1 +1,199 @@
-<!-- Fase 5 do plano de gestão de equipe preenche esta tela. -->
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <p class="text-sm text-muted-color">
+      Quem tem acesso a esta empresa — consultoria alocada, equipe própria e terceiros.
+    </p>
+
+    <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+  </div>
+
+  @if (aviso()) {
+    <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
+  }
+  @if (erro()) {
+    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
+
+  <p-table [value]="membros()" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '100%' }">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Nome</th>
+        <th>Papel</th>
+        <th>Origem</th>
+        <th>Último acesso</th>
+        <th>Situação</th>
+        <th></th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-membro>
+      <tr data-testid="linha" [attr.data-user]="membro.id">
+        <td>
+          <div class="font-medium text-surface-900 dark:text-surface-0">{{ membro.name }}</div>
+          <div class="text-xs text-muted-color">{{ membro.email }}</div>
+        </td>
+
+        <td>
+          @for (papel of membro.roles; track papel) {
+            <span class="mr-1">{{ rotuloDoPapel(papel) }}</span>
+          }
+        </td>
+
+        <!--
+          Três relações contratuais diferentes: quem me atende, quem trabalha
+          aqui e quem foi contratado para um serviço. Quem administra a planta
+          precisa distinguir as três.
+        -->
+        <td>{{ rotuloDaOrigem(membro.origin) }}</td>
+
+        <td>{{ membro.lastAccessAt ? (membro.lastAccessAt | date: 'dd/MM/yyyy') : '—' }}</td>
+
+        <td>
+          @switch (membro.status) {
+            @case ('ACTIVE') {
+              <span class="rounded-full bg-success/15 px-2 py-0.5 text-xs font-bold text-success">
+                Ativo
+              </span>
+            }
+            @case ('INVITED') {
+              @if (expirado(membro)) {
+                <span
+                  data-testid="convite-expirado"
+                  class="rounded-full bg-warning/15 px-2 py-0.5 text-xs font-bold text-warning"
+                >
+                  Convite expirado
+                </span>
+              } @else {
+                <span
+                  data-testid="convite-pendente"
+                  class="rounded-full bg-surface-200 px-2 py-0.5 text-xs font-bold text-muted-color dark:bg-surface-800"
+                >
+                  Convite pendente
+                </span>
+              }
+            }
+            @case ('DISABLED') {
+              <span
+                class="rounded-full bg-surface-200 px-2 py-0.5 text-xs font-bold text-muted-color dark:bg-surface-800"
+              >
+                Sem acesso
+              </span>
+            }
+          }
+        </td>
+
+        <td>
+          <div class="flex justify-end gap-1">
+            @if (membro.actions.resendInvitation) {
+              <p-button
+                data-testid="acao-reenviar"
+                label="Reenviar"
+                [text]="true"
+                size="small"
+                (onClick)="reenviar(membro)"
+              />
+            }
+            @if (membro.actions.changeRoles) {
+              <p-button
+                data-testid="acao-trocar-papel"
+                label="Trocar papel"
+                [text]="true"
+                size="small"
+                (onClick)="editando.set(membro)"
+              />
+            }
+            <!--
+              "Remover da empresa", e nunca "Excluir": o Gestor encerra o acesso
+              a **esta** empresa. O cadastro da pessoa segue existindo, e
+              desligá-la da conta não é ato desta tela (D8).
+            -->
+            @if (membro.actions.removeFromCompany) {
+              <p-button
+                data-testid="acao-remover"
+                label="Remover da empresa"
+                severity="secondary"
+                [text]="true"
+                size="small"
+                (onClick)="removendo.set(membro)"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6" class="py-8 text-center text-muted-color">
+          {{ carregando() ? 'Carregando…' : 'Ninguém tem acesso a esta empresa ainda.' }}
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  [header]="'Convidar para ' + nomeDaEmpresa()"
+  [visible]="convidando()"
+  (visibleChange)="convidando.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '38rem' }"
+>
+  <!--
+    Sem seletor de empresas: aqui já se sabe qual. Oferecer a escolha seria
+    encenar uma pergunta cuja resposta a rota já deu.
+  -->
+  <app-invite-form
+    [roles]="papeisQuePossoConceder()"
+    [fixedCompanyId]="companyId()"
+    (created)="concluir()"
+  />
+</p-dialog>
+
+@if (editando(); as membro) {
+  <p-dialog
+    [header]="'Papéis de ' + membro.name"
+    [visible]="true"
+    (visibleChange)="editando.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '34rem' }"
+  >
+    <app-role-editor
+      [memberName]="membro.name"
+      [vinculos]="vinculoDoEditando()"
+      (saved)="concluir()"
+    />
+  </p-dialog>
+}
+
+@if (removendo(); as membro) {
+  <p-dialog
+    [header]="'Remover ' + membro.name + ' da empresa'"
+    [visible]="true"
+    (visibleChange)="removendo.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '32rem' }"
+  >
+    <div class="space-y-4">
+      <p class="text-sm text-surface-900 dark:text-surface-0">
+        {{ membro.name }} perde o acesso a {{ nomeDaEmpresa() }}. O cadastro continua existindo, e
+        o histórico do que essa pessoa fez aqui não muda.
+      </p>
+
+      <div class="flex justify-end">
+        <p-button
+          data-testid="confirmar-remocao"
+          label="Remover da empresa"
+          severity="danger"
+          (onClick)="remover()"
+        />
+      </div>
+    </div>
+  </p-dialog>
+}

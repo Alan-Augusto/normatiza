@@ -154,7 +154,8 @@ export class MenuContextService {
       const items: MenuItem[] = [
         { label: 'Dashboard', icon: 'pi pi-chart-pie', route: `${base}/dashboard` },
         { label: 'Equipamentos', icon: 'pi pi-box', route: `${base}/equipments` },
-        { label: 'Plano de Ação', icon: 'pi pi-list-check', route: `${base}/action-plan` }
+        { label: 'Plano de Ação', icon: 'pi pi-list-check', route: `${base}/action-plan` },
+        { label: 'Equipe', icon: 'pi pi-users', route: `${base}/team` }
       ];
 
       const companyName = this.activeContext.company()?.name ?? `Empresa ${companyId}`;
@@ -184,6 +185,7 @@ export class MenuContextService {
     if (url.startsWith('/admin')) {
       const items: MenuItem[] = [
         { label: 'Contas', icon: 'pi pi-users', route: '/admin/accounts' },
+        { label: 'Admins da Plataforma', icon: 'pi pi-shield', route: '/admin/admins' },
         { label: 'Compras', icon: 'pi pi-shopping-cart', route: '/admin/purchases' },
         { label: 'Design System', icon: 'pi pi-palette', route: '/admin/design-system' }
       ];
@@ -207,6 +209,7 @@ export class MenuContextService {
     const items: MenuItem[] = [
       { label: 'Dashboard', icon: 'pi pi-chart-pie', route: '/app/dashboard' },
       { label: 'Empresas', icon: 'pi pi-building', route: '/app/companies' },
+      { label: 'Equipe', icon: 'pi pi-users', route: '/app/team' },
       { label: 'Meus Cadastros', icon: 'pi pi-book', route: '/app/catalogs/solutions' }
     ];
 
