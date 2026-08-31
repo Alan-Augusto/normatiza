@@ -13,6 +13,11 @@
  * Serve ao bloco de contexto e ao link de voltar — os dois nascem e somem
  * conforme a pessoa entra e sai de uma empresa, e apareciam com um salto.
  */
+/*
+ * `display: grid` disputa com utilitários de display do Tailwind (`.block`) na
+ * mesma especificidade, e aí quem vence é a ordem de injeção. Não se combina
+ * `.revela` com um utilitário de display no mesmo elemento.
+ */
 .revela {
   display: grid;
   grid-template-rows: 0fr;
