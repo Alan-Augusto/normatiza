@@ -223,10 +223,7 @@ export class CompanyTeamComponent {
    * empresa. Quem abre esta tela tem acesso a ela, então o nome já está na mão.
    */
   nomeDaEmpresa(): string {
-    const vinculo = (this.auth.session()?.memberships ?? []).find(
-      (item) => item.companyId === this.companyId(),
-    );
-    return vinculo?.company.tradeName ?? 'esta empresa';
+    return this.auth.companyInScope(this.companyId())?.tradeName ?? 'esta empresa';
   }
 
   carregar(): void {

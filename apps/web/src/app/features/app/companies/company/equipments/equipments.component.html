@@ -1,1 +1,24 @@
-<p>equipments-list works!</p>
+<!-- Tela provisória: máquinas inventadas, para exercer a troca de contexto. -->
+<div class="space-y-3">
+  <p
+    data-testid="aviso-provisorio"
+    class="rounded-lg bg-warning/15 px-3 py-2 text-xs font-medium text-warning"
+  >
+    Estas máquinas não existem — o cadastro de equipamentos ainda não foi feito. A lista serve só
+    para abrir o contexto do equipamento.
+  </p>
+
+  <div class="space-y-2">
+    @for (maquina of maquinas; track maquina.id) {
+      <a
+        data-testid="equipamento"
+        [attr.data-equipment]="maquina.id"
+        [routerLink]="rotaDoEquipamento(maquina.id)"
+        class="block rounded-lg border border-surface-200 p-3 hover:bg-surface-50 dark:border-surface-700 dark:hover:bg-surface-800"
+      >
+        <div class="font-medium text-surface-900 dark:text-surface-0">{{ maquina.nome }}</div>
+        <div class="text-xs text-muted-color">{{ maquina.setor }}</div>
+      </a>
+    }
+  </div>
+</div>

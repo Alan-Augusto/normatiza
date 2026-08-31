@@ -1,1 +1,26 @@
-<p>clients-list works!</p>
+<!-- Tela provisória: lista mínima para exercer a troca de contexto. -->
+<div class="space-y-3">
+  <p
+    data-testid="aviso-provisorio"
+    class="rounded-lg bg-warning/15 px-3 py-2 text-xs font-medium text-warning"
+  >
+    Tela de teste. As empresas são reais, mas a listagem é só uma lista de links para abrir o
+    contexto da empresa — o cadastro de empresas ainda não foi feito.
+  </p>
+
+  <div class="space-y-2">
+    @for (empresa of empresas(); track empresa.id) {
+      <a
+        data-testid="empresa"
+        [attr.data-company]="empresa.id"
+        [routerLink]="['/app/companies', empresa.id, 'dashboard']"
+        class="block rounded-lg border border-surface-200 p-3 hover:bg-surface-50 dark:border-surface-700 dark:hover:bg-surface-800"
+      >
+        <div class="font-medium text-surface-900 dark:text-surface-0">{{ empresa.tradeName }}</div>
+        <div class="text-xs text-muted-color">{{ empresa.corporateName }}</div>
+      </a>
+    } @empty {
+      <p class="text-sm text-muted-color">Nenhuma empresa na sua carteira.</p>
+    }
+  </div>
+</div>

@@ -183,7 +183,15 @@ O título (`h1`) e o subtítulo (`p`) de cada tela são gerenciados de forma cen
 ### 5.3. Cabeçalho de Contexto
 Nos Contextos 2 e 3, o usuário precisa saber permanentemente **em qual empresa e em qual equipamento** está atuando — é a premissa central de UX do produto.
 
-Esse identificador é responsabilidade do **layout do contexto** (`company.layout.ts`, `equipment.layout.ts`), que o resolve a partir dos parâmetros da rota e o exibe acima do título da tela. Ele coexiste com o título dinâmico da §5.2, sem substituí-lo.
+Quem **resolve** o identificador é o **layout do contexto** (`company.layout.ts`, `equipment.layout.ts`), a partir dos parâmetros da rota; o nome sai da sessão, não de um `GET` — `auth.companyInScope()`. Quem o **exibe** é a sidebar, logo abaixo da busca.
+
+**Por que na sidebar, e não acima do título da tela.** O rótulo nomeia o **menu**, não o conteúdo: todo item ao lado dele já é daquela empresa (`/app/companies/:id/…`), e a saída dela — "Voltar para Empresas" — mora ali do lado. Acima do `<h1>` ele repetia a migalha, que diz a mesma coisa e ainda é clicável, e empurrava o título da tela para baixo por informação que não é da tela.
+
+Empresa e equipamento vão em **duas linhas**, e não numa frase só: em 15rem de sidebar, *"BRF · Prensa excêntrica 60t"* trunca no meio do nome da máquina. Colapsada, a sidebar **não** mostra o contexto: é texto sem ícone, e sem largura para o texto não há o que exibir — o bloco fecha inteiro em vez de deixar um vão.
+
+**Quem publica também apaga.** Cada layout limpa o que publicou ao ser destruído (`DestroyRef.onDestroy`); sem isso o contexto sobrevive à saída, e quem volta para a carteira segue lendo o nome da empresa numa tela que não é de empresa nenhuma. Sair da empresa leva o equipamento junto — não existe máquina sem a planta dela —, e sair da máquina preserva a empresa.
+
+Os dois blocos — o de contexto e o de voltar — **abrem e fecham por altura** (`.revela`, em `sidebar.component.css`), porque nascem e somem conforme a pessoa entra e sai de uma empresa, e apareciam num salto. O conteúdo fica montado com a altura em zero: com um `@if` por dentro, ele sumiria antes da transição e o fechamento seria seco. Escondido, sai do foco e do leitor de tela; e quem pede `prefers-reduced-motion` recebe a mesma informação sem a transição.
 
 **Regra:** telas individuais **não** renderizam o nome da empresa ou do equipamento como cabeçalho próprio. Consomem o contexto ativo pelo serviço correspondente em `core/services`.
 

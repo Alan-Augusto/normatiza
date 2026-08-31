@@ -5,6 +5,6 @@ import { Component } from '@angular/core';
   standalone: true,
   imports: [],
   templateUrl: './history.component.html',
-  styleUrl: './history.component.css'
+  styleUrl: './history.component.css',
 })
 export class EquipmentHistoryComponent {}

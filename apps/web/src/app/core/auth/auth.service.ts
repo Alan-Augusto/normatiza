@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, of, shareReplay, tap } from 'rxjs';
 
-import type { LoginRequest, LoginResponse, Role, SessionUser, User } from '@normatiza/shared';
+import type {
+  CompanySummary,
+  LoginRequest,
+  LoginResponse,
+  Role,
+  SessionUser,
+  User,
+} from '@normatiza/shared';
 
 import { API_BASE_URL } from './api.config';
 
@@ -117,6 +124,23 @@ export class AuthService {
   atualizarPerfil(dados: Partial<User>): void {
     this._session.update((sessão) =>
       sessão ? { ...sessão, user: { ...sessão.user, ...dados } } : sessão,
+    );
+  }
+
+  /**
+   * A empresa, como quem está logado a enxerga.
+   *
+   * Sai da **sessão**, e não de um `GET /companies` — que não existe. Não é
+   * provisório: `memberships[].company` é a carteira de quem pergunta, já
+   * recortada no servidor, e é a mesma fonte que decide a porta de entrada.
+   *
+   * Vive aqui porque três lugares precisam da mesma resposta — o cabeçalho de
+   * contexto, a migalha e o título do convite na Equipe da Empresa. Três cópias
+   * divergiriam na primeira vez que "nome" deixasse de ser `tradeName`.
+   */
+  companyInScope(companyId: string): CompanySummary | null {
+    return (
+      this.vínculosAtivos().find((vínculo) => vínculo.companyId === companyId)?.company ?? null
     );
   }
 

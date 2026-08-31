@@ -151,7 +151,7 @@ export const routes: Routes = [
             path: 'action-plan',
             loadComponent: () => import('./features/app/companies/company/action-plan/action-plan.component').then(m => m.CompanyActionPlanComponent),
             data: {
-              label: 'Plano de Ação',
+              label: 'Planos de Ação',
               icon: 'pi pi-list-check',
               subtitle: 'Todos os pontos de todos os equipamentos, nas sete etapas do ciclo de adequação.'
             }
@@ -168,7 +168,7 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/app/companies/company/equipments/equipment/dashboard/dashboard.component').then(m => m.EquipmentDashboardComponent),
                 data: {
                   label: 'Dashboard do Equipamento',
-                  icon: 'pi pi-gauge',
+                  icon: 'pi pi-chart-pie',
                   subtitle: 'Radiografia da máquina: ficha, selo de conformidade e progresso da adequação.'
                 }
               },

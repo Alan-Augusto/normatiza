@@ -1,3 +1,37 @@
 :host {
   display: block;
 }
+
+/**
+ * Abertura e fechamento por altura, sem saber a altura de antemão.
+ *
+ * `grid-template-rows: 0fr → 1fr` é o que permite animar até "o tamanho do
+ * conteúdo": `height: auto` não é interpolável, e fixar um `max-height` faria a
+ * animação correr rápido demais ou sobrar tempo parada, dependendo do tamanho do
+ * nome da máquina.
+ *
+ * Serve ao bloco de contexto e ao link de voltar — os dois nascem e somem
+ * conforme a pessoa entra e sai de uma empresa, e apareciam com um salto.
+ */
+.revela {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms ease-in-out;
+}
+
+.revela.aberto {
+  grid-template-rows: 1fr;
+}
+
+/* O filho precisa poder encolher a zero — sem isto, o `0fr` não fecha nada. */
+.revela > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Quem pediu menos movimento recebe a mesma informação, sem a transição. */
+@media (prefers-reduced-motion: reduce) {
+  .revela {
+    transition: none;
+  }
+}

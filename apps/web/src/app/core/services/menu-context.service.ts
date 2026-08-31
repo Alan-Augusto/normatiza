@@ -80,7 +80,7 @@ export class MenuContextService {
     //
     // Transversal não é ausência de contexto: uma tela que não declara em que
     // universo está herda o padrão, e o padrão era o Contexto 1. Era assim que
-    // o perfil mostrava Empresas e Meus Cadastros ao lado cliente.
+    // o perfil mostrava Empresas e Documentos ao lado cliente.
     if (CONFIGURAÇÕES.some((rota) => url.startsWith(rota))) {
       const items: MenuItem[] = [
         { label: 'Meu Perfil', icon: 'pi pi-user', route: '/app/profile' }
@@ -118,7 +118,7 @@ export class MenuContextService {
       const base = `/app/companies/${companyId}/equipments/${equipmentId}`;
 
       const items: MenuItem[] = [
-        { label: 'Dashboard', icon: 'pi pi-gauge', route: `${base}/dashboard` },
+        { label: 'Dashboard', icon: 'pi pi-chart-pie', route: `${base}/dashboard` },
         { label: 'Análises de Risco', icon: 'pi pi-shield', route: `${base}/analysis` },
         { label: 'Histórico', icon: 'pi pi-history', route: `${base}/history` }
       ];
@@ -154,7 +154,7 @@ export class MenuContextService {
       const items: MenuItem[] = [
         { label: 'Dashboard', icon: 'pi pi-chart-pie', route: `${base}/dashboard` },
         { label: 'Equipamentos', icon: 'pi pi-box', route: `${base}/equipments` },
-        { label: 'Plano de Ação', icon: 'pi pi-list-check', route: `${base}/action-plan` },
+        { label: 'Planos de Ação', icon: 'pi pi-list-check', route: `${base}/action-plan` },
         { label: 'Equipe', icon: 'pi pi-users', route: `${base}/team` }
       ];
 
@@ -210,7 +210,7 @@ export class MenuContextService {
       { label: 'Dashboard', icon: 'pi pi-chart-pie', route: '/app/dashboard' },
       { label: 'Empresas', icon: 'pi pi-building', route: '/app/companies' },
       { label: 'Equipe', icon: 'pi pi-users', route: '/app/team' },
-      { label: 'Meus Cadastros', icon: 'pi pi-book', route: '/app/catalogs/solutions' }
+      { label: 'Documentos', icon: 'pi pi-book', route: '/app/catalogs/solutions' }
     ];
 
     const activeItem = items.find(i => url.startsWith(i.route));

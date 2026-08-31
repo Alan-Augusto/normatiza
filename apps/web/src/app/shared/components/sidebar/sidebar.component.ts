@@ -1,4 +1,12 @@
-import { Component, inject, input, signal, computed, HostListener } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { Router, NavigationEnd, RouterLink, RouterLinkActive } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
@@ -21,7 +29,7 @@ import { rotaDaConsultoria } from '@core/auth/entry-route';
   imports: [RouterLink, RouterLinkActive, NgIconComponent, Tooltip, MenuModule],
   providers: [provideIcons({ lucideSidebarClose, lucideSidebarOpen })],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.css'
+  styleUrl: './sidebar.component.css',
 })
 export class SidebarComponent {
   private readonly router = inject(Router);
@@ -41,9 +49,9 @@ export class SidebarComponent {
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      map((event: NavigationEnd) => event.urlAfterRedirects || event.url)
+      map((event: NavigationEnd) => event.urlAfterRedirects || event.url),
     ),
-    { initialValue: this.router.url }
+    { initialValue: this.router.url },
   );
 
   /**
@@ -115,12 +123,45 @@ export class SidebarComponent {
   protected readonly activePageTitle = computed(() => this.pageMeta.meta().label);
   protected readonly activePageSubtitle = computed(() => this.pageMeta.meta().subtitle);
 
-  // Cabeçalho de contexto: empresa e equipamento em contexto (arquitetura.md §5.3)
-  protected readonly contextHeader = computed<string | null>(() => {
-    const company = this.activeContext.company();
-    if (!company) return null;
-    const equipment = this.activeContext.equipment();
-    return equipment ? `${company.name} · ${equipment.name}` : company.name;
+  /**
+   * Em que empresa e em que máquina a pessoa está atuando (arquitetura.md §5.3).
+   *
+   * Mora na **sidebar**, abaixo da busca, e não acima do título da tela: todo
+   * item do menu ao lado já é desta empresa — `/app/companies/:id/...` — e a
+   * saída dela também. O rótulo nomeia o menu, não o conteúdo; acima do `<h1>`
+   * ele repetia a migalha e empurrava o título para baixo.
+   *
+   * Empresa e equipamento vão **separados**, e não numa frase só: em 15rem de
+   * sidebar, "BRF · Prensa excêntrica 60t" vira reticências no meio do nome da
+   * máquina. Em duas linhas, cada um trunca por si.
+   *
+   * Colapsada, a sidebar não mostra o contexto: sem largura para o texto e sem
+   * ícone, não há o que exibir — o bloco fecha inteiro em vez de deixar um vão.
+   */
+  protected readonly contextCompany = computed(() => this.activeContext.company()?.name ?? null);
+  protected readonly contextEquipment = computed(
+    () => this.activeContext.equipment()?.name ?? null,
+  );
+
+  /**
+   * O nome que o bloco **exibe** — que não é o mesmo que o nome em contexto.
+   *
+   * Fechar por altura sobre um texto que já esvaziou é fechar sobre o vazio: a
+   * transição roda, mas não há o que ver, e a linha some num salto. Estes dois
+   * retêm o último nome enquanto o bloco se fecha; escondido a zero de altura,
+   * o valor retido não aparece para ninguém.
+   *
+   * É a mesma razão pela qual o link de voltar fica montado com a altura em
+   * zero, um nível acima.
+   */
+  protected readonly empresaExibida = linkedSignal<string | null, string>({
+    source: this.contextCompany,
+    computation: (nome, anterior) => nome ?? anterior?.value ?? '',
+  });
+
+  protected readonly equipamentoExibido = linkedSignal<string | null, string>({
+    source: this.contextEquipment,
+    computation: (nome, anterior) => nome ?? anterior?.value ?? '',
   });
 
   /**
@@ -137,21 +178,33 @@ export class SidebarComponent {
         {
           label: 'Configurações',
           icon: 'pi pi-cog',
-          command: () => this.router.navigate(['/app/profile'])
-        }
-      ]
+          command: () => this.router.navigate(['/app/profile']),
+        },
+      ],
     },
     {
       label: 'Aparência',
       items: [
-        { label: 'Tema Claro', icon: 'pi pi-sun', command: () => this.themeService.setDarkMode(false) },
-        { label: 'Tema Escuro', icon: 'pi pi-moon', command: () => this.themeService.setDarkMode(true) },
-        { label: 'Sistema', icon: 'pi pi-desktop', command: () => this.themeService.setSystemTheme() }
-      ]
+        {
+          label: 'Tema Claro',
+          icon: 'pi pi-sun',
+          command: () => this.themeService.setDarkMode(false),
+        },
+        {
+          label: 'Tema Escuro',
+          icon: 'pi pi-moon',
+          command: () => this.themeService.setDarkMode(true),
+        },
+        {
+          label: 'Sistema',
+          icon: 'pi pi-desktop',
+          command: () => this.themeService.setSystemTheme(),
+        },
+      ],
     },
     ...this.blocoDaPlataforma(),
     {
-      separator: true
+      separator: true,
     },
     {
       label: 'Sessão',
@@ -159,10 +212,10 @@ export class SidebarComponent {
         {
           label: 'Sair',
           icon: 'pi pi-power-off',
-          command: () => this.sair()
-        }
-      ]
-    }
+          command: () => this.sair(),
+        },
+      ],
+    },
   ]);
 
   // Identidade de quem está usando o sistema

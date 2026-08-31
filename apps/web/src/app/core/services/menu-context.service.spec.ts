@@ -82,12 +82,12 @@ describe('MenuContextService', () => {
   describe('Configurações — transversal', () => {
     it('deve montar o próprio contexto, e não o da consultoria', async () => {
       // Era aqui que vazava: `/app/profile` não era reconhecido e caía no menu
-      // do Contexto 1, com Empresas e Meus Cadastros à vista do cliente.
+      // do Contexto 1, com Empresas e Documentos à vista do cliente.
       const ctx = await menuEm('/app/profile', ['CLIENT_ENGINEER']);
 
       expect(ctx.level).toBe('settings');
       expect(rótulos(ctx)).not.toContain('Empresas');
-      expect(rótulos(ctx)).not.toContain('Meus Cadastros');
+      expect(rótulos(ctx)).not.toContain('Documentos');
       expect(rótulos(ctx)).toContain('Meu Perfil');
     });
 
@@ -171,7 +171,7 @@ describe('MenuContextService', () => {
       const ctx = await menuEm('/app/rota-que-ainda-nao-existe', ['MANAGER']);
 
       expect(rótulos(ctx)).not.toContain('Empresas');
-      expect(rótulos(ctx)).not.toContain('Meus Cadastros');
+      expect(rótulos(ctx)).not.toContain('Documentos');
     });
 
     it('deve cair no contexto da própria pessoa quando a URL é desconhecida', async () => {
