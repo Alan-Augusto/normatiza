@@ -152,9 +152,104 @@ não o acesso a ele.
 
 > Os três estados estão lado a lado na vitrine em `/admin/design-system`.
 
+### Agrupar, quando a lista responde melhor em blocos
+
+Algumas listas respondem a uma pergunta que já vem em baldes. "Quem tem acesso a
+esta empresa" é uma delas: consultoria, gente da própria empresa e terceiros são
+**três relações contratuais diferentes**, com expectativas diferentes sobre quem
+manda em quem.
+
+```html
+<app-data-table [dados]="membrosAgrupados()" agruparPor="origin">
+  <ng-template appTituloDeGrupo [appTituloDeGrupoDe]="membrosAgrupados()" let-membro>
+    {{ rotuloDaOrigem(membro.origin) }} · {{ quantasNaOrigem(membro.origin) }}
+  </ng-template>
+  …
+</app-data-table>
+```
+
+Duas obrigações de quem usa:
+
+1. **Os dados chegam já ordenados** pelo campo do agrupamento. O `p-table` abre
+   um grupo a cada troca de valor — lista fora de ordem produz o mesmo título
+   três vezes. A ordenação é da tela porque é decisão de apresentação.
+2. **A coluna daquele campo sai.** Dentro de cada bloco ela repetiria o mesmo
+   valor linha após linha, que é a definição de ruído.
+
+> **`agruparPor` é um nome de campo em string — justo o que o componente evita
+> no resto.** A razão é que quem agrupa é o `p-table`, e é assim que ele pede. A
+> troca vale porque aqui a string nomeia **um** campo e falha alto (nenhum grupo
+> aparece), enquanto uma configuração de colunas nomearia todas e falharia
+> caladamente, célula a célula. O conteúdo do título continua sendo template,
+> com tipo.
+
+### Regra geral: o que não varia não aparece
+
+Vale para coluna, para ação e para pergunta — e é a mesma frase nos três casos:
+
+> Uma coluna cujo valor é igual em todas as linhas **para quem está olhando** não
+> é informação, é largura gasta repetindo o que o título da tela já disse. Um
+> campo com uma resposta possível não é pergunta. Uma coluna de ações sem ação
+> nenhuma é cabeçalho sobre o vazio.
+
+O recorte é sempre **quem está olhando**, e a conta é sobre as linhas **que
+chegaram** — o Técnico alocado só na BRF recebe a lista já recortada pelo escopo
+dele, e a coluna "Empresas" diria "BRF" da primeira à última. Para o Josué, a
+mesma coluna responde a uma pergunta de verdade e fica.
+
+Quem decide o que pode ser feito continua sendo o servidor (`actions`, D13); a
+tela só pergunta se **alguma** linha tem algo a oferecer.
+
 ---
 
-## 🎨 7. Diretrizes para Uso de Ícones (PrimeIcons vs. Lucide)
+## 🧑‍🔧 7. Papéis: nunca um nome de cargo sozinho
+
+O papel aparece como selo em quase toda tabela do sistema, e um nome de cargo
+não diz o que ele alcança — "Engenheiro do Cliente" não conta a ninguém que essa
+pessoa jamais toca na análise. Metade das regras deste sistema são negativas, e
+eram justamente as que a interface calava.
+
+Três textos, num lugar só — `packages/shared/src/auth/roles.ts`:
+
+| Mapa | O que carrega |
+| :--- | :--- |
+| `ROLE_LABEL` | Como o papel se chama. |
+| `ROLE_SUMMARY` | O que a pessoa **faz**. |
+| `ROLE_LIMIT` | O que ela **não** faz. |
+| `ROLE_ORDER` | A ordem de apresentação: por **alçada**, nunca alfabética. |
+
+Lidos em três lugares, sempre os mesmos: o **convite** (para decidir), **Meu
+Perfil** (para a pessoa entender o que ela é) e o **guia** `app-role-guide` — um
+diálogo aberto por um link nas telas de equipe, disponível também a quem não
+convida ninguém.
+
+> **Nunca explique um papel por `title`/hover.** É o anti-padrão de prioridade 2
+> da base de UX: morre no toque, onde não existe cursor, e não chega a leitor de
+> tela.
+
+### `app-role-picker`: a escolha some quando não há escolha
+
+| Papéis que quem convida concede | A forma |
+| :-: | :--- |
+| **1** | Nenhum campo. O papel é **declarado**, com a descrição. |
+| **vários, um lado** | Lista de opções, ordenada por alçada. |
+| **vários, dois lados** | A mesma lista, com um título por lado. |
+
+Mesma regra que já esconde o seletor de empresas dentro de uma empresa: *uma
+lista de uma opção só é uma pergunta encenada*. A **descrição fica** — quem não
+escolhe nada ainda precisa saber o que aquela pessoa vai enxergar.
+
+**Não são abas.** Só o Engenheiro Responsável alcança os dois lados: a aba
+existiria para uma única pessoa do sistema, e esconderia metade das opções das
+demais — quem abrisse no lado errado precisaria descobrir que existe outro, e o
+papel escolhido poderia ficar numa aba fechada.
+
+O alvo de clique é o **cartão inteiro**, via `<label for>`, e não o ponto do
+rádio.
+
+---
+
+## 🎨 8. Diretrizes para Uso de Ícones (PrimeIcons vs. Lucide)
 
 Para manter o design limpo, consistente e de alta performance, adotamos uma estratégia híbrida para o uso de ícones:
 

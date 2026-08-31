@@ -11,6 +11,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { BRF, SEARA, respostaDeLogin, sessão, vínculo } from '../../../core/auth/testing/sessao';
 import {
   EQUIPE,
+  NADA,
   carla,
   conviteExpirado,
   desligado,
@@ -19,6 +20,7 @@ import {
   marcos,
   prévia,
   rafael,
+  vínculoDe,
 } from '../../../core/services/testing/equipe';
 import {
   clicar as clicarNo,
@@ -253,8 +255,8 @@ describe('TeamComponent', () => {
 
       clicarNo(fixture, '[data-testid="convidar"] button');
 
-      const empresas = todos('[data-testid="empresa-oferecida"]').map(
-        (caixa) => caixa.parentElement?.textContent?.trim(),
+      const empresas = todos('[data-testid="empresa-oferecida"]').map((caixa) =>
+        caixa.parentElement?.textContent?.trim(),
       );
       expect(empresas).toEqual(['BRF']);
     });
@@ -392,13 +394,87 @@ describe('TeamComponent', () => {
 
       http
         .expectOne(`${API}/users/${carla.id}/disable-preview`)
-        .flush(prévia({ allowed: false, blockedReason: 'Só o lado consultoria desliga da conta.' }));
+        .flush(
+          prévia({ allowed: false, blockedReason: 'Só o lado consultoria desliga da conta.' }),
+        );
       fixture.detectChanges();
 
       expect(texto()).toContain('Só o lado consultoria desliga da conta.');
       expect(el('[data-testid="confirmar-desligamento"]')).toBeNull();
     });
   });
+
+  /**
+   * **O que não varia não aparece.**
+   *
+   * Uma coluna cujo valor é igual em todas as linhas para quem está olhando não
+   * é informação, é largura gasta repetindo o que o título da tela já disse.
+   */
+  describe('as colunas que somem', () => {
+    /** O Técnico não age sobre ninguém: o servidor manda `actions` tudo falso. */
+    const semNenhumaAção = () => EQUIPE.map((pessoa) => ({ ...pessoa, actions: NADA }));
+
+    /** Todo mundo na mesma empresa — o recorte que o Técnico da BRF recebe. */
+    const sóNaBrf = () =>
+      EQUIPE.map((pessoa) => ({
+        ...pessoa,
+        actions: NADA,
+        memberships: [vínculoDe(BRF.id, ['EXECUTOR'])],
+      }));
+
+    it('não deve abrir coluna de ações quando nenhuma linha tem ação', async () => {
+      await comoTécnico(semNenhumaAção());
+
+      // A lista continua: quem tem acesso é material de auditoria (D20).
+      expect(todos('[data-testid="linha"]').length).toBe(EQUIPE.length);
+      expect(cabecalhos().length).toBe(6);
+    });
+
+    it('deve manter a coluna de ações quando alguma linha tem alguma', async () => {
+      await comoJosué();
+
+      expect(cabecalhos().length).toBe(7);
+    });
+
+    it('não deve repetir a mesma empresa em toda linha', async () => {
+      // O Técnico alocado só na BRF recebe a lista já recortada pelo escopo
+      // dele. A coluna "Empresas" diria "BRF" da primeira à última.
+      await comoTécnico(sóNaBrf());
+
+      expect(cabecalhos()).not.toContain('Empresas');
+    });
+
+    it('deve mostrar as empresas quando elas de fato diferem', async () => {
+      // O Josué enxerga quem atende só a BRF e quem atende as duas. Aqui a
+      // coluna responde a uma pergunta de verdade.
+      await comoJosué();
+
+      expect(cabecalhos()).toContain('Empresas');
+    });
+  });
+
+  describe('o guia de papéis', () => {
+    it('deve estar ao alcance de quem não convida ninguém', async () => {
+      // Entender o que é um "Engenheiro do Cliente" não é privilégio de quem
+      // administra: o Técnico lê o selo em toda linha e precisa do mesmo texto.
+      await comoTécnico();
+
+      expect(el('[data-testid="convidar"]')).toBeNull();
+      expect(el('[data-testid="abrir-guia-de-papeis"]')).not.toBeNull();
+    });
+
+    it('deve explicar os sete papéis, com o que cada um não faz', async () => {
+      await comoJosué();
+
+      clicarNo(fixture, '[data-testid="abrir-guia-de-papeis"] button');
+
+      expect(todos('[data-testid="papel-no-guia"]').length).toBe(7);
+      expect(el('[data-testid="guia-de-papeis"]')!.textContent).toContain('Não vê a análise');
+    });
+  });
+
+  /** Os títulos de coluna, como quem olha os lê. */
+  const cabecalhos = () => todos('th').map((coluna) => coluna.textContent?.trim() ?? '');
 
   /** Marca um papel na caixa de troca de papéis. */
   function marcar(papel: string) {

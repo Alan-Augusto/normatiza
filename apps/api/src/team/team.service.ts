@@ -1,8 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { COMPANY_SCOPED_ROLES, ROLE_LABEL, memberOrigin } from '@normatiza/shared';
+import {
+  COMPANY_SCOPED_ROLES,
+  ROLE_LABEL,
+  ROLE_SIDE,
+  SIGNING_ROLES,
+  memberOrigin,
+} from '@normatiza/shared';
 import type {
   CompanyMember,
+  CompanyTeam,
   Role,
+  TechnicalResponsible,
   TeamListQuery,
   TeamMember,
   UpdateMembershipRequest,
@@ -107,7 +115,18 @@ export class TeamService {
   }
 
   /** Contexto 2 — quem tem acesso a esta empresa, e nada além disso. */
-  async listCompanyMembers(actor: SessionScope, companyId: string): Promise<CompanyMember[]> {
+  /**
+   * Quem tem acesso a **esta** empresa.
+   *
+   * O recorte depende de **quem pergunta**, e é feito aqui e não na tela: um
+   * filtro de template deixaria nome, e-mail e último acesso da consultoria
+   * viajando até o navegador do cliente, onde qualquer inspetor os leria.
+   *
+   * Do lado cliente, `members` traz só gente da empresa e os terceiros que ela
+   * contratou; a consultoria vira contexto — quem presta o serviço e quem
+   * assina por ele ([01 §4](../../../../docs/produto/01_papeis_e_permissoes.md)).
+   */
+  async listCompanyMembers(actor: SessionScope, companyId: string): Promise<CompanyTeam> {
     if (!this.permissions.canAccessCompany(actor, companyId)) {
       throw new NotFoundException();
     }
@@ -120,10 +139,23 @@ export class TeamService {
 
     const conta = await this.prisma.account.findUniqueOrThrow({
       where: { id: actor.accountId },
-      select: { ownerUserId: true },
+      select: { name: true, ownerUserId: true },
     });
 
-    return vínculos.map((vínculo) => {
+    const daConsultoria = (papéis: Role[]) =>
+      papéis.some((papel) => ROLE_SIDE[papel] === 'CONSULTANCY');
+
+    /**
+     * A consultoria só se enxerga em lista. Quem olha do lado cliente recebe a
+     * própria casa; para quem é da consultoria, essas linhas **são** a equipe.
+     */
+    const olhaDaConsultoria = daConsultoria(this.permissions.effectiveRoles(actor, companyId));
+
+    const visíveis = olhaDaConsultoria
+      ? vínculos
+      : vínculos.filter((vínculo) => !daConsultoria(vínculo.roles));
+
+    const members = visíveis.map((vínculo) => {
       const pessoa = vínculo.user;
       const alvo = paraAlvo(pessoa, conta.ownerUserId);
 
@@ -143,6 +175,12 @@ export class TeamService {
         actions: this.policy.actionsForCompany(actor, alvo, companyId),
       };
     });
+
+    return {
+      accountName: conta.name,
+      technicalResponsibles: responsáveisTécnicos(vínculos),
+      members,
+    };
   }
 
   /**
@@ -317,6 +355,34 @@ function resumoDaEmpresa(company: {
     corporateName: company.corporateName,
     isActive: company.isActive,
   };
+}
+
+/**
+ * Quem responde tecnicamente por esta empresa, na forma que o cliente pode ver.
+ *
+ * Só os papéis que assinam (`SIGNING_ROLES`), e só nome e registro: é o que já
+ * vai impresso no laudo. O Técnico da consultoria fica de fora mesmo estando
+ * alocado — nomeá-lo seria expor a equipe da consultoria sem que exista
+ * responsabilidade que o justifique
+ * ([01 §4](../../../../docs/produto/01_papeis_e_permissoes.md)).
+ */
+function responsáveisTécnicos(
+  vínculos: {
+    roles: Role[];
+    user: {
+      name: string;
+      registryType: TechnicalResponsible['registryType'] | null;
+      registryNumber: string | null;
+    };
+  }[],
+): TechnicalResponsible[] {
+  return vínculos
+    .filter((vínculo) => vínculo.roles.some((papel) => SIGNING_ROLES.includes(papel)))
+    .map((vínculo) => ({
+      name: vínculo.user.name,
+      registryType: vínculo.user.registryType ?? undefined,
+      registryNumber: vínculo.user.registryNumber ?? undefined,
+    }));
 }
 
 function convitePendente(convite: { id: string; status: string; expiresAt: Date } | null) {

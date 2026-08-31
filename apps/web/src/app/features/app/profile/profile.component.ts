@@ -8,6 +8,8 @@ import { Select } from 'primeng/select';
 import {
   MENSAGEM_SENHA_CURTA,
   ROLE_LABEL,
+  ROLE_LIMIT,
+  ROLE_SUMMARY,
   SENHA_MINIMA,
   hasProfessionalRegistry,
   type RegistryType,
@@ -41,6 +43,8 @@ export class ProfileComponent {
   private readonly profile = inject(ProfileService);
 
   readonly rotulo = ROLE_LABEL;
+  readonly resumo = ROLE_SUMMARY;
+  readonly limite = ROLE_LIMIT;
 
   /** O mesmo mínimo que o servidor exige — importado dele, nunca copiado. */
   readonly tamanhoMinimo = SENHA_MINIMA;

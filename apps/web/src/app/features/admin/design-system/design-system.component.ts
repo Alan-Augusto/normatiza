@@ -2,10 +2,10 @@ import { Component, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { 
-  lucidePalette, 
-  lucideSliders, 
-  lucideLayers, 
+import {
+  lucidePalette,
+  lucideSliders,
+  lucideLayers,
   lucideMessageSquare,
   lucideCheck,
   lucideTrash2,
@@ -13,7 +13,7 @@ import {
   lucideAlertTriangle,
   lucideTrendingUp,
   lucideFileText,
-  lucideActivity
+  lucideActivity,
 } from '@ng-icons/lucide';
 
 // Importações dos Componentes PrimeNG (v21 Standalone)
@@ -30,6 +30,7 @@ import {
   AcaoVazia,
   CabecalhoDaTabela,
   LinhaDaTabela,
+  TituloDeGrupo,
 } from '../../../shared/components/data-table/data-table.directives';
 import { Dialog } from 'primeng/dialog';
 import { ConfirmDialog } from 'primeng/confirmdialog';
@@ -56,13 +57,14 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     CabecalhoDaTabela,
     LinhaDaTabela,
     AcaoVazia,
+    TituloDeGrupo,
     Dialog,
     ConfirmDialog,
     Tooltip,
-    Toast
+    Toast,
   ],
   providers: [
-    ConfirmationService, 
+    ConfirmationService,
     MessageService,
     provideIcons({
       lucidePalette,
@@ -75,11 +77,11 @@ import { ConfirmationService, MessageService } from 'primeng/api';
       lucideAlertTriangle,
       lucideTrendingUp,
       lucideFileText,
-      lucideActivity
-    })
+      lucideActivity,
+    }),
   ],
   templateUrl: './design-system.component.html',
-  styleUrl: './design-system.component.css'
+  styleUrl: './design-system.component.css',
 })
 export class DesignSystemComponent {
   private readonly confirmationService = inject(ConfirmationService);
@@ -100,7 +102,7 @@ export class DesignSystemComponent {
   selectOptions = [
     { label: 'Administrador', value: 'admin' },
     { label: 'Editor', value: 'editor' },
-    { label: 'Visualizador', value: 'viewer' }
+    { label: 'Visualizador', value: 'viewer' },
   ];
   selectedOption = signal<string>('admin');
 
@@ -111,20 +113,33 @@ export class DesignSystemComponent {
   usersList = [
     { name: 'Alan Augusto', email: 'alan@brworks.com', role: 'Administrador', status: 'Ativo' },
     { name: 'Maria Silva', email: 'maria@brworks.com', role: 'Editor', status: 'Pendente' },
-    { name: 'João Santos', email: 'joao@brworks.com', role: 'Visualizador', status: 'Inativo' }
+    { name: 'João Santos', email: 'joao@brworks.com', role: 'Visualizador', status: 'Inativo' },
+    { name: 'Rita Lopes', email: 'rita@brworks.com', role: 'Editor', status: 'Ativo' },
+    { name: 'Caio Prado', email: 'caio@brworks.com', role: 'Administrador', status: 'Ativo' },
   ];
 
-  /** A vitrine dos três estados da tabela — carregando, vazia e com dados. */
-  estadoDaTabela = signal<'dados' | 'carregando' | 'vazia'>('dados');
+  /** A vitrine dos estados da tabela — carregando, vazia, com dados e agrupada. */
+  estadoDaTabela = signal<'dados' | 'carregando' | 'vazia' | 'agrupada'>('dados');
 
-  usuariosDaVitrine = computed(() =>
-    this.estadoDaTabela() === 'dados' ? this.usersList : [],
-  );
+  /**
+   * Agrupar exige a lista **já ordenada** pelo campo: o `p-table` abre um grupo
+   * a cada troca de valor, e fora de ordem o mesmo título apareceria três vezes.
+   */
+  usuariosDaVitrine = computed(() => {
+    if (this.estadoDaTabela() === 'agrupada') {
+      return [...this.usersList].sort((a, b) => a.role.localeCompare(b.role));
+    }
+    return this.estadoDaTabela() === 'dados' ? this.usersList : [];
+  });
+
+  quantosComPerfil(perfil: string): number {
+    return this.usersList.filter((usuario) => usuario.role === perfil).length;
+  }
 
   activitiesList = [
     { title: 'Documento assinado', user: 'Alan Augusto', time: 'Há 5 minutos' },
     { title: 'Nova conta criada', user: 'Maria Silva', time: 'Há 2 horas' },
-    { title: 'Tentativa de login bloqueada', user: 'Sistema', time: 'Ontem' }
+    { title: 'Tentativa de login bloqueada', user: 'Sistema', time: 'Ontem' },
   ];
 
   // Disparar Confirmação
@@ -138,22 +153,22 @@ export class DesignSystemComponent {
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-text',
       accept: () => {
-        this.messageService.add({ 
-          severity: 'success', 
-          summary: 'Excluído', 
-          detail: 'Item removido com sucesso.' 
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Excluído',
+          detail: 'Item removido com sucesso.',
         });
-      }
+      },
     });
   }
 
   // Enviar Formulário Mock
   saveModalForm() {
     this.displayNormalModal.set(false);
-    this.messageService.add({ 
-      severity: 'success', 
-      summary: 'Salvo', 
-      detail: 'Os dados do formulário foram salvos!' 
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Salvo',
+      detail: 'Os dados do formulário foram salvos!',
     });
   }
 }

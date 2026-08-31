@@ -48,9 +48,19 @@
       </div>
     </div>
 
-    @if (podeConvidar()) {
-      <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
-    }
+    <div class="flex items-center gap-2">
+      <!--
+        O papel aparece como selo em toda linha e nunca diz o que alcança.
+        O guia é a resposta única a isso, e está aqui para quem **não** convida
+        também: entender o que é um "Engenheiro do Cliente" não é privilégio de
+        quem administra.
+      -->
+      <app-role-guide />
+
+      @if (podeConvidar()) {
+        <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+      }
+    </div>
   </div>
 
   @if (aviso()) {
@@ -70,11 +80,15 @@
       <tr>
         <th>Nome</th>
         <th>Papéis</th>
-        <th>Empresas</th>
+        @if (mostraEscopo()) {
+          <th>Empresas</th>
+        }
         <th>Convidou</th>
         <th>Último acesso</th>
         <th>Situação</th>
-        <th></th>
+        @if (mostraAcoes()) {
+          <th></th>
+        }
       </tr>
     </ng-template>
 
@@ -98,7 +112,9 @@
           }
         </td>
 
-        <td>{{ empresasDe(membro) || '—' }}</td>
+        @if (mostraEscopo()) {
+          <td>{{ empresasDe(membro) || '—' }}</td>
+        }
 
         <td>{{ membro.invitedBy?.name ?? '—' }}</td>
 
@@ -146,50 +162,53 @@
         <!--
           O que aparece aqui é o que veio do servidor em `actions`. A ação que a
           alçada não alcança **não é renderizada** — botão cinza com aviso é
-          oferecer e recusar no mesmo gesto.
+          oferecer e recusar no mesmo gesto. E quando **nenhuma** linha tem ação
+          alguma, a coluna inteira some: cabeçalho sobre o vazio é peso.
         -->
-        <td>
-          <div class="flex justify-end gap-1">
-            @if (membro.actions.resendInvitation) {
-              <p-button
-                data-testid="acao-reenviar"
-                label="Reenviar"
-                [text]="true"
-                size="small"
-                (onClick)="reenviar(membro)"
-              />
-            }
-            @if (membro.actions.revokeInvitation) {
-              <p-button
-                data-testid="acao-revogar"
-                label="Revogar"
-                severity="secondary"
-                [text]="true"
-                size="small"
-                (onClick)="revogar(membro)"
-              />
-            }
-            @if (membro.actions.changeRoles) {
-              <p-button
-                data-testid="acao-trocar-papel"
-                label="Trocar papel"
-                [text]="true"
-                size="small"
-                (onClick)="editando.set(membro)"
-              />
-            }
-            @if (membro.actions.disableFromAccount) {
-              <p-button
-                data-testid="acao-desligar"
-                label="Desligar"
-                severity="secondary"
-                [text]="true"
-                size="small"
-                (onClick)="desligando.set(membro)"
-              />
-            }
-          </div>
-        </td>
+        @if (mostraAcoes()) {
+          <td>
+            <div class="flex justify-end gap-1">
+              @if (membro.actions.resendInvitation) {
+                <p-button
+                  data-testid="acao-reenviar"
+                  label="Reenviar"
+                  [text]="true"
+                  size="small"
+                  (onClick)="reenviar(membro)"
+                />
+              }
+              @if (membro.actions.revokeInvitation) {
+                <p-button
+                  data-testid="acao-revogar"
+                  label="Revogar"
+                  severity="secondary"
+                  [text]="true"
+                  size="small"
+                  (onClick)="revogar(membro)"
+                />
+              }
+              @if (membro.actions.changeRoles) {
+                <p-button
+                  data-testid="acao-trocar-papel"
+                  label="Trocar papel"
+                  [text]="true"
+                  size="small"
+                  (onClick)="editando.set(membro)"
+                />
+              }
+              @if (membro.actions.disableFromAccount) {
+                <p-button
+                  data-testid="acao-desligar"
+                  label="Desligar"
+                  severity="secondary"
+                  [text]="true"
+                  size="small"
+                  (onClick)="desligando.set(membro)"
+                />
+              }
+            </div>
+          </td>
+        }
       </tr>
     </ng-template>
 

@@ -3,7 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, contentChild, input } fro
 import { Skeleton } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
-import { AcaoVazia, CabecalhoDaTabela, LinhaDaTabela } from './data-table.directives';
+import {
+  AcaoVazia,
+  CabecalhoDaTabela,
+  LinhaDaTabela,
+  TituloDeGrupo,
+} from './data-table.directives';
 
 /**
  * A tabela de todas as telas.
@@ -54,9 +59,29 @@ export class DataTable<T> {
 
   readonly linhasDeEsqueleto = input(5);
 
+  /**
+   * O campo que abre os grupos, quando a lista responde melhor em blocos que
+   * corrida (D22). Sem ele, nada muda.
+   *
+   * **É um nome de campo em string — justo o que o resto do componente evita.**
+   * A razão é que quem agrupa é o `p-table`, e é assim que ele pede. A troca
+   * vale porque aqui a string nomeia **um** campo e falha alto (grupo nenhum
+   * aparece), enquanto uma configuração de colunas nomearia todas e falharia
+   * caladamente, célula a célula. O conteúdo do título continua sendo template.
+   *
+   * Os dados precisam chegar **já ordenados** por esse campo: o `p-table` abre
+   * um grupo a cada troca de valor, e uma lista fora de ordem produziria o
+   * mesmo título três vezes.
+   */
+  readonly agruparPor = input<string | undefined>(undefined);
+
   protected readonly cabecalho = contentChild.required(CabecalhoDaTabela);
   protected readonly linha = contentChild.required(LinhaDaTabela);
   protected readonly acaoVazia = contentChild(AcaoVazia);
+  protected readonly tituloDeGrupo = contentChild(TituloDeGrupo);
+
+  /** Só agrupa quando há campo **e** título — meio agrupamento não é nenhum. */
+  protected readonly agrupando = computed(() => !!this.agruparPor() && !!this.tituloDeGrupo());
 
   protected readonly esqueleto = computed(() =>
     Array.from({ length: this.linhasDeEsqueleto() }, (_, i) => i),

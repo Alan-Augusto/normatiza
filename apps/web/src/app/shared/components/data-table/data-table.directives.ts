@@ -37,3 +37,25 @@ export class LinhaDaTabela<T> {
 export class AcaoVazia {
   readonly template = inject(TemplateRef);
 }
+
+/**
+ * O título que abre cada grupo, quando a tabela agrupa (D22).
+ *
+ * Recebe o **primeiro item** do grupo, e não a chave crua: é dele que a tela
+ * tira o rótulo legível. `'CONSULTANCY'` não é o que ninguém lê — quem traduz
+ * é a tela, com o mesmo mapa que usa na coluna.
+ */
+@Directive({ selector: 'ng-template[appTituloDeGrupo]', standalone: true })
+export class TituloDeGrupo<T> {
+  readonly template = inject<TemplateRef<{ $implicit: T }>>(TemplateRef);
+
+  /** Existe pelo mesmo motivo de `appLinhaDe`: é daqui que sai o tipo. */
+  readonly appTituloDeGrupoDe = input.required<readonly T[]>();
+
+  static ngTemplateContextGuard<T>(
+    _diretiva: TituloDeGrupo<T>,
+    _contexto: unknown,
+  ): _contexto is { $implicit: T } {
+    return true;
+  }
+}

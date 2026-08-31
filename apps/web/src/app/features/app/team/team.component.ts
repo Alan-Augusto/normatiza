@@ -25,6 +25,7 @@ import {
   LinhaDaTabela,
 } from '../../../shared/components/data-table/data-table.directives';
 import { InviteFormComponent } from '../../../shared/components/team/invite-form.component';
+import { RoleGuideComponent } from '../../../shared/components/team/role-guide.component';
 import {
   RoleEditorComponent,
   type VinculoEditavel,
@@ -57,6 +58,7 @@ import { DisableDialogComponent } from './components/disable-dialog.component';
     LinhaDaTabela,
     AcaoVazia,
     InviteFormComponent,
+    RoleGuideComponent,
     RoleEditorComponent,
     DisableDialogComponent,
   ],
@@ -125,6 +127,30 @@ export class TeamComponent implements OnInit {
    * ação impossível é pior do que não oferecer: quem clica acha que quebrou.
    */
   readonly podeConvidar = computed(() => this.papeisQuePossoConceder().length > 0);
+
+  /**
+   * **O que não varia não aparece.**
+   *
+   * Uma coluna cujo valor é igual em todas as linhas — *para quem está
+   * olhando* — não é informação, é peso. O Técnico alocado só na BRF recebe a
+   * lista já recortada pelo escopo dele: toda linha diria "BRF", e a coluna
+   * ocuparia largura para repetir o que o título da tela já disse.
+   *
+   * A conta é sobre as linhas **que chegaram**, e não sobre o que o papel
+   * poderia alcançar: é o mesmo recorte que a pessoa está lendo.
+   */
+  readonly mostraEscopo = computed(
+    () => new Set(this.membros().map((membro) => this.empresasDe(membro))).size > 1,
+  );
+
+  /**
+   * A coluna de ações sem nenhuma ação em nenhuma linha é uma coluna vazia com
+   * cabeçalho. Quem decide continua sendo o `actions` do servidor (D13) — aqui
+   * só se pergunta se **alguma** linha tem algo a oferecer.
+   */
+  readonly mostraAcoes = computed(() =>
+    this.membros().some((membro) => Object.values(membro.actions).some(Boolean)),
+  );
 
   /** Lista vazia por filtro e lista vazia por não haver ninguém não são a mesma notícia. */
   readonly filtrando = computed(() => Object.values(this.filtros()).some(Boolean));

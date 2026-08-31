@@ -158,13 +158,55 @@ describe('Gestão de equipe (e2e)', () => {
 
   describe('a equipe de uma empresa', () => {
     it('deve mostrar ao Gestor quem tem acesso à empresa dele', async () => {
+      // Quem a empresa administra: gente dela e o terceiro que ela contratou.
+      // A consultoria não entra aqui — é o recorte de D25, logo abaixo.
       const marcos = await escopoDe(ctx.prisma, elenco.marcos.id);
 
       const equipe = await team.listCompanyMembers(marcos, elenco.brf.id);
 
-      expect(nomes(equipe)).toEqual(
-        ['Antonio', 'Carla', 'Débora', 'Fernando', 'Josué', 'Marcos', 'Paulo', 'Rafael'].sort(),
+      expect(nomes(equipe.members)).toEqual(
+        ['Antonio', 'Débora', 'Marcos', 'Paulo', 'Rafael'].sort(),
       );
+    });
+
+    it('não deve entregar ao cliente o cadastro da consultoria (D25)', async () => {
+      // Nome, e-mail e último acesso de funcionário da consultoria são dado
+      // pessoal dela, e o Marcos não pode agir sobre nenhuma dessas linhas.
+      // "Último acesso" da Carla, ainda por cima, é frequência de uso de outra
+      // empresa — informação comercial, não registro de acesso da BRF.
+      const marcos = await escopoDe(ctx.prisma, elenco.marcos.id);
+
+      const equipe = await team.listCompanyMembers(marcos, elenco.brf.id);
+
+      expect(nomes(equipe.members)).not.toContain('Carla');
+      expect(nomes(equipe.members)).not.toContain('Fernando');
+      expect(nomes(equipe.members)).not.toContain('Josué');
+      expect(JSON.stringify(equipe.members)).not.toContain(elenco.carla.email);
+    });
+
+    it('deve nomear ao cliente quem presta o serviço e quem assina por ele (D25)', async () => {
+      // Nomear a responsável técnica não é o mesmo vazamento: esse nome e esse
+      // registro vão impressos no laudo assinado — é o objeto do contrato, não
+      // o organograma da consultoria.
+      const marcos = await escopoDe(ctx.prisma, elenco.marcos.id);
+
+      const equipe = await team.listCompanyMembers(marcos, elenco.brf.id);
+
+      expect(equipe.accountName).toBe('Normatiza');
+      expect(nomes(equipe.technicalResponsibles)).toContain('Carla');
+      // O Fernando é Técnico: trabalha na planta e não assina nada.
+      expect(nomes(equipe.technicalResponsibles)).not.toContain('Fernando');
+    });
+
+    it('deve mostrar à consultoria a própria equipe dentro da empresa (D25)', async () => {
+      // Do lado consultoria essas linhas **são** a equipe, e o recorte não se
+      // aplica: quem some para o cliente continua aqui.
+      const josué = await escopoDe(ctx.prisma, elenco.josué.id);
+
+      const equipe = await team.listCompanyMembers(josué, elenco.brf.id);
+
+      expect(nomes(equipe.members)).toContain('Carla');
+      expect(nomes(equipe.members)).toContain('Fernando');
     });
 
     it('não deve deixar o Gestor da BRF listar a Seara', async () => {
@@ -192,9 +234,8 @@ describe('Gestão de equipe (e2e)', () => {
       const marcos = await escopoDe(ctx.prisma, elenco.marcos.id);
 
       const equipe = await team.listCompanyMembers(marcos, elenco.brf.id);
-      const origem = (nome: string) => equipe.find((m) => m.name === nome)?.origin;
+      const origem = (nome: string) => equipe.members.find((m) => m.name === nome)?.origin;
 
-      expect(origem('Carla')).toBe('CONSULTANCY');
       expect(origem('Marcos')).toBe('CLIENT');
       expect(origem('Rafael')).toBe('CLIENT');
       expect(origem('Paulo')).toBe('EXTERNAL');
@@ -206,8 +247,8 @@ describe('Gestão de equipe (e2e)', () => {
       const brf = await team.listCompanyMembers(josué, elenco.brf.id);
       const seara = await team.listCompanyMembers(josué, elenco.seara.id);
 
-      expect(nomes(brf)).toContain('Paulo');
-      expect(nomes(seara)).toContain('Paulo');
+      expect(nomes(brf.members)).toContain('Paulo');
+      expect(nomes(seara.members)).toContain('Paulo');
     });
 
     it('nunca deve oferecer o desligamento da conta nesta tela (D8)', async () => {
@@ -215,7 +256,7 @@ describe('Gestão de equipe (e2e)', () => {
 
       const equipe = await team.listCompanyMembers(josué, elenco.brf.id);
 
-      expect(equipe.every((m) => m.actions.disableFromAccount === false)).toBe(true);
+      expect(equipe.members.every((m) => m.actions.disableFromAccount === false)).toBe(true);
     });
   });
 
@@ -635,11 +676,17 @@ describe('Gestão de equipe (e2e)', () => {
       // Um botão oferecido e recusado é o mesmo defeito que um botão escondido
       // sem motivo: nos dois casos a tela e o servidor discordam.
       const marcos = await escopoDe(ctx.prisma, elenco.marcos.id);
-      const equipe = await team.listCompanyMembers(marcos, elenco.brf.id);
+      const josué = await escopoDe(ctx.prisma, elenco.josué.id);
 
-      const carla = equipe.find((m) => m.name === 'Carla');
-      expect(carla?.actions.changeRoles).toBe(false);
-      expect(carla?.actions.removeFromCompany).toBe(false);
+      // A Carla nem aparece na lista do Marcos (D25) — o vínculo dela vem da
+      // listagem de quem a administra. Não oferecer é uma coisa; o servidor
+      // recusar é a outra, e é esta que o teste cobra.
+      const doLadoCliente = await team.listCompanyMembers(marcos, elenco.brf.id);
+      expect(nomes(doLadoCliente.members)).not.toContain('Carla');
+
+      const equipe = await team.listCompanyMembers(josué, elenco.brf.id);
+      const carla = equipe.members.find((m) => m.name === 'Carla');
+      expect(carla?.actions.changeRoles).toBe(true);
 
       await expect(
         team.updateMembershipRoles(marcos, carla!.membershipId, { roles: ['TECHNICIAN'] }),
@@ -653,7 +700,7 @@ describe('Gestão de equipe (e2e)', () => {
       const marcos = await escopoDe(ctx.prisma, elenco.marcos.id);
       const equipe = await team.listCompanyMembers(marcos, elenco.brf.id);
 
-      const rafael = equipe.find((m) => m.name === 'Rafael');
+      const rafael = equipe.members.find((m) => m.name === 'Rafael');
       expect(rafael?.actions.removeFromCompany).toBe(true);
 
       await expect(team.removeFromCompany(marcos, rafael!.membershipId)).resolves.toBeUndefined();

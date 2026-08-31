@@ -86,7 +86,13 @@ describe('TeamService', () => {
       expect(req.request.method).toBe('GET');
 
       req.flush(EQUIPE_DA_BRF);
-      expect(await promessa).toHaveLength(EQUIPE_DA_BRF.length);
+
+      // A resposta não é uma lista: é quem a empresa administra **mais** a
+      // consultoria como contexto (D25). O serviço entrega as duas coisas sem
+      // achatar uma na outra.
+      const equipe = await promessa;
+      expect(equipe.members).toHaveLength(EQUIPE_DA_BRF.members.length);
+      expect(equipe.accountName).toBe('Normatiza');
     });
   });
 

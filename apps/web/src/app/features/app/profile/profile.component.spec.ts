@@ -193,6 +193,18 @@ describe('ProfileComponent', () => {
       expect(vínculos.textContent).toContain('Técnico');
     });
 
+    it('deve explicar o que o papel alcança, e o que ele não alcança', async () => {
+      // Esta é a tela onde a pessoa entende o que ela **é** no sistema, e um
+      // nome de cargo sozinho não conta isso: o Rafael lia "Executor" sem ter
+      // como saber que a análise nunca vai aparecer para ele.
+      await abrirComo([vínculo(BRF.id, ['EXECUTOR'])]);
+
+      const vínculos = el('[data-testid="meus-vinculos"]')!;
+
+      expect(vínculos.textContent).toContain('Recebe as tarefas designadas');
+      expect(vínculos.textContent).toContain('Não vê a análise');
+    });
+
     it('deve pedir registro profissional só de quem o papel comporta', async () => {
       // CREA/CFT é de quem assina responsabilidade técnica. Pedi-lo ao Executor
       // é perguntar por um documento que ele não tem por que ter.

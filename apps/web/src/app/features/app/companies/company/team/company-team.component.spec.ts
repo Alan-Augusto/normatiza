@@ -5,7 +5,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 
-import type { CompanyMember, MembershipWithCompany } from '@normatiza/shared';
+import type { CompanyTeam, MembershipWithCompany } from '@normatiza/shared';
 
 import { API_BASE_URL } from '../../../../../core/auth/api.config';
 import { AuthService } from '../../../../../core/auth/auth.service';
@@ -18,7 +18,11 @@ import {
 } from '../../../../../core/auth/testing/sessao';
 import {
   EQUIPE_DA_BRF,
+  EQUIPE_DA_BRF_PELA_CONSULTORIA,
+  NADA,
   carlaNaBrf,
+  equipeDaEmpresa,
+  marcosNaBrf,
   terceiroNaBrf,
 } from '../../../../../core/services/testing/equipe';
 import {
@@ -69,7 +73,7 @@ describe('CompanyTeamComponent', () => {
 
   async function abrirComo(
     memberships: MembershipWithCompany[],
-    equipe: CompanyMember[] = EQUIPE_DA_BRF,
+    equipe: CompanyTeam = EQUIPE_DA_BRF,
   ): Promise<void> {
     const auth = TestBed.inject(AuthService);
     const login = firstValueFrom(auth.login({ email: 'quem@seja.com', password: 'certa' }));
@@ -82,10 +86,10 @@ describe('CompanyTeamComponent', () => {
     fixture.detectChanges();
   }
 
-  const comoMarcos = (equipe?: CompanyMember[]) =>
-    abrirComo([vínculo(BRF.id, ['MANAGER'])], equipe);
+  const comoMarcos = (equipe?: CompanyTeam) => abrirComo([vínculo(BRF.id, ['MANAGER'])], equipe);
 
-  const comoJosué = (equipe?: CompanyMember[]) =>
+  /** Do lado consultoria a lista é outra: a equipe dela **é** o que aparece (D25). */
+  const comoJosué = (equipe: CompanyTeam = EQUIPE_DA_BRF_PELA_CONSULTORIA) =>
     abrirComo([vínculo(BRF.id, ['LEAD_ENGINEER']), vínculo(SEARA.id, ['LEAD_ENGINEER'])], equipe);
 
   const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -108,29 +112,115 @@ describe('CompanyTeamComponent', () => {
   const temAcao = (userId: string, nome: string) =>
     linhaDe(userId)!.querySelector(`[data-testid="acao-${nome}"]`) !== null;
 
+  /**
+   * Sob qual título de grupo a linha de alguém está — andando para trás pelas
+   * irmãs até achar o cabeçalho mais próximo, que é como quem olha lê.
+   */
+  function origemDaLinha(userId: string): string {
+    let anterior = linhaDe(userId)?.previousElementSibling ?? null;
+    while (anterior) {
+      if (anterior.getAttribute('data-testid') === 'titulo-de-grupo') {
+        return anterior.textContent ?? '';
+      }
+      anterior = anterior.previousElementSibling;
+    }
+    throw new Error(`A linha de ${userId} não está sob nenhum bloco.`);
+  }
+
   describe('a lista', () => {
     it('deve mostrar quem tem acesso a esta empresa', async () => {
       await comoMarcos();
 
-      expect(todos('[data-testid="linha"]').length).toBe(EQUIPE_DA_BRF.length);
+      expect(todos('[data-testid="linha"]').length).toBe(EQUIPE_DA_BRF.members.length);
     });
 
-    it('deve separar consultoria, cliente e terceiro na coluna de origem', async () => {
-      // Três relações contratuais diferentes. Quem administra a planta precisa
-      // distinguir o funcionário dele do terceiro contratado e de quem vem da
-      // consultoria — as expectativas sobre quem manda em quem não são iguais.
+    it('deve separar quem é da empresa de quem foi contratado, em blocos', async () => {
+      // Duas relações contratuais diferentes: o funcionário e o terceiro. As
+      // expectativas sobre quem manda em quem não são iguais.
+      //
+      // A regra é a distinção; que ela apareça em bloco e não em coluna é a
+      // forma, e mudou em D22 — a coluna repetia o mesmo valor linha após
+      // linha dentro de cada bloco.
       await comoMarcos();
 
-      expect(linhaDe(carlaNaBrf.id)!.textContent).toContain('Consultoria');
-      expect(linhaDe(terceiroNaBrf.id)!.textContent).toContain('Terceiro');
+      const titulos = todos('[data-testid="titulo-de-grupo"]').map((linha) => linha.textContent);
+
+      expect(titulos.some((titulo) => titulo?.includes(BRF.tradeName))).toBe(true);
+      expect(titulos.some((titulo) => titulo?.includes('Terceiros contratados'))).toBe(true);
+    });
+
+    it('deve nomear o bloco, e não classificá-lo na língua da consultoria', async () => {
+      // "Cliente" é a palavra da consultoria para a BRF. A Débora abre a tela
+      // da empresa dela e não tem por que ler o sistema descrevendo-a de fora.
+      await comoMarcos();
+
+      const titulos = todos('[data-testid="titulo-de-grupo"]').map((linha) => linha.textContent);
+
+      expect(titulos.some((titulo) => titulo?.includes('Cliente'))).toBe(false);
+      expect(titulos.some((titulo) => titulo?.includes(`${BRF.tradeName} · 1 pessoa`))).toBe(true);
+    });
+
+    it('deve manter cada pessoa dentro do bloco da origem dela', async () => {
+      // O bloco só informa se a linha estiver debaixo do título certo. Sem
+      // isto, a tabela poderia abrir os títulos e distribuir as linhas de
+      // qualquer jeito — e o teste acima continuaria passando.
+      await comoMarcos();
+
+      expect(origemDaLinha(marcosNaBrf.id)).toContain(BRF.tradeName);
+      expect(origemDaLinha(terceiroNaBrf.id)).toContain('Terceiros contratados');
     });
 
     it('não deve nomear nenhuma outra empresa', async () => {
       await comoMarcos();
 
-      expect(texto()).toContain('Carla');
       expect(texto()).not.toContain('Seara');
       expect(texto()).not.toContain(SEARA.id);
+    });
+  });
+
+  describe('a consultoria, para quem é do lado cliente (D25)', () => {
+    it('não deve trazer a equipe da consultoria como linha de tabela', async () => {
+      // Nome, e-mail e último acesso de funcionário da consultoria são dado
+      // pessoal dela. O Marcos não os contratou, não os administra e não pode
+      // agir sobre nenhuma dessas linhas.
+      await comoMarcos();
+
+      expect(linhaDe(carlaNaBrf.id)).toBeNull();
+      expect(texto()).not.toContain(carlaNaBrf.email);
+    });
+
+    it('deve dizer quem presta o serviço e quem assina por ele', async () => {
+      // Saber que existe um terceiro com acesso é diferente de receber o
+      // cadastro dele. Nome e registro é o que já vai impresso no laudo — o
+      // objeto do contrato, não o organograma da consultoria.
+      await comoMarcos();
+
+      const contexto = el('[data-testid="contexto-consultoria"]');
+
+      expect(contexto).not.toBeNull();
+      expect(contexto!.textContent).toContain('Normatiza');
+      expect(contexto!.textContent).toContain('Carla');
+      expect(contexto!.textContent).toContain('SP-111111');
+    });
+
+    it('não deve repetir o contexto para quem é da consultoria', async () => {
+      // Ali a Carla é a equipe, e a frase deixaria de ser notícia: seria
+      // contar à consultoria quem é a consultoria.
+      await comoJosué();
+
+      expect(el('[data-testid="contexto-consultoria"]')).toBeNull();
+      expect(linhaDe(carlaNaBrf.id)).not.toBeNull();
+      // O bloco dela é a própria consultoria, pelo nome.
+      expect(origemDaLinha(carlaNaBrf.id)).toContain('Normatiza');
+    });
+
+    it('não deve inventar responsável técnico onde não há nenhum alocado', async () => {
+      await comoMarcos(equipeDaEmpresa({ members: [marcosNaBrf], technicalResponsibles: [] }));
+
+      const contexto = el('[data-testid="contexto-consultoria"]');
+
+      expect(contexto!.textContent).toContain('Normatiza');
+      expect(contexto!.textContent).not.toContain('Responsabilidade técnica');
     });
   });
 
@@ -171,11 +261,11 @@ describe('CompanyTeamComponent', () => {
       http.expectOne(`${API}/companies/${BRF.id}/members`).flush(EQUIPE_DA_BRF);
     });
 
-    it('não deve deixar o cliente gerenciar quem é da consultoria', async () => {
-      // A Carla aparece na lista — o Marcos precisa saber quem o atende. Mas
-      // ela não é dele para remover. As `actions` do servidor dizem isso, e a
-      // tela só obedece.
-      await comoMarcos();
+    it('não deve deixar ninguém gerenciar quem é da consultoria', async () => {
+      // Nem onde a Carla aparece: para o Josué ela é linha, e para o cliente
+      // nem isso. As `actions` do servidor dizem quem pode o quê, e a tela só
+      // obedece — quem recalculasse aqui criaria uma segunda regra.
+      await comoJosué();
 
       expect(temAcao(carlaNaBrf.id, 'remover')).toBe(false);
       expect(temAcao(carlaNaBrf.id, 'trocar-papel')).toBe(false);
@@ -227,7 +317,20 @@ describe('CompanyTeamComponent', () => {
       expect(el('[data-testid="convidar"]')).toBeNull();
       // Mas ela continua vendo quem tem acesso à empresa dela: numa ferramenta
       // de conformidade, essa lista é material de auditoria.
-      expect(todos('[data-testid="linha"]').length).toBe(EQUIPE_DA_BRF.length);
+      expect(todos('[data-testid="linha"]').length).toBe(EQUIPE_DA_BRF.members.length);
+    });
+
+    it('não deve abrir coluna de ações para quem não age sobre ninguém', async () => {
+      // A Débora acompanha e não administra: nenhuma linha lhe oferece nada, e
+      // uma coluna vazia com cabeçalho é peso. O guia de papéis fica — ele não
+      // depende de alçada nenhuma.
+      const semAção = equipeDaEmpresa({
+        members: EQUIPE_DA_BRF.members.map((pessoa) => ({ ...pessoa, actions: NADA })),
+      });
+      await abrirComo([vínculo(BRF.id, ['DIRECTOR'])], semAção);
+
+      expect(todos('th').length).toBe(4);
+      expect(el('[data-testid="abrir-guia-de-papeis"]')).not.toBeNull();
     });
 
     it('deve oferecer à consultoria, dentro da empresa, a alçada maior dela', async () => {

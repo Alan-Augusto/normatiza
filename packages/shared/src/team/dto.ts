@@ -135,6 +135,46 @@ export interface CompanyMember {
   actions: MemberActions;
 }
 
+/**
+ * Quem responde tecnicamente pela empresa, na consultoria que a atende.
+ *
+ * Nome e registro, e mais nada — sem e-mail, sem último acesso, sem status.
+ * São os dados que já vão impressos no laudo assinado: o objeto do contrato,
+ * não o cadastro da pessoa.
+ */
+export interface TechnicalResponsible {
+  name: string;
+  registryType?: RegistryType;
+  registryNumber?: string;
+}
+
+/**
+ * A resposta de `GET /companies/:companyId/members`.
+ *
+ * **Não é uma lista, é duas coisas** — e a diferença é a regra de negócio de
+ * [01 §4](../../../../docs/produto/01_papeis_e_permissoes.md):
+ *
+ * - `members` é quem **a empresa** administra: gente dela e os terceiros que
+ *   ela contratou. Para quem olha do lado cliente, a consultoria **não entra
+ *   aqui** — nome, e-mail e último acesso de funcionário da consultoria são
+ *   dado pessoal dela, e o cliente não pode agir sobre nenhuma dessas linhas.
+ * - `accountName` e `technicalResponsibles` são o contexto: quem presta o
+ *   serviço e quem assina por ele.
+ *
+ * Saber que existe um terceiro com acesso e receber o cadastro dele são coisas
+ * diferentes; separar em dois campos é o que impede uma de virar a outra.
+ *
+ * Quem olha **do lado consultoria** recebe a própria equipe dentro de
+ * `members`, porque ali ela é a equipe — e o contexto deixa de ser notícia.
+ */
+export interface CompanyTeam {
+  /** A consultoria que atende esta empresa. */
+  accountName: string;
+  /** Engenheiros alocados a esta empresa. Vazio quando não há nenhum. */
+  technicalResponsibles: TechnicalResponsible[];
+  members: CompanyMember[];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Mutações do vínculo
 // ─────────────────────────────────────────────────────────────────────────────

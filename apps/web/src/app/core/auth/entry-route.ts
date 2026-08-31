@@ -25,10 +25,16 @@ export const VÊ_A_EMPRESA: readonly Role[] = [...CONTEXTO_1, ...CONTEXTO_2];
 
 export function rotaDeEntrada(session: SessionUser): string {
   // O Contexto 0 não é papel de vínculo: é a dimensão de plataforma, sobreposta
-  // ao login normal. Quem é as duas coisas — dono da plataforma e Engenheiro
-  // Responsável da própria consultoria — entra pelo backoffice e transita para
-  // a consultoria pelo menu, sem trocar de login.
-  if (session.isPlatformAdmin) return '/admin';
+  // ao login normal. E **não é a porta maior — é a porta ao lado**: quem é as
+  // duas coisas entra onde o trabalho dele acontece, e vai ao backoffice quando
+  // quiser, pelo bloco "Plataforma" do menu.
+  //
+  // O Josué é dono da plataforma de vez em quando e dono da Normatiza todo dia;
+  // abrir no backoffice faria da exceção o padrão. Só cai direto no Contexto 0
+  // quem não tem vínculo ativo em conta nenhuma — o admin que existe só para
+  // operar a plataforma, e para quem não há aplicação nenhuma do outro lado.
+  const temTrabalhoNaAplicação = session.memberships.some((vínculo) => vínculo.isActive);
+  if (session.isPlatformAdmin && !temTrabalhoNaAplicação) return '/admin';
 
   return rotaDaConsultoria(session);
 }

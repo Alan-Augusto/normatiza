@@ -42,6 +42,68 @@ export const ROLE_LABEL: Readonly<Record<Role, string>> = {
 };
 
 /**
+ * O que a pessoa **faz** com aquele papel, numa linha, na voz de quem opera.
+ *
+ * Mora aqui, e não na tela, pela mesma razão de `ROLE_LABEL`: é lido em três
+ * lugares — no convite (para decidir), em Meu Perfil (para a pessoa entender o
+ * que ela é) e no guia de papéis — e três cópias divergiriam na primeira
+ * correção de texto.
+ *
+ * O texto é o resumo do §4 de docs/produto/01_papeis_e_permissoes.md. Mudou
+ * lá, muda aqui.
+ */
+export const ROLE_SUMMARY: Readonly<Record<Role, string>> = {
+  LEAD_ENGINEER:
+    'Dono da conta. Cadastra empresas, faz e conclui análises, valida evidências e assina o laudo.',
+  CONSULTANT_ENGINEER:
+    'Faz e conclui análises, valida evidências e emite laudo — nas empresas que receber no escopo.',
+  TECHNICIAN:
+    'Vai a campo: mede a máquina, preenche a ficha técnica, fotografa e levanta os pontos de risco.',
+  MANAGER:
+    'Responde pela empresa. Aprova orçamento e prazo, e administra quem tem acesso do lado do cliente.',
+  CLIENT_ENGINEER:
+    'Transforma a análise em obra: define responsável, prazo e orçamento de cada ponto, e entrega a evidência.',
+  DIRECTOR: 'Acompanha painéis, grau de adequação, investimento e baixa os laudos prontos.',
+  EXECUTOR: 'Recebe as tarefas designadas a ela, executa e sobe a foto do que fez.',
+};
+
+/**
+ * O que aquele papel **não** faz — e é metade das regras deste sistema.
+ *
+ * Existe separado do resumo de propósito. "O Engenheiro do Cliente nunca toca
+ * na análise" é exatamente a dúvida de quem está escolhendo um papel, e é a
+ * frase que a interface calava: um nome de cargo sozinho não diz o que ele
+ * **não** alcança, e é aí que a escolha erra.
+ */
+export const ROLE_LIMIT: Readonly<Record<Role, string>> = {
+  LEAD_ENGINEER: 'Não aprova orçamento de cliente — quem decide gastar é a empresa.',
+  CONSULTANT_ENGINEER: 'Não enxerga empresas fora do escopo que recebeu.',
+  TECHNICIAN: 'Não conclui análise nem emite laudo — entrega o levantamento para o engenheiro.',
+  MANAGER: 'Não cria nem edita análise: a apreciação de riscos é da consultoria.',
+  CLIENT_ENGINEER: 'Não toca na análise e não aprova o próprio orçamento — quem aprova é o Gestor.',
+  DIRECTOR: 'Leitura pura: não move, não aprova e não cadastra nada.',
+  EXECUTOR: 'Não vê a análise, o HRN, os outros pontos da máquina nem as outras máquinas.',
+};
+
+/**
+ * A ordem em que os papéis se apresentam a quem escolhe: por **alçada**, dentro
+ * de cada lado — a mesma da tabela do §4 de
+ * docs/produto/01_papeis_e_permissoes.md.
+ *
+ * Nunca alfabética. Em ordem alfabética "Diretor" — leitura pura — vem antes de
+ * "Gestor", e uma lista sugere hierarquia mesmo quando não promete nenhuma.
+ */
+export const ROLE_ORDER: readonly Role[] = [
+  'LEAD_ENGINEER',
+  'CONSULTANT_ENGINEER',
+  'TECHNICIAN',
+  'MANAGER',
+  'CLIENT_ENGINEER',
+  'DIRECTOR',
+  'EXECUTOR',
+];
+
+/**
  * O lado é atributo do papel, não do usuário — e é o que separa quem produz a
  * análise de quem a executa. Derivado, nunca persistido: coluna e mapa poderiam
  * divergir, e aqui não há duas verdades possíveis.
@@ -71,6 +133,18 @@ export const COMPANY_SCOPED_ROLES: readonly Role[] = [
   'CLIENT_ENGINEER',
   'DIRECTOR',
 ];
+
+/**
+ * Quem assume **responsabilidade técnica** perante o cliente: emite e assina o
+ * laudo, com o próprio registro profissional.
+ *
+ * É por isso que só estes dois aparecem ao cliente como responsáveis pela
+ * empresa dele. O Técnico é da consultoria e trabalha naquela planta, mas não
+ * assina nada — nomeá-lo ao cliente seria expor a equipe da consultoria sem que
+ * exista relação de responsabilidade que o justifique
+ * (docs/produto/01_papeis_e_permissoes.md §4).
+ */
+export const SIGNING_ROLES: readonly Role[] = ['LEAD_ENGINEER', 'CONSULTANT_ENGINEER'];
 
 /** Papéis com carteira: vários vínculos ativos, um por empresa atendida. */
 export const PORTFOLIO_ROLES: readonly Role[] = [
@@ -110,12 +184,53 @@ export function canInvite(inviterRoles: readonly Role[], target: Role): boolean 
   return inviterRoles.some((role) => CAN_INVITE[role].includes(target));
 }
 
+/**
+ * Os papéis que quem tem `inviterRoles` pode conceder, **em ordem de alçada**.
+ *
+ * A ordenação não é cosmética: sem ela, a lista sai na ordem em que os vínculos
+ * de quem convida vieram do banco — quem tem dois papéis veria uma ordem, quem
+ * tem um veria outra, e a mesma tela mudaria de forma sem nenhuma razão visível
+ * para quem olha.
+ */
 export function invitableRoles(inviterRoles: readonly Role[]): Role[] {
   const união = new Set<Role>();
   for (const role of inviterRoles) {
     for (const alvo of CAN_INVITE[role]) união.add(alvo);
   }
-  return [...união];
+  return ROLE_ORDER.filter((papel) => união.has(papel));
+}
+
+/** O rótulo do lado, como cabeçalho de grupo na escolha do papel. */
+export const ROLE_SIDE_LABEL: Readonly<Record<RoleSide, string>> = {
+  CONSULTANCY: 'Na consultoria — quem produz a análise',
+  CLIENT: 'Na empresa cliente — quem executa a adequação',
+  EXTERNAL: 'Externo',
+};
+
+/**
+ * Agrupa **os papéis dados** por lado, cada grupo em ordem de alçada.
+ *
+ * Recebe a lista a exibir, e não a de quem convida: quem já aplicou
+ * `CAN_INVITE` foi `invitableRoles`, e aplicá-lo de novo aqui perguntaria
+ * "quem esses papéis convidariam?" — outra pergunta, com resposta plausível o
+ * bastante para passar despercebida. Ao Gestor, que concede três papéis,
+ * sobraria **um**.
+ *
+ * Um grupo só significa que **não há título de grupo a mostrar**: quem decide
+ * isso é quem renderiza, olhando o tamanho da lista. Só o Engenheiro
+ * Responsável alcança os dois lados.
+ */
+export function rolesBySide(roles: readonly Role[]): { side: RoleSide; roles: Role[] }[] {
+  const grupos = new Map<RoleSide, Role[]>();
+
+  for (const papel of ROLE_ORDER.filter((papel) => roles.includes(papel))) {
+    const lado = ROLE_SIDE[papel];
+    const atual = grupos.get(lado);
+    if (atual) atual.push(papel);
+    else grupos.set(lado, [papel]);
+  }
+
+  return [...grupos].map(([side, roles]) => ({ side, roles }));
 }
 
 /**

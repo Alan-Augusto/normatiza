@@ -116,7 +116,42 @@ São capacidades diferentes, e não se derivam uma da outra.
 
 A razão: numa ferramenta de conformidade, "quem tem acesso aos dados desta empresa" é material de auditoria, não privilégio administrativo. A Débora — Diretora da BRF, que não convida ninguém — é provavelmente **quem mais precisa** dessa lista. Amarrar a visibilidade à coluna "Convida" a deixaria de fora.
 
+#### A lista do cliente é a da empresa dele, não a da consultoria
+
+**Quem olha do lado cliente não recebe a equipe da consultoria em forma de lista.** O Marcos vê quem é da BRF e os terceiros que a BRF contratou. Não vê a Carla nem o Fernando como linhas de tabela — sem nome em coluna, sem e-mail, sem último acesso, sem contagem.
+
+A regra acima ("quem tem acesso é material de auditoria") vale para as pessoas **da empresa**, e não se estende à consultoria, porque muda o dono do dado: nome, e-mail e frequência de uso de funcionário da Normatiza são dado pessoal da Normatiza. O cliente não os contratou, não os administra e não pode agir sobre nenhum deles — `actions` chega tudo falso nessas linhas.
+
+O caso mais claro é o **último acesso**. Ele existe para quem administra a equipe saber se o acesso concedido está sendo usado. Exposto ao cliente, vira outra coisa: se a Carla não entra há cinco dias, a BRF infere que ninguém está tocando no serviço dela. Isso é informação comercial da consultoria, e nenhuma finalidade de registro de acesso pede um carimbo de hora.
+
+**Saber que existe um terceiro com acesso ≠ receber o cadastro dele.** As duas coisas são atendidas por uma linha de contexto, não por uma tabela:
+
+> A **Normatiza** presta o serviço de adequação nesta unidade.
+> Responsável técnica: **Carla** — CREA-SP 111111.
+
+**Nomear o responsável técnico não é o mesmo vazamento.** Esse nome e esse registro vão impressos no laudo assinado — são o objeto do contrato, e a BRF precisa saber com quem falar. Já *quantas* pessoas a consultoria alocou, *quem* são as demais e *quando* cada uma entrou no sistema é operação interna dela. Aparecem os papéis que **assinam** — Engenheiro Responsável e Engenheiro da Consultoria alocados àquela empresa. O Técnico não aparece: ele não assume responsabilidade técnica perante o cliente.
+
+> **O recorte é do servidor, por quem pergunta.** Filtrar na tela deixaria os dados viajando até o navegador do cliente. A **consultoria** que abre a mesma tela dentro da empresa continua vendo todo mundo — para ela é a própria equipe.
+
 **O botão de convidar some** para quem a coluna "Convida" deixa vazia — Técnico, Diretor e Executor. Não é desabilitado: oferecer a ação e recusá-la no passo seguinte é o mesmo gesto do botão cinza, e quem clica acha que o sistema quebrou. Quem não concede papel nenhum abriria um formulário sem uma única opção.
+
+#### Como o papel se apresenta a quem convida
+
+A coluna "Convida" acima não descreve só uma permissão: ela decide **a forma do convite**.
+
+| Quantos papéis concede | Quem é | O que o convite mostra |
+| :-: | :--- | :--- |
+| **Um** | Carla, Antonio | Nenhuma escolha — o papel é declarado. *"Convidar um executor para a BRF"*. |
+| **Vários, um lado** | Marcos | Uma lista, com o que cada papel faz. |
+| **Vários, os dois lados** | Josué | A mesma lista, separada por lado. |
+
+Uma pergunta com uma resposta possível não é pergunta: para o Antonio, que só concede Executor, sobra o que é escolha de verdade — **nome, e-mail e interno × terceiro**.
+
+**A descrição do papel aparece nos três casos.** Não escolher não é não precisar saber: quem convida um executor precisa saber que a análise nunca vai aparecer para ele. E cada papel se apresenta com **duas** frases — o que ele faz e o que ele **não** faz —, porque metade das regras deste documento são negativas, e são justamente elas que decidem se o papel escolhido é o certo.
+
+A lista é ordenada por **alçada**, na ordem da tabela do §4 — nunca em ordem alfabética, que poria *Diretor*, de leitura pura, acima de *Gestor*.
+
+> O mesmo texto responde em outros dois lugares: em **Meu Perfil**, onde a pessoa entende o que ela é no sistema, e num guia *"o que cada papel faz"* alcançável das telas de equipe — inclusive por quem não convida ninguém. Ele vive em `packages/shared`, ao lado dos nomes dos papéis: três cópias divergiriam na primeira correção de texto.
 
 ---
 

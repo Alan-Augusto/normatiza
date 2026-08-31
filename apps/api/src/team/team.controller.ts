@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type {
-  CompanyMember,
+  CompanyTeam,
   DisableUserPreview,
   TeamMember,
 } from '@normatiza/shared';
@@ -118,7 +118,7 @@ export class CompanyMembersController {
   async list(
     @Req() req: AuthenticatedRequest,
     @Param('companyId') companyId: string,
-  ): Promise<CompanyMember[]> {
+  ): Promise<CompanyTeam> {
     const escopo = await this.auth.buildScope(req.auth!.userId);
     return this.team.listCompanyMembers(escopo, companyId);
   }

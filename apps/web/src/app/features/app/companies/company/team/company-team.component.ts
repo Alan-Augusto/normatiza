@@ -8,12 +8,12 @@ import { ActivatedRoute } from '@angular/router';
 import { map } from 'rxjs/operators';
 
 import {
-  MEMBER_ORIGIN_LABEL,
   ROLE_LABEL,
   invitableRoles,
   type CompanyMember,
   type MemberOrigin,
   type Role,
+  type TechnicalResponsible,
 } from '@normatiza/shared';
 
 import { AuthService } from '../../../../../core/auth/auth.service';
@@ -24,8 +24,10 @@ import {
   AcaoVazia,
   CabecalhoDaTabela,
   LinhaDaTabela,
+  TituloDeGrupo,
 } from '../../../../../shared/components/data-table/data-table.directives';
 import { InviteFormComponent } from '../../../../../shared/components/team/invite-form.component';
+import { RoleGuideComponent } from '../../../../../shared/components/team/role-guide.component';
 import {
   RoleEditorComponent,
   type VinculoEditavel,
@@ -46,6 +48,11 @@ import {
  *    `GET /companies/:id/members` e não a lista da conta filtrada: a projeção
  *    da conta traria o escopo de cada pessoa junto, e o Marcos descobriria que
  *    a mesma consultoria atende a Seara.
+ * 3. **A consultoria não é linha de tabela para o cliente** (D25). Quem presta
+ *    o serviço e quem assina por ele aparecem como contexto — nome e registro,
+ *    o que já vai impresso no laudo. O recorte é do servidor: esta tela desenha
+ *    o que recebe e não esconde nada por conta própria, senão o cadastro da
+ *    consultoria continuaria legível no inspetor do navegador.
  */
 @Component({
   selector: 'app-company-team',
@@ -59,7 +66,9 @@ import {
     CabecalhoDaTabela,
     LinhaDaTabela,
     AcaoVazia,
+    TituloDeGrupo,
     InviteFormComponent,
+    RoleGuideComponent,
     RoleEditorComponent,
   ],
   templateUrl: './company-team.component.html',
@@ -76,6 +85,8 @@ export class CompanyTeamComponent {
   );
 
   readonly membros = signal<CompanyMember[]>([]);
+  readonly nomeDaConsultoria = signal('');
+  readonly responsaveisTecnicos = signal<TechnicalResponsible[]>([]);
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
@@ -89,8 +100,31 @@ export class CompanyTeamComponent {
     return ROLE_LABEL[papel];
   }
 
-  rotuloDaOrigem(origem: MemberOrigin): string {
-    return MEMBER_ORIGIN_LABEL[origem];
+  /**
+   * O título do bloco é o **nome** de quem está ali, não a classificação.
+   *
+   * "Cliente" é a palavra da consultoria para a BRF — não a palavra da BRF para
+   * si mesma. A Débora abre a tela da empresa dela e leria um rótulo escrito do
+   * ponto de vista de quem a atende: o mesmo vazamento de vocabulário que o D1
+   * existe para impedir, em forma de cabeçalho. Com o nome, cada bloco se
+   * explica sozinho e ninguém precisa traduzir a taxonomia do sistema.
+   *
+   * O terceiro é o único que continua classificado, e por falta de dado, não
+   * por escolha: a empresa prestadora não existe no sistema (D11).
+   */
+  rotuloDoBloco(origem: MemberOrigin): string {
+    if (origem === 'CONSULTANCY') return this.nomeDaConsultoria();
+    if (origem === 'CLIENT') return this.nomeDaEmpresa();
+    return 'Terceiros contratados';
+  }
+
+  /**
+   * "Pessoas", e não "registros": a lista é de gente com acesso, e "registro"
+   * já é outra coisa nesta mesma tela — o CREA de quem assina o laudo.
+   */
+  contagemDoBloco(origem: MemberOrigin): string {
+    const quantas = this.quantasNaOrigem(origem);
+    return quantas === 1 ? '1 pessoa' : `${quantas} pessoas`;
   }
 
   /**
@@ -109,6 +143,59 @@ export class CompanyTeamComponent {
    * administra. O que some é só o botão que não poderia dar em nada.
    */
   readonly podeConvidar = computed(() => this.papeisQuePossoConceder().length > 0);
+
+  /**
+   * A ordem dos blocos: quem me atende, quem trabalha aqui, quem foi
+   * contratado para a obra. Não é alfabética nem a do enum — é a distância
+   * contratual em relação a quem administra a planta.
+   */
+  private readonly ordemDaOrigem: readonly MemberOrigin[] = ['CONSULTANCY', 'CLIENT', 'EXTERNAL'];
+
+  /**
+   * A lista agrupada por origem (D22).
+   *
+   * "Quem tem acesso a esta empresa" é uma pergunta que se responde em três
+   * baldes, e era servida como corrida única. O agrupamento também resolve um
+   * defeito silencioso: as linhas da consultoria chegam ao Marcos sem ação
+   * nenhuma — ele vê a Carla e não a remove —, e numa lista plana isso lê como
+   * linha quebrada. Num bloco chamado "Consultoria" lê como o que é.
+   *
+   * A ordenação é aqui e não no servidor porque é decisão de apresentação; o
+   * `p-table` abre um grupo a cada troca de valor, então a lista **precisa**
+   * chegar ordenada ou o mesmo título apareceria três vezes.
+   */
+  readonly membrosAgrupados = computed(() =>
+    [...this.membros()].sort(
+      (a, b) => this.ordemDaOrigem.indexOf(a.origin) - this.ordemDaOrigem.indexOf(b.origin),
+    ),
+  );
+
+  /**
+   * A linha de contexto aparece para quem **não** tem a consultoria na lista.
+   *
+   * Derivado dos dados, e não de um sinalizador a mais: quando o servidor
+   * recortou (D25), não há linha de origem `CONSULTANCY`; quando quem olha é da
+   * consultoria, elas estão ali e a frase deixaria de ser notícia — seria
+   * contar à Carla quem é a Carla.
+   */
+  readonly mostraContextoDaConsultoria = computed(
+    () =>
+      this.nomeDaConsultoria().length > 0 &&
+      !this.membros().some((membro) => membro.origin === 'CONSULTANCY'),
+  );
+
+  /** Quantas pessoas há no bloco — a contagem que faz a lista virar resumo. */
+  quantasNaOrigem(origem: MemberOrigin): number {
+    return this.membros().filter((membro) => membro.origin === origem).length;
+  }
+
+  /**
+   * Coluna de ações sem ação nenhuma é cabeçalho sobre o vazio. É o caso da
+   * Débora, que acompanha e não administra.
+   */
+  readonly mostraAcoes = computed(() =>
+    this.membros().some((membro) => Object.values(membro.actions).some(Boolean)),
+  );
 
   /**
    * Um vínculo só — o desta empresa. Os outros a pessoa até pode ter, mas esta
@@ -147,8 +234,10 @@ export class CompanyTeamComponent {
     this.erro.set(null);
 
     this.team.listCompanyMembers(this.companyId()).subscribe({
-      next: (membros) => {
-        this.membros.set(membros);
+      next: (equipe) => {
+        this.membros.set(equipe.members);
+        this.nomeDaConsultoria.set(equipe.accountName);
+        this.responsaveisTecnicos.set(equipe.technicalResponsibles);
         this.carregando.set(false);
       },
       error: () => {

@@ -145,15 +145,27 @@
 
     <ul data-testid="meus-vinculos" class="space-y-3">
       @for (vinculo of vinculos(); track vinculo.id) {
-        <li class="border-b border-surface-100 pb-3 last:border-0 last:pb-0 dark:border-surface-800">
+        <li
+          class="border-b border-surface-100 pb-3 last:border-0 last:pb-0 dark:border-surface-800"
+        >
           <div class="text-sm font-medium text-surface-900 dark:text-surface-0">
             {{ vinculo.company.tradeName }}
           </div>
-          <div class="text-xs text-muted-color">
-            @for (papel of vinculo.roles; track papel) {
-              <span class="mr-1">{{ rotulo[papel] }}</span>
-            }
-          </div>
+          <!--
+            O papel, e o que ele alcança. Esta é a tela onde a pessoa entende o
+            que ela **é** no sistema, e um nome de cargo sozinho não conta isso:
+            o Rafael lia "Executor" e não tinha como saber que a análise não
+            aparece para ele. Mesmo texto do convite e do guia — um lugar só.
+          -->
+          @for (papel of vinculo.roles; track papel) {
+            <div data-testid="papel-do-vinculo" class="mt-1">
+              <div class="text-xs font-medium text-surface-700 dark:text-surface-300">
+                {{ rotulo[papel] }}
+              </div>
+              <div class="text-xs text-muted-color">{{ resumo[papel] }}</div>
+              <div class="text-xs text-muted-color">{{ limite[papel] }}</div>
+            </div>
+          }
         </li>
       } @empty {
         <li class="text-sm text-muted-color">

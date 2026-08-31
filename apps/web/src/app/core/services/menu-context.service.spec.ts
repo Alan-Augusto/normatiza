@@ -106,9 +106,18 @@ describe('MenuContextService', () => {
       expect(consultoria.backLink?.route).toBe('/app/dashboard');
     });
 
-    it('deve levar o admin da plataforma de volta ao backoffice', async () => {
+    it('deve levar de volta ao backoffice o admin que só opera a plataforma', async () => {
+      // Sem vínculo nenhum, é de lá que ele veio e é para lá que ele volta.
       const ctx = await menuEm('/app/profile', [], true);
       expect(ctx.backLink?.route).toBe('/admin');
+    });
+
+    it('não deve ejetar para o backoffice o admin que também tem consultoria', async () => {
+      // O Josué está dentro de `/app`: a saída das configurações é o trabalho
+      // dele, não a dimensão de plataforma. Ele vai ao backoffice pelo bloco
+      // "Plataforma" do menu, quando quiser.
+      const ctx = await menuEm('/app/profile', ['LEAD_ENGINEER'], true);
+      expect(ctx.backLink?.route).toBe('/app/dashboard');
     });
 
     it('deve oferecer Plano / Créditos ao titular da conta', async () => {

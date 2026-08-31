@@ -1,5 +1,6 @@
 import type {
   CompanyMember,
+  CompanyTeam,
   DisableUserPreview,
   MemberActions,
   Role,
@@ -158,7 +159,10 @@ export function membroDaEmpresa(over: Partial<CompanyMember> = {}): CompanyMembe
   };
 }
 
-/** A consultoria aparece na lista — mas o cliente não a gerencia. */
+/**
+ * A Carla como **linha** — só existe na visão de quem é da consultoria (D25).
+ * Para o cliente ela não vem como membro: vem como responsável técnica.
+ */
 export const carlaNaBrf = membroDaEmpresa({
   id: carla.id,
   membershipId: 'm-brf-carla',
@@ -190,7 +194,37 @@ export const terceiroNaBrf = membroDaEmpresa({
   actions: { ...NADA, changeRoles: true, removeFromCompany: true },
 });
 
-export const EQUIPE_DA_BRF: CompanyMember[] = [carlaNaBrf, marcosNaBrf, terceiroNaBrf];
+/**
+ * A responsabilidade técnica como o cliente a recebe: nome e registro, o que já
+ * vai impresso no laudo. Sem e-mail, sem último acesso, sem status.
+ */
+export const CARLA_RESPONSÁVEL = {
+  name: 'Carla',
+  registryType: 'CREA' as const,
+  registryNumber: 'SP-111111',
+};
+
+export function equipeDaEmpresa(over: Partial<CompanyTeam> = {}): CompanyTeam {
+  return {
+    accountName: 'Normatiza',
+    technicalResponsibles: [CARLA_RESPONSÁVEL],
+    members: [],
+    ...over,
+  };
+}
+
+/**
+ * O que o **cliente** recebe: gente da empresa e o terceiro contratado. A
+ * consultoria não é linha aqui — é contexto (D25).
+ */
+export const EQUIPE_DA_BRF: CompanyTeam = equipeDaEmpresa({
+  members: [marcosNaBrf, terceiroNaBrf],
+});
+
+/** O que a **consultoria** recebe na mesma tela: ali a Carla é a equipe. */
+export const EQUIPE_DA_BRF_PELA_CONSULTORIA: CompanyTeam = equipeDaEmpresa({
+  members: [carlaNaBrf, marcosNaBrf, terceiroNaBrf],
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Desligamento

@@ -35,10 +35,28 @@
       [value]="dados()"
       styleClass="p-datatable-sm"
       [tableStyle]="{ 'min-width': '100%' }"
+      [rowGroupMode]="agrupando() ? 'subheader' : undefined"
+      [groupRowsBy]="agruparPor()"
     >
       <ng-template pTemplate="header">
         <ng-container *ngTemplateOutlet="cabecalho().template" />
       </ng-template>
+
+      @if (tituloDeGrupo(); as titulo) {
+        <ng-template pTemplate="groupheader" let-item>
+          <tr data-testid="titulo-de-grupo">
+            <!--
+              `colspan` alto de propósito: o navegador o limita ao número real
+              de colunas, e a alternativa seria a tela informar quantas são —
+              um número que passaria a ter de ser mantido em dia com o
+              cabeçalho, e que ninguém lembraria de mexer ao acrescentar uma.
+            -->
+            <td colspan="99" class="bg-surface-50 dark:bg-surface-800">
+              <ng-container *ngTemplateOutlet="titulo.template; context: { $implicit: item }" />
+            </td>
+          </tr>
+        </ng-template>
+      }
 
       <ng-template pTemplate="body" let-item>
         <ng-container *ngTemplateOutlet="linha().template; context: { $implicit: item }" />

@@ -10,15 +10,35 @@ import { BRF, SEARA, sessão, vínculo } from './testing/sessao';
  * e as outras empresas atendidas junto.
  */
 describe('rotaDeEntrada', () => {
-  it('deve levar o admin da plataforma ao Contexto 0', () => {
+  it('deve levar ao Contexto 0 o admin que só opera a plataforma', () => {
+    // Sem vínculo em conta nenhuma, não há aplicação do outro lado: mandá-lo
+    // para `/app/profile` seria abrir uma tela que não é o trabalho dele.
     expect(rotaDeEntrada(sessão([], true))).toBe('/admin');
   });
 
-  it('deve levar ao Contexto 0 quem é admin da plataforma e também da própria consultoria', () => {
+  it('deve levar à consultoria quem é admin da plataforma e também da própria consultoria', () => {
     // É o caso do dono do produto: Engenheiro Responsável da consultoria dele e
-    // dono da plataforma, com **um** login. A porta maior é o backoffice; ele
-    // desce para a consultoria pelo menu.
-    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])], true))).toBe('/admin');
+    // dono da plataforma, com **um** login. Ele é dono da plataforma de vez em
+    // quando e dono da consultoria todo dia — o backoffice é porta ao lado, não
+    // porta maior, e ele a toma pelo menu quando quiser.
+    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])], true))).toBe(
+      '/app/dashboard',
+    );
+  });
+
+  it('deve valer o mesmo para o admin que é do lado cliente', () => {
+    // A dimensão de plataforma não muda de que lado a pessoa trabalha: ela
+    // continua nascendo dentro do Contexto 2 da empresa dela.
+    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['MANAGER'])], true))).toBe(
+      `/app/companies/${BRF.id}/dashboard`,
+    );
+  });
+
+  it('deve ir ao Contexto 0 o admin cujos vínculos foram todos desativados', () => {
+    // "Tem vínculo" é vínculo **ativo**: quem foi desligado de tudo não tem
+    // aplicação para onde entrar, mesmo com as linhas antigas na sessão.
+    const desligadoDeTudo = [vínculo(BRF.id, ['LEAD_ENGINEER'], { isActive: false })];
+    expect(rotaDeEntrada(sessão(desligadoDeTudo, true))).toBe('/admin');
   });
 
   it('deve levar o Engenheiro Responsável ao Contexto 1', () => {

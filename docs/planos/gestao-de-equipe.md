@@ -1,6 +1,6 @@
 # Plano — Gestão de Equipe
 
-> **Status:** Fases 0–5 concluídas — backend e frontend verdes (158 testes no front); falta só o fechamento · **Criado em:** 2026-08-26
+> **Status:** Fases 0–5 e 7 concluídas — 212 testes no front, 125 unitários e 150 e2e na API · falta 6.2–6.5 e o roteiro de aceite (7.9) · **Criado em:** 2026-08-26
 > **Regras de negócio:** [01 — Papéis e Permissões](../produto/01_papeis_e_permissoes.md) · [03 — Navegação §3.3 e §4.5](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §1](../produto/04_modelo_de_dados.md)
 > **Arquitetura existente:** [Autenticação e Autorização](../backend/autenticacao.md)
 
@@ -100,12 +100,22 @@ Escopo desta feature:
 
 ## 4. Decisões pendentes
 
-Nenhuma. As duas que bloqueavam a Fase 1 viraram D11 e D12; **D19 e D20 foram decididas** e estão registradas abaixo.
+Nenhuma. As duas que bloqueavam a Fase 1 viraram D11 e D12; **D19 e D20** fecharam com a tabela compartilhada, e **D21–D24** com a Fase 7.
+
+### Decididas
 
 | # | Decisão | Definição |
 | :-- | :--- | :--- |
 | D19 | Concessão de admin **por e-mail exato** | `POST /platform/admins` passa a receber `{ email }` e resolve no servidor. Sem busca por trecho: não por sigilo — o Contexto 0 enxerga as contas por definição —, mas porque busca parcial é varredura do cadastro inteiro, e quem promove alguém já sabe o endereço. E-mail sem dono é recusa explícita (promover quem não tem conta seria um convite de plataforma, fluxo próprio que não existe). E-mail que alcança **duas** pessoas devolve 409 com os candidatos e a **conta** de cada uma — `User.email` é único por conta, não globalmente, a mesma ambiguidade do login (D16). Pessoa desligada é recusada: o acesso não sobrevive ao desligamento, e conceder gravaria linha inerte. Regra de negócio em [01](../produto/01_papeis_e_permissoes.md). |
-| D20 | Ver a equipe ≠ poder convidar | Duas capacidades, não uma. Vê a lista todo papel com posição na empresa — Técnico e Diretor inclusive —, já recortada pelo escopo de quem pergunta; o Executor fica de fora. O que some para quem não concede papel nenhum é **o botão**, não a tela: `CAN_INVITE` vazio abriria um formulário sem uma única opção, e oferecer o que será recusado é o mesmo gesto do botão cinza. Amarrar a visibilidade a "quem convida" tiraria da Débora — Diretora, que não convida ninguém — a lista de quem tem acesso à empresa dela, que numa ferramenta de conformidade é material de auditoria. Regra de negócio em [01](../produto/01_papeis_e_permissoes.md). |
+| D20 | Ver a equipe ≠ poder convidar | Duas capacidades, não uma. Vê a lista todo papel com posição na empresa — Técnico e Diretor inclusive —, já recortada pelo escopo de quem pergunta; o Executor fica de fora. **E a lista é a da empresa, não a da conta que a atende** — o recorte é D25. O que some para quem não concede papel nenhum é **o botão**, não a tela: `CAN_INVITE` vazio abriria um formulário sem uma única opção, e oferecer o que será recusado é o mesmo gesto do botão cinza. Amarrar a visibilidade a "quem convida" tiraria da Débora — Diretora, que não convida ninguém — a lista de quem tem acesso à empresa dela, que numa ferramenta de conformidade é material de auditoria. Regra de negócio em [01](../produto/01_papeis_e_permissoes.md). |
+
+| # | Decisão | Definição |
+| :-- | :--- | :--- |
+| D21 | O papel se escolhe numa **lista agrupada por lado**, e some quando não há escolha | Três formas, decididas pelo tamanho de `CAN_INVITE` de quem convida: **um** papel é declarado, não perguntado (Carla, Antonio); **vários de um lado** viram lista ordenada por alçada (Marcos); **vários dos dois lados** ganham um título por lado (só o Josué). **Não são abas**: só o Eng. Responsável alcança os dois lados, então a aba existiria para uma única pessoa do sistema — e esconderia metade das opções das demais, podendo deixar o papel escolhido numa aba fechada. A **descrição fica nos três casos**: não escolher não é não precisar saber. Ordem por alçada, nunca alfabética. Regra em [01 §4](../produto/01_papeis_e_permissoes.md). |
+| D22 | A Equipe da Empresa **agrupa por origem, e o bloco se chama pelo nome** | Com contagem em pessoas, e a coluna "Origem" sai — dentro de cada bloco ela repetiria o mesmo valor linha após linha. **O título é o nome de quem está ali** — *BRF · 3 pessoas*, *Normatiza · 2 pessoas* —, nunca a classificação: "Cliente" é a palavra da consultoria para a BRF, e escrita na tela da BRF ela conta de que lado o sistema foi escrito, que é o vazamento de vocabulário que o D1 existe para impedir. A Débora leria *"Cliente · 4"* sobre a própria equipe. Só o terceiro continua classificado — *Terceiros contratados* —, e por falta de dado: a empresa prestadora não existe no sistema (D11). Custa uma capacidade nova no `app-data-table` — `agruparPor`, via o `rowGroupMode` do próprio `p-table`. |
+| D23 | A descrição do papel mora em `packages/shared` | `ROLE_SUMMARY` (o que faz), `ROLE_LIMIT` (o que **não** faz) e `ROLE_ORDER` (a ordem de alçada), ao lado de `ROLE_LABEL`. Três consumidores: o convite, Meu Perfil e o guia `app-role-guide`. O "não" existe separado porque metade das regras deste sistema é negativa — *"o Eng. do Cliente nunca toca na análise"* é exatamente a dúvida de quem escolhe um papel. |
+| D24 | O convite passa a **reactive forms tipado** | Validade por campo, estado `touched` e erro ao lado do campo não têm onde morar em `ngModel` sobre sinal. Sem isso, e-mail malformado só era recusado pelo servidor e voltava como frase genérica no rodapé, longe do campo que a causou. O e-mail é **aparado antes de validar** — `Validators.email` é ancorado, e a terceira ocorrência desse mesmo defeito no sistema. |
+| D25 | A lista do cliente é **a da empresa dele** | Quem olha do lado cliente recebe gente da empresa e os terceiros que ela contratou; a consultoria sai da tabela e vira **uma linha de contexto** — quem presta o serviço e quem assina por ele, com nome e registro. O argumento de D20 (*"quem tem acesso é material de auditoria"*) não sobrevive à troca do dono do dado: nome, e-mail e último acesso de funcionário da consultoria são dado pessoal **dela**, exposto a um terceiro que não os contratou, não os administra e não pode agir sobre nenhum deles. O caso mais claro é o **último acesso** — se a Carla não entra há cinco dias, a BRF infere que ninguém está tocando no serviço dela: informação comercial vazando pelo painel do cliente, e nenhuma finalidade de registro de acesso pede carimbo de hora. **Saber que existe um terceiro com acesso ≠ receber o cadastro dele**, e separar em dois campos (`members` × contexto) é o que impede uma coisa de virar a outra. **Nomear o responsável técnico não é o mesmo vazamento:** esse nome e esse registro vão impressos no laudo assinado — é o objeto do contrato, não o organograma da consultoria; por isso só os papéis que **assinam** (`SIGNING_ROLES`), e o Técnico fica de fora. **O recorte é no servidor, por quem pergunta** (é o que a Fase 6.2 confere): filtrar no template deixaria os dados viajando até o navegador do cliente, legíveis no inspetor. A consultoria dentro da empresa continua recebendo todo mundo em `members`, porque ali é a própria equipe. Regra em [01 §4](../produto/01_papeis_e_permissoes.md). |
 
 A regra de negócio de D12 está escrita em [01 §5](../produto/01_papeis_e_permissoes.md).
 
@@ -146,7 +156,7 @@ Gestão dos usuários **da conta**.
 
 Quem tem acesso **a esta empresa**: consultoria alocada, gente do próprio cliente e terceiros.
 
-**Tabela:** Nome · Papel · Origem (consultoria · cliente · terceiro) · Último acesso · Status
+**Tabela:** Nome · Papel · Último acesso · Status — em blocos por origem, cada um intitulado pelo **nome** de quem está nele (D22).
 **Convite:** o escopo **já vem preenchido** com esta empresa — não há seletor de empresas.
 
 **Ações:** convidar (Marcos → Eng. do Cliente, Diretor, Executor; Antonio → Executor) · trocar papel · **remover da empresa**.
@@ -289,11 +299,114 @@ O que o sucessor herda e o que acontece com o que estava no nome de quem saiu pr
 
 ### Fase 6 — Fechamento
 
-- [ ] **6.1** Suíte completa verde (`test`, `test:e2e`, front). *Parcial: 119 unitários e 158 do front verdes; falta rodar `test:e2e` no fechamento.*
+- [x] **6.1** Suíte completa verde (`test`, `test:e2e`, front) — 125 unitários, 150 e2e e 212 no front, rodadas juntas depois de D25.
 - [ ] **6.2** Conferir que nenhuma regra é aplicada só no front.
 - [ ] **6.3** Estender [`docs/backend/autenticacao.md`](../backend/autenticacao.md) com o ciclo de vida, ou abrir `docs/backend/equipe.md` se ficar grande demais. **Levar junto o índice D1–D15**: o código já cita `(D8)`, `(D12)`, `(D13)` em comentário, e apagar este plano sem o índice deixa essas siglas sem referente — foi o motivo do §14 da autenticação.
 - [ ] **6.4** Atualizar `docs/produto` com o que for decidido durante a implementação.
 - [ ] **6.5** Apagar este arquivo e a linha no [README dos planos](./README.md).
+
+### Fase 7 — Adequação de usabilidade
+
+> **Ordem obrigatória: definir → redesenhar → ajustar teste.** Mexer no teste antes de a interface parar de mudar é pagar o mesmo trabalho duas vezes. Os passos 7.1 e 7.2 não produzem código.
+
+**O problema, na frase de quem usa:** *"estou meio perdido com tanto papel diferente."* Não é falta de informação — é que o sistema **nomeia** papéis sem nunca dizer o que cada um faz, e pede que a pessoa classifique alguém num organograma quando o que ela tem na cabeça é *"quero que o Rafael receba tarefas"*.
+
+#### 7.1 — Fechar D21–D24
+
+#### 7.2 — A regra de superfície: **o que não varia não aparece**
+
+Uma coluna cujo valor é igual em todas as linhas **para quem está olhando** não é informação, é ruído. Vale igualmente para a coluna de ações vazia e para a pergunta de resposta única.
+
+| Quem olha | Tela | O que **some** | Por quê |
+| :--- | :--- | :--- | :--- |
+| Fernando · Técnico | Equipe | Coluna **Escopo** e coluna de **ações** | O escopo dele é uma empresa: toda linha diria "BRF". `actions` vem tudo `false` (D13). |
+| Carla · Eng. Consultoria | Equipe | — | Carteira com duas empresas: o escopo varia, e ela age sobre Técnicos. |
+| Débora · Diretora | Equipe da Empresa | Coluna de **ações** e o botão de convite (D20) | Leitura pura. A lista fica: é material de auditoria. |
+| Antonio · Eng. do Cliente | Equipe da Empresa | O **seletor de papel** inteiro | `CAN_INVITE.CLIENT_ENGINEER = ['EXECUTOR']`. |
+| Marcos · Gestor | Equipe da Empresa | Abas de lado | Os três papéis que ele concede são todos do lado cliente. |
+
+> É a mesma regra que já esconde o seletor de empresas no Contexto 2 (`invite-form.component.ts`): *uma lista de uma opção só é uma pergunta encenada*. A Fase 7 aplica ao campo ao lado.
+
+#### 7.3 — O convite deixa de ser um formulário de cadastro
+
+Três formas, decididas pelo tamanho de `CAN_INVITE` de quem convida — não por configuração de tela:
+
+| Papéis que ele concede | Quem é | A forma |
+| :-: | :--- | :--- |
+| **1** | Carla, Antonio | Sem escolha. O título diz o que vai acontecer — *"Convidar um executor para a BRF"* — e um bloco descreve o papel. Para o Antonio o formulário inteiro vira **nome · e-mail · interno ou terceiro**. |
+| **3, um lado** | Marcos | Lista de opções, uma linha de descrição em cada, ordenada por **alçada**. |
+| **6, dois lados** | Josué | A mesma lista, com dois títulos de grupo: *Na minha consultoria* · *Na empresa cliente*. |
+
+**Por que não abas** (D21): só o Eng. Responsável alcança os dois lados — a aba existiria para **uma** pessoa do sistema, a mais experiente. E aba esconde metade das opções: quem abrir no lado errado precisa descobrir que existe outro, e o papel escolhido pode ficar numa aba fechada, com o formulário exibindo um estado que ninguém vê.
+
+**Ordem por alçada, nunca alfabética.** É a ordem do `type Role` e a da tabela do §4 de [01](../produto/01_papeis_e_permissoes.md). Alfabética põe *Diretor* — leitura pura — acima de *Gestor*, e sugere hierarquia onde não há.
+
+#### 7.4 — A descrição do papel, num lugar só (D23)
+
+Dois campos por papel, em `packages/shared`: o que faz e o que **não** faz. O "não" é metade das regras deste sistema — *"o Eng. do Cliente nunca toca na análise"*, *"o Executor não vê o HRN nem as outras máquinas"* — e é exatamente o que dissolve a confusão de quem convida.
+
+Três consumidores da mesma cópia:
+
+1. **O convite**, para decidir.
+2. **Meu Perfil**, para o Rafael entender o que ele *é* no sistema — hoje a tela lista o vínculo e não explica nada.
+3. **Um diálogo "o que cada papel faz"**, aberto por um link discreto nas duas telas de equipe. É a resposta única a "estou perdido com tanto papel".
+
+> O papel numa tabela é um selo. Explicar por `title`/*hover* não serve: é o anti-padrão de prioridade 2 da base do `ui-ux-pro-max` — *reliance on hover only* —, morre no toque e não existe para leitor de tela. Daí o diálogo, que funciona nos três.
+
+#### 7.5 — Formulário: erro ao lado do campo (D24)
+
+O que a base de UX aponta como **High** e hoje falha:
+
+- **Error Placement** — o convite tem um erro só, no rodapé. E-mail malformado nem é validado no cliente: vira 400 e uma frase genérica longe do campo que a causou.
+- **Content Jumping** — o aviso de "escopo de mais de uma empresa" nasce e some empurrando o botão. O espaço tem de estar reservado.
+- **Error Messages** — o erro precisa de `role="alert"` e `aria-describedby` ligando ao campo.
+- **Alvo de toque** — a opção de papel se clica na linha inteira, não no ponto, com 44px de altura.
+- Validar em `blur` com `touched`, não a cada tecla nem só no envio.
+
+#### 7.6 — Depois, e só depois, os testes
+
+**A maior parte não muda, e isso não é sorte.** Os testes de equipe afirmam **regras**, não a marcação: *"à Carla só se oferece Técnico"*, *"a Débora não vê o botão"*, *"o botão diz Remover da empresa"*. O acoplamento ao `p-select` está inteiro em duas funções de `core/testing/prime.ts` — `opcoesDe` e `escolher`. Trocado o seletor por lista de opções, essas duas mudam **num arquivo**, e as afirmações de regra sobrevivem literalmente.
+
+| Tipo | Exemplo | Fase 7 |
+| :--- | :--- | :--- |
+| **Regra** | `opcoesDe('convite-papel') === ['Técnico']` | Sobrevive. Se quebrar, é regressão de verdade. |
+| **Forma** | ordenação alfabética; o campo ser um `select` | Muda — afirmava a implementação. |
+
+**O risco de reaproveitar `opcoesDe`:** um ajudante que lê tanto a lista quanto o papel declarado pode mascarar a ausência do texto. Mitigação: um teste dedicado por forma — *"com um papel só, não há escolha a fazer"* e *"com vários, há uma lista"* —, e as regras continuam pelo ajudante.
+
+- [x] **7.1** Fechar D21–D24.
+- [x] **7.2** `ROLE_SUMMARY` / `ROLE_LIMIT` e `ROLE_ORDER` em `packages/shared`, com o texto conferido contra [01 §4](../produto/01_papeis_e_permissoes.md).
+- [x] **7.3** Seletor de papel nas três formas; `app-role-guide` compartilhado.
+- [x] **7.4** Colunas e ações que somem quando não variam (7.2), nas duas telas.
+- [x] **7.5** Agrupamento por origem na Equipe da Empresa (D22) — `agruparPor` no `app-data-table`, sobre o `rowGroupMode` do `p-table`.
+- [x] **7.6** Convite em *reactive forms* tipado, com erro por campo (D24).
+- [x] **7.7** Meu Perfil explica o papel de quem está lendo.
+- [x] **7.8** Ajustar os testes de **forma**; conferir que nenhum de **regra** precisou ceder.
+- [ ] **7.9** Roteiro de aceite manual, por fluxo — incluindo o que **não** pode aparecer.
+
+> **Estado: verde.** 208 testes no front (eram 187), 125 unitários e 147 e2e na
+> API, build limpo.
+>
+> **Nenhum teste de regra precisou ceder, e a previsão de que a maioria
+> sobreviveria se confirmou.** O acoplamento ao `p-select` estava inteiro em
+> `opcoesDe` e `escolher`, em `core/testing/prime.ts`: os dois passaram a ler
+> também a lista marcada com `data-opcao`, e os seis pontos de teste que
+> afirmam alçada continuaram como estavam. Mudaram **dois**, os dois de forma —
+> o que afirmava a coluna "Origem", que virou bloco, e nada mais. A ordenação
+> alfabética que eu previa quebrar **não existia**: o teste chamava `.sort()`
+> antes de comparar, então nunca afirmou ordem nenhuma. Agora afirma, e a ordem
+> é a de alçada.
+>
+> **Um defeito real foi pego pelos testes de regra**, e é o argumento a favor
+> deles: a primeira versão de `rolesBySide` reaplicava `CAN_INVITE` a uma lista
+> que já era o resultado dele — ao Gestor, que concede três papéis, sobrava
+> **um**. O resultado era plausível o bastante para passar numa conferência
+> visual. Quem reprovou foi *"ao Gestor se oferecem os papéis que ele
+> concede"*, escrito antes de qualquer uma destas telas existir.
+>
+> `packages/shared` não tem executor de teste; a garantia de `rolesBySide` vive
+> em `invite-form.component.spec.ts`, que exercita exatamente o caso que
+> quebrou.
 
 ---
 

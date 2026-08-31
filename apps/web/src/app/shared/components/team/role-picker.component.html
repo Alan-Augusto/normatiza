@@ -1,0 +1,66 @@
+@if (unico(); as papel) {
+  <!--
+    Um papel só: o convite **informa** em vez de perguntar. A descrição fica —
+    quem não escolhe nada ainda precisa saber o que essa pessoa vai enxergar.
+  -->
+  <div
+    data-testid="papel-unico"
+    [attr.data-opcao]="rotulo(papel)"
+    class="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800"
+  >
+    <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ rotulo(papel) }}</p>
+    <p class="mt-1 text-sm text-muted-color">{{ resumo(papel) }}</p>
+    <p class="mt-1 text-sm text-muted-color">{{ limite(papel) }}</p>
+  </div>
+} @else {
+  <div role="radiogroup" aria-label="Papel de quem está sendo convidado" class="space-y-3">
+    @for (grupo of grupos(); track grupo.side) {
+      <div class="space-y-2">
+        <!-- O título de lado só existe quando há dois lados a distinguir. -->
+        @if (comTitulos()) {
+          <p
+            data-testid="titulo-do-lado"
+            class="text-xs font-semibold tracking-wide text-muted-color uppercase"
+          >
+            {{ tituloDoLado(grupo.side) }}
+          </p>
+        }
+
+        @for (papel of grupo.roles; track papel) {
+          <!--
+            O rótulo embrulha o cartão inteiro: o alvo de toque é a linha toda,
+            não o ponto de 16px. Vale para o dedo e para quem tem pouca pontaria.
+          -->
+          <label
+            data-testid="opcao-de-papel"
+            [attr.data-opcao]="rotulo(papel)"
+            [for]="id + '-' + papel"
+            class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors"
+            [class]="
+              valor() === papel
+                ? 'border-primary bg-primary/5'
+                : 'border-surface-200 dark:border-surface-700'
+            "
+          >
+            <p-radioButton
+              [inputId]="id + '-' + papel"
+              [name]="id"
+              [value]="papel"
+              [ngModel]="valor()"
+              (ngModelChange)="escolher($event)"
+              styleClass="mt-0.5"
+            />
+
+            <span class="min-w-0">
+              <span class="block text-sm font-medium text-surface-900 dark:text-surface-0">
+                {{ rotulo(papel) }}
+              </span>
+              <span class="mt-0.5 block text-sm text-muted-color">{{ resumo(papel) }}</span>
+              <span class="mt-0.5 block text-sm text-muted-color">{{ limite(papel) }}</span>
+            </span>
+          </label>
+        }
+      </div>
+    }
+  </div>
+}

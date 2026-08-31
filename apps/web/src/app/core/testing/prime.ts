@@ -16,10 +16,7 @@ function raiz(fixture: ComponentFixture<unknown>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
-export function elemento(
-  fixture: ComponentFixture<unknown>,
-  seletor: string,
-): HTMLElement | null {
+export function elemento(fixture: ComponentFixture<unknown>, seletor: string): HTMLElement | null {
   return raiz(fixture).querySelector(seletor);
 }
 
@@ -28,13 +25,27 @@ export function elementos(fixture: ComponentFixture<unknown>, seletor: string): 
 }
 
 /**
- * Abre um `p-select` e devolve o que ele oferece, na ordem em que aparece.
+ * O que um campo de escolha **apresenta**, na ordem em que aparece.
  *
  * Devolve os **rótulos**, não os valores: é o que a pessoa lê. Um teste que
  * afirmasse `['TECHNICIAN']` estaria conferindo o enum do banco; o que importa
  * é que a Carla vê "Técnico" e mais nada.
+ *
+ * Lê duas formas, porque o sistema tem duas e a **regra é a mesma nas duas**:
+ * um `p-select`, que precisa ser aberto, e uma lista marcada com `data-opcao`
+ * — que inclui o caso de **um papel só**, onde não há escolha a fazer e o
+ * formulário informa em vez de perguntar (D21).
+ *
+ * > O risco de um ajudante que lê duas formas é ele passar mesmo se a tela
+ * > ficasse muda. Por isso cada forma tem um teste próprio afirmando a forma;
+ * > aqui só se afirma a **regra**, que não muda com o desenho.
  */
 export function opcoesDe(fixture: ComponentFixture<unknown>, testid: string): string[] {
+  const declaradas = elementos(fixture, `[data-testid="${testid}"] [data-opcao]`);
+  if (declaradas.length > 0) {
+    return declaradas.map((opcao) => opcao.getAttribute('data-opcao') ?? '');
+  }
+
   abrir(fixture, testid);
   const opcoes = elementos(fixture, 'li[role="option"]').map(
     (opcao) => opcao.getAttribute('aria-label') ?? '',
@@ -43,8 +54,21 @@ export function opcoesDe(fixture: ComponentFixture<unknown>, testid: string): st
   return opcoes;
 }
 
-/** Escolhe num `p-select` pelo rótulo que a pessoa leria. */
+/** Escolhe pelo rótulo que a pessoa leria, na forma que o campo tiver. */
 export function escolher(fixture: ComponentFixture<unknown>, testid: string, rotulo: string): void {
+  const naLista = elementos(fixture, `[data-testid="${testid}"] [data-opcao]`);
+
+  if (naLista.length > 0) {
+    const alvo = naLista.find((item) => item.getAttribute('data-opcao') === rotulo);
+    if (!alvo) throw new Error(naoOferecido(rotulo, testid, opcoesDe(fixture, testid)));
+
+    // O rótulo embrulha o rádio; clicar nele é o que a pessoa faz.
+    const entrada = alvo.querySelector('input');
+    (entrada ?? alvo).click();
+    fixture.detectChanges();
+    return;
+  }
+
   abrir(fixture, testid);
 
   const opcao = elementos(fixture, 'li[role="option"]').find(
@@ -52,14 +76,18 @@ export function escolher(fixture: ComponentFixture<unknown>, testid: string, rot
   );
 
   if (!opcao) {
-    const oferecidas = elementos(fixture, 'li[role="option"]').map((i) =>
-      i.getAttribute('aria-label'),
+    const oferecidas = elementos(fixture, 'li[role="option"]').map(
+      (i) => i.getAttribute('aria-label') ?? '',
     );
-    throw new Error(`"${rotulo}" não é oferecido em [${testid}]. Há: ${oferecidas.join(', ')}`);
+    throw new Error(naoOferecido(rotulo, testid, oferecidas));
   }
 
   opcao.click();
   fixture.detectChanges();
+}
+
+function naoOferecido(rotulo: string, testid: string, oferecidas: string[]): string {
+  return `"${rotulo}" não é oferecido em [${testid}]. Há: ${oferecidas.join(', ')}`;
 }
 
 /**
@@ -77,11 +105,7 @@ export function marcar(fixture: ComponentFixture<unknown>, inputId: string, marc
 }
 
 /** Digita num campo de texto — `pInputText` e `pTextarea` são diretivas sobre o nativo. */
-export function digitar(
-  fixture: ComponentFixture<unknown>,
-  seletor: string,
-  valor: string,
-): void {
+export function digitar(fixture: ComponentFixture<unknown>, seletor: string, valor: string): void {
   const campo = elemento(fixture, seletor) as HTMLInputElement | HTMLTextAreaElement | null;
   if (!campo) throw new Error(`Não achei o campo "${seletor}".`);
 

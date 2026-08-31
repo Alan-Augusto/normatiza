@@ -81,13 +81,23 @@ describe('Gestão de equipe — HTTP (e2e)', () => {
   });
 
   describe('a listagem da empresa', () => {
-    it('deve devolver quem tem acesso àquela empresa', async () => {
+    it('deve devolver quem a empresa administra, e a consultoria como contexto', async () => {
       const resposta = await http()
         .get(`/companies/${elenco.brf.id}/members`)
         .set('Authorization', await comoMarcos())
         .expect(200);
 
-      expect(resposta.body.map((m: { name: string }) => m.name)).toContain('Carla');
+      const membros = resposta.body.members.map((m: { name: string }) => m.name);
+      const responsáveis = resposta.body.technicalResponsibles.map(
+        (r: { name: string }) => r.name,
+      );
+
+      // O recorte de D25 acontece no servidor: se a Carla viajasse até aqui,
+      // esconder no template deixaria o cadastro dela legível no inspetor.
+      expect(membros).toContain('Marcos');
+      expect(membros).not.toContain('Carla');
+      expect(responsáveis).toContain('Carla');
+      expect(resposta.body.accountName).toBe('Normatiza');
     });
 
     it('deve responder 404, e não 403, para empresa fora do escopo', async () => {

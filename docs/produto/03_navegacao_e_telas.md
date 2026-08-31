@@ -19,7 +19,7 @@ Transversal — Área de Execução       "minhas tarefas" (qualquer papel opera
 
 | Papel | Entra em |
 | :--- | :--- |
-| Admin do Sistema | Contexto 0 |
+| Admin do Sistema | Contexto 0 — **se não tiver vínculo em conta nenhuma** |
 | Engenheiro Responsável | Contexto 1 completo |
 | Engenheiro da Consultoria | Contexto 1 **reduzido à sua carteira** |
 | Técnico | Contexto 1 reduzido à sua carteira, ou direto no Contexto 2 se tiver uma empresa só |
@@ -28,6 +28,8 @@ Transversal — Área de Execução       "minhas tarefas" (qualquer papel opera
 | Diretor | **Contexto 2 da sua empresa** — dashboard, em modo leitura |
 | Executor | Área de Execução, direto |
 
+> **O Contexto 0 não é a porta maior — é uma porta ao lado.** Quem acumula a dimensão de plataforma com um papel de consultoria entra **onde o trabalho dele acontece**: o Josué é dono da plataforma de vez em quando e dono da Normatiza todo dia, e entrar pelo backoffice faria da exceção o padrão. O caminho para o Contexto 0 fica no menu, em "Plataforma", e é dele a decisão de tomá-lo. Só quem **não tem vínculo ativo em conta nenhuma** — o admin que existe apenas para operar a plataforma — cai direto no backoffice, porque para essa pessoa não há aplicação nenhuma do outro lado.
+>
 > **O Contexto 1 é exclusivo da consultoria.** Ele existe porque a consultoria atende várias empresas e precisa de uma camada acima delas. Papéis da consultoria que atendem uma carteira entram no Contexto 1 vendo **apenas as empresas do seu escopo**.
 >
 > Todo papel do lado cliente pertence a uma única empresa — não existe nada acima dela para navegar. O cliente **nasce dentro do Contexto 2 e nunca sai dele**.

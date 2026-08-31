@@ -1,0 +1,46 @@
+<p-button
+  data-testid="abrir-guia-de-papeis"
+  label="O que cada papel faz"
+  [text]="true"
+  size="small"
+  (onClick)="abrir()"
+/>
+
+<p-dialog
+  header="O que cada papel faz"
+  [visible]="aberto()"
+  (visibleChange)="aberto.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '40rem' }"
+>
+  <div data-testid="guia-de-papeis" class="space-y-5">
+    <p class="text-sm text-muted-color">
+      A permissão de uma pessoa é o papel dela <strong>nesta empresa</strong>. Quem tem mais de um
+      papel soma o que cada um alcança.
+    </p>
+
+    @for (grupo of grupos; track grupo.side) {
+      <div class="space-y-2">
+        <p class="text-xs font-semibold tracking-wide text-muted-color uppercase">
+          {{ grupo.titulo }}
+        </p>
+
+        @for (papel of grupo.roles; track papel) {
+          <div
+            data-testid="papel-no-guia"
+            [attr.data-opcao]="rotulo(papel)"
+            class="rounded-lg border border-surface-200 p-3 dark:border-surface-700"
+          >
+            <p class="text-sm font-medium text-surface-900 dark:text-surface-0">
+              {{ rotulo(papel) }}
+            </p>
+            <p class="mt-1 text-sm text-muted-color">{{ resumo(papel) }}</p>
+            <p class="mt-1 text-sm text-muted-color">{{ limite(papel) }}</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</p-dialog>

@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import type {
-  CompanyMember,
+  CompanyTeam,
   CreateInvitationRequest,
   DisableUserPreview,
   DisableUserRequest,
@@ -42,9 +42,13 @@ export class TeamService {
    *
    * Rota própria, e não `listTeam({ companyId })`: a projeção é outra. Esta
    * não nomeia nenhuma outra empresa, nem a conta.
+   *
+   * A resposta não é uma lista: são `members` — quem a empresa administra — e a
+   * consultoria como **contexto** (D25). Quem recorta é o servidor, por quem
+   * pergunta; esta tela recebe já recortado e não filtra nada.
    */
-  listCompanyMembers(companyId: string): Observable<CompanyMember[]> {
-    return this.http.get<CompanyMember[]>(`${this.api}/companies/${companyId}/members`);
+  listCompanyMembers(companyId: string): Observable<CompanyTeam> {
+    return this.http.get<CompanyTeam>(`${this.api}/companies/${companyId}/members`);
   }
 
   updateMembership(membershipId: string, dados: UpdateMembershipRequest): Observable<void> {

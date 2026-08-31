@@ -1,10 +1,15 @@
 /**
  * De onde a pessoa vem, na visão de **uma empresa**.
  *
- * É a coluna "Origem" da Equipe da Empresa ([03 §4.5](../../../../docs/produto/03_navegacao_e_telas.md)):
- * o Marcos precisa distinguir quem é da consultoria que o atende, quem é
- * funcionário dele e quem é terceiro contratado — três relações contratuais
+ * É o que separa os blocos da Equipe da Empresa ([03 §4.5](../../../../docs/produto/03_navegacao_e_telas.md)):
+ * o Marcos precisa distinguir o funcionário dele do terceiro contratado — e a
+ * consultoria, quando é ela quem olha —, porque são relações contratuais
  * diferentes, com expectativas diferentes sobre quem manda em quem.
+ *
+ * **Não existe rótulo para exibir aqui**, e é de propósito: o bloco se
+ * apresenta pelo *nome* de quem está nele — "BRF", "Normatiza" —, e não pela
+ * classificação. "Cliente" é a palavra da consultoria para a BRF; escrita na
+ * tela da BRF, ela conta de que lado o sistema foi escrito.
  *
  * Derivada, nunca persistida — mesmo princípio de `ROLE_SIDE`. Vive aqui, e não
  * na tela, porque quem calcula é o servidor: painel web e app de campo recebem
@@ -14,12 +19,6 @@
 import { ROLE_SIDE, type ExecutorType, type Role } from '../auth';
 
 export type MemberOrigin = 'CONSULTANCY' | 'CLIENT' | 'EXTERNAL';
-
-export const MEMBER_ORIGIN_LABEL: Readonly<Record<MemberOrigin, string>> = {
-  CONSULTANCY: 'Consultoria',
-  CLIENT: 'Cliente',
-  EXTERNAL: 'Terceiro',
-};
 
 /**
  * `EXTERNAL` é decidido pelo contrato, não pelo papel: `ROLE_SIDE` classifica
