@@ -1,6 +1,13 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+
+  // O endpoint `-pooler` do Neon é um pgbouncer em modo transaction, e ele não
+  // sustenta os advisory locks que `prisma migrate` usa para serializar as
+  // migrações — elas travam ou falham por lá. `directUrl` é o mesmo banco sem
+  // o pooler (a URL sem o sufixo `-pooler` no host): a aplicação continua
+  // usando o pool, e só as migrações vão pela conexão direta.
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {

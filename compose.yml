@@ -1,0 +1,70 @@
+# Stack de produção do Normatiza. Sobe idêntica no homelab e em qualquer VPS:
+# o servidor precisa apenas de Docker, deste arquivo e de um `.env` ao lado.
+#
+#   docker compose pull && docker compose up -d
+#
+# Nada aqui é específico da máquina — nenhum caminho de home, nenhuma versão de
+# Node instalada à mão. Migrar de servidor é copiar dois arquivos.
+#
+# O banco é o Postgres gerenciado no Neon, fora deste compose. Ver
+# docs/devops/deploy.md para o trecho que traz um Postgres local de volta.
+
+name: normatiza
+
+services:
+  # ── Migrações ──────────────────────────────────────────────────────────────
+  # Container de uma tacada só, que roda e morre. A API depende do sucesso dele,
+  # então uma migração que falha impede a versão nova de subir — e o site segue
+  # no ar com a versão anterior, em vez de rodar código novo contra schema velho.
+  #
+  # `migrate deploy`, nunca `migrate dev`: só aplica o que está versionado em
+  # prisma/migrations, jamais gera migração nova nem oferece resetar o banco.
+  migrate:
+    image: ${IMAGE_API:?defina IMAGE_API no .env}:${TAG:-latest}
+    restart: 'no'
+    environment:
+      NODE_ENV: production
+      # A migração vai pela conexão DIRETA, não pelo pooler: o pgbouncer do
+      # Neon em modo transaction não sustenta os advisory locks do Prisma.
+      DATABASE_URL: ${DATABASE_URL:?defina DATABASE_URL no .env}
+      DIRECT_URL: ${DIRECT_URL:?defina DIRECT_URL no .env}
+    # Chama o binário do Prisma direto, sem passar pelo pnpm. Não é preciosismo:
+    # o pnpm é ativado por corepack, e o corepack baixa o pacote da internet no
+    # primeiro uso. Uma migração que depende de registry.npmjs.org estar de pé é
+    # um deploy que falha por motivo alheio ao seu código.
+    command:
+      [
+        '/app/apps/api/node_modules/.bin/prisma',
+        'migrate',
+        'deploy',
+        '--schema',
+        'apps/api/prisma/schema.prisma',
+      ]
+
+  # ── API ────────────────────────────────────────────────────────────────────
+  api:
+    image: ${IMAGE_API:?defina IMAGE_API no .env}:${TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    # Também sem `ports:`. Quem fala com a API é o nginx do serviço `web`, pela
+    # rede interna. Isso mantém a API inacessível de fora exceto pelos prefixos
+    # que o nginx encaminha de propósito.
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # ── Web (SPA + entrada da API) ─────────────────────────────────────────────
+  web:
+    image: ${IMAGE_WEB:?defina IMAGE_WEB no .env}:${TAG:-latest}
+    restart: unless-stopped
+    ports:
+      # Única porta publicada. É para cá que o Cloudflare Tunnel aponta.
+      # 127.0.0.1 de propósito: quem chega é o cloudflared, que roda no host —
+      # a porta não precisa estar visível na LAN.
+      - '127.0.0.1:${HOST_PORT:-8080}:8080'
+    depends_on:
+      - api

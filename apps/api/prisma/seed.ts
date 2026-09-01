@@ -20,11 +20,15 @@ loadEnv();
 const prisma = new PrismaClient();
 
 /**
- * A senha de todo o elenco. O padrão é genérico de propósito: a senha que se
- * usa de fato vem de `SEED_PASSWORD` no `.env`, que está fora do git. Uma senha
- * pessoal commitada continua no histórico depois de trocada.
+ * A senha de todo o elenco de homologação. `SEED_PASSWORD` no `.env` continua
+ * mandando — este é só o padrão quando ela não está definida.
+ *
+ * São 13 caracteres porque o mínimo do sistema é 10
+ * (`SENHA_MINIMA` em @normatiza/shared). Nunca ponha aqui uma senha que você
+ * use de verdade: o padrão é público, vive no git, e continua no histórico
+ * depois de trocado.
  */
-const SENHA = process.env.SEED_PASSWORD ?? 'normatiza-dev-123';
+const SENHA = process.env.SEED_PASSWORD ?? 'normatiza2026';
 
 /**
  * Apagar usuário é opt-in explícito. Sem isto, `pnpm prisma:seed` é sempre
@@ -53,7 +57,7 @@ const ELENCO: Pessoa[] = [
   {
     chave: 'josue',
     nome: 'Josué',
-    email: 'josue@normatiza.com',
+    email: 'josue@email.com',
     papeis: ['LEAD_ENGINEER'],
     empresas: [BRF, SEARA],
     cargo: 'Engenheiro Responsável',
@@ -195,7 +199,17 @@ async function main() {
   for (const pessoa of ELENCO) {
     const usuario = await prisma.user.upsert({
       where: { accountId_email: { accountId: conta.id, email: pessoa.email } },
-      update: { passwordHash, passwordAlgo: 'ARGON2ID', status: 'ACTIVE', disabledAt: null },
+      // `name` e `jobTitle` entram no update junto com a senha: sem eles, um
+      // nome que divergisse do elenco da doc (docs/produto/01) permaneceria
+      // divergente por mais que se rodasse o seed.
+      update: {
+        name: pessoa.nome,
+        jobTitle: pessoa.cargo,
+        passwordHash,
+        passwordAlgo: 'ARGON2ID',
+        status: 'ACTIVE',
+        disabledAt: null,
+      },
       create: {
         accountId: conta.id,
         name: pessoa.nome,
@@ -254,7 +268,7 @@ async function main() {
 
   console.log('\nSeed pronto — Normatiza atendendo BRF e Seara.\n');
   console.log('  CONSULTORIA');
-  console.log('    josue@normatiza.com   Eng. Responsável · BRF + Seara · titular · admin da plataforma');
+  console.log('    josue@email.com       Eng. Responsável · BRF + Seara · titular · admin da plataforma');
   console.log('    carla@email.com       Eng. da Consultoria · BRF + Seara');
   console.log('    fernando@email.com    Técnico · só BRF');
   console.log('  CLIENTE — BRF');

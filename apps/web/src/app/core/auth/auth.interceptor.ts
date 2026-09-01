@@ -30,7 +30,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   // Um CEP, um mapa, um CDN — nada disso tem por que receber a credencial da
   // sessão só porque a chamada passou pelo mesmo HttpClient.
-  if (!req.url.startsWith(api)) return next(req);
+  if (!pertenceÀApi(req.url, api)) return next(req);
 
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -57,6 +57,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     }),
   );
 };
+
+/**
+ * Em produção `apiBaseUrl` é vazio: web e API vivem na mesma origem e as
+ * chamadas saem como caminhos relativos. Um `url.startsWith('')` casaria com
+ * **tudo** — inclusive um CDN — e entregaria o access token e o cookie de
+ * sessão a terceiros. Com base vazia, "ser da API" passa a ser "ser um caminho
+ * desta origem".
+ *
+ * O `//` é recusado à parte porque `//outro-host.com/x` tem cara de caminho
+ * relativo e é URL absoluta para outro servidor.
+ */
+function pertenceÀApi(url: string, api: string): boolean {
+  return api ? url.startsWith(api) : url.startsWith('/') && !url.startsWith('//');
+}
 
 /**
  * `withCredentials` vai em toda chamada da API porque o refresh token viaja em

@@ -1,0 +1,36 @@
+# Nada de node_modules do host: os arquiteturas/binários nativos (argon2) do
+# macOS não servem no container Linux, e copiá-los é o jeito mais rápido de
+# obter um erro de módulo inválido que parece bug de código.
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build outputs — a imagem compila do zero.
+dist
+**/dist
+build
+out
+.angular
+**/.angular
+
+# Segredos. Um `COPY apps/api apps/api` levaria o .env de desenvolvimento para
+# dentro da imagem publicada no registry. As credenciais de produção chegam por
+# variável de ambiente no compose, nunca pela imagem.
+.env
+**/.env
+!**/.env.example
+
+# Ruído que só engorda o contexto de build.
+.git
+.github
+.DS_Store
+**/.DS_Store
+coverage
+**/coverage
+docs
+.agents
+.codex
+.claude
+.impeccable
+*.md
+!README.md

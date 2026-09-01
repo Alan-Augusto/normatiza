@@ -175,7 +175,7 @@ Uma conta dedicada à plataforma continua possível — é o caminho para um adm
 ### A porta é a CLI, não o convite
 
 ```bash
-pnpm admin:create --email josue@normatiza.com
+pnpm admin:create --email josue@email.com
 pnpm admin:create --listar
 ```
 

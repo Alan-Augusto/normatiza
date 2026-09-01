@@ -7,6 +7,16 @@ allowBuilds:
   esbuild: true
   lmdb: true
   unrs-resolver: true
+  # O Prisma baixa os query engines no postinstall. Sem autorização explícita, o
+  # pnpm ignora o script e aborta o install — o que só aparece em ambiente limpo
+  # (Docker, CI, clone novo), porque uma aprovação antiga fica registrada local.
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  # Aceleradores nativos do build do Angular. Mesma história: o install
+  # aborta sem eles autorizados.
+  '@parcel/watcher': true
+  msgpackr-extract: true
 minimumReleaseAgeExclude:
   - '@primeicons/angular@8.0.0-rc.1'
   - '@primeicons/core@8.0.0-rc.1'

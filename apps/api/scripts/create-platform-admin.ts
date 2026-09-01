@@ -19,8 +19,8 @@ loadEnv();
  * sem abrir o banco na mão.
  *
  * Uso:
- *   pnpm admin:create --email josue@normatiza.com
- *   pnpm admin:create --email josue@normatiza.com --conta 11.111.111/0001-11
+ *   pnpm admin:create --email josue@email.com
+ *   pnpm admin:create --email josue@email.com --conta 11.111.111/0001-11
  *   pnpm admin:create --email suporte@normatiza.com --criar --nome "Suporte" --senha "…"
  *   pnpm admin:create --listar
  */

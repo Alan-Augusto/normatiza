@@ -1,0 +1,137 @@
+# Compila as duas imagens e publica no GitHub Container Registry.
+#
+# O servidor não compila nada: ele só baixa a imagem pronta. É o que permite
+# rodar num homelab modesto hoje e numa VPS qualquer amanhã sem mudar nada —
+# e o que torna o rollback uma troca de tag, não um rebuild.
+
+name: Build, publicação e deploy
+
+on:
+  push:
+    branches: [main]
+  # Permite republicar uma tag manualmente pela aba Actions.
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      # `fail-fast: false` para que uma falha no web não esconda o resultado da
+      # API — com as duas mensagens em mãos o diagnóstico é uma leitura só.
+      fail-fast: false
+      matrix:
+        include:
+          - app: api
+            dockerfile: apps/api/Dockerfile
+          - app: web
+            dockerfile: apps/web/Dockerfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # O GHCR exige o nome do dono em minúsculas; o do GitHub não é.
+      - name: Normaliza o nome do repositório
+        id: nome
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          # A raiz do monorepo, e não a pasta do app: o pnpm workspace precisa
+          # enxergar o lockfile e o packages/shared.
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.nome.outputs.owner }}/normatiza-${{ matrix.app }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.nome.outputs.owner }}/normatiza-${{ matrix.app }}:latest
+          # Cache no próprio registry: o `pnpm install` de um deploy sem mudança
+          # de dependência é reaproveitado inteiro.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Deploy ─────────────────────────────────────────────────────────────────
+  # Roda num runner self-hosted dentro do próprio servidor. É o que permite
+  # deploy automático num homelab sem abrir nenhuma porta de entrada: o runner
+  # faz apenas conexões de SAÍDA para o GitHub e busca o trabalho de lá.
+  deploy:
+    needs: build
+    runs-on: [self-hosted, normatiza]
+
+    # Um runner self-hosted executa código do repositório na sua máquina. O
+    # `if` garante que só a `main` chega aqui — nunca um push de branch, nunca
+    # um pull request. Se este repositório algum dia virar público, revise isto
+    # antes: um PR de um fork rodando na sua rede doméstica é o cenário ruim.
+    if: github.ref == 'refs/heads/main'
+
+    # Um deploy por vez, e sem cancelar o que já começou: interromper um
+    # `up -d` no meio deixa a stack em estado indefinido.
+    concurrency:
+      group: deploy-producao
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      # Autentica o Docker do servidor no GHCR usando o token efêmero do próprio
+      # job. Evita ter que criar um PAT de longa duração e guardá-lo na máquina:
+      # o token vale só enquanto este job roda.
+      - name: Autenticar no registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # Sem `actions/checkout`: o servidor não precisa do código-fonte. O
+      # deploy.sh já vive em /opt/normatiza e as imagens vêm prontas do GHCR.
+      - name: Publicar a versão
+        run: /opt/normatiza/deploy.sh "${{ github.sha }}"
+
+      - name: Conferir se o site respondeu
+        run: |
+          # A porta vem do .env do servidor, não de um valor fixo aqui: são as
+          # duas únicas fontes da verdade, e divergir faz o healthcheck acusar
+          # uma queda que não existe.
+          porta=$(grep -E '^HOST_PORT=' /opt/normatiza/.env | cut -d= -f2- || echo 8080)
+
+          # Dá tempo à API de completar o boot antes de cobrar resposta.
+          for tentativa in $(seq 1 30); do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:${porta}/" || true)
+            if [ "$codigo" = "200" ]; then
+              echo "site respondendo (tentativa $tentativa)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "o site não respondeu 200 em 60s — últimos logs:" >&2
+          cd /opt/normatiza && docker compose logs --tail 50 >&2
+          exit 1
+
+  resumo:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Versão no ar
+        run: |
+          echo "### No ar: \`${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Para voltar atrás, no servidor:' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '```sh' >> "$GITHUB_STEP_SUMMARY"
+          echo 'cd /opt/normatiza && ./deploy.sh <sha-anterior>' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

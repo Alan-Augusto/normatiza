@@ -1,11 +1,20 @@
 /**
- * Produção. Vale o mesmo do ambiente de desenvolvimento: a API responde na raiz
- * da própria origem, por causa do `Path=/auth` do cookie de refresh.
+ * Produção. `apiBaseUrl` é **vazio de propósito**: web e API são servidos pela
+ * mesma origem (o nginx de `apps/web/nginx.conf` encaminha os prefixos da API),
+ * então as chamadas saem como caminhos relativos — `/auth/login`, `/users`.
  *
- * O endereço é definitivo no deploy. Enquanto o domínio próprio não existe, este
- * valor é o que precisa ser conferido antes de publicar.
+ * Duas consequências, ambas desejadas:
+ *
+ * 1. A imagem não sabe em que domínio vai rodar. Trocar de servidor, de domínio
+ *    ou subir um ambiente de staging não exige rebuild do front.
+ * 2. Mesma origem significa ausência de CORS e cookie `SameSite=Lax` — o
+ *    `Path=/auth` do refresh token funciona sem `COOKIE_CROSS_SITE`.
+ *
+ * Se um dia a API mudar para um host próprio (`api.exemplo.com`), este valor
+ * volta a ser uma URL absoluta E o `COOKIE_CROSS_SITE=true` passa a ser
+ * obrigatório na API.
  */
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.normatiza.com',
+  apiBaseUrl: '',
 };

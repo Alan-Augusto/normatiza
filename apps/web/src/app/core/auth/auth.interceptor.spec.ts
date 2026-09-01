@@ -241,4 +241,73 @@ describe('authInterceptor', () => {
       await segunda;
     });
   });
+
+  /**
+   * Em produção `apiBaseUrl` é vazio: web e API são servidos pela mesma origem
+   * e as chamadas saem como caminhos relativos. É o caso que de fato roda no
+   * servidor — e o único em que `startsWith` sozinho casaria com o mundo todo.
+   */
+  describe('com a API na mesma origem (apiBaseUrl vazio)', () => {
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      navegou = [];
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(withInterceptors([authInterceptor])),
+          provideHttpClientTesting(),
+          { provide: API_BASE_URL, useValue: '' },
+          { provide: Router, useValue: { navigate: (rota: unknown[]) => navegou.push(String(rota[0])) } },
+        ],
+      });
+      http = TestBed.inject(HttpTestingController);
+      client = TestBed.inject(HttpClient);
+      auth = TestBed.inject(AuthService);
+    });
+
+    /** Repete o login, agora contra o caminho relativo. */
+    async function autenticadoNaOrigem(token = 'access.jwt.1') {
+      const promessa = firstValueFrom(auth.login({ email: 'marcos@brf.com', password: 'certa' }));
+      http.expectOne('/auth/login').flush(respostaDeLogin({ accessToken: token }));
+      await promessa;
+    }
+
+    it('deve mandar o access token no caminho relativo', async () => {
+      await autenticadoNaOrigem();
+
+      const promessa = firstValueFrom(client.get('/companies'));
+      const req = http.expectOne('/companies');
+      expect(req.request.headers.get('Authorization')).toBe('Bearer access.jwt.1');
+      expect(req.request.withCredentials).toBe(true);
+
+      req.flush([]);
+      await promessa;
+    });
+
+    it('não deve vazar a credencial para um host externo', async () => {
+      // Sem o tratamento da base vazia, `''.startsWith` casaria com esta URL e
+      // entregaria o token da sessão a um terceiro.
+      await autenticadoNaOrigem();
+
+      const promessa = firstValueFrom(client.get('https://viacep.com.br/ws/01001000/json/'));
+      const req = http.expectOne('https://viacep.com.br/ws/01001000/json/');
+      expect(req.request.headers.has('Authorization')).toBe(false);
+      expect(req.request.withCredentials).toBe(false);
+
+      req.flush({});
+      await promessa;
+    });
+
+    it('não deve tratar URL protocolo-relativa como sendo desta origem', async () => {
+      // `//outro-host.com/x` tem cara de caminho relativo e é absoluta.
+      await autenticadoNaOrigem();
+
+      const promessa = firstValueFrom(client.get('//outro-host.com/roubo'));
+      const req = http.expectOne('//outro-host.com/roubo');
+      expect(req.request.headers.has('Authorization')).toBe(false);
+      expect(req.request.withCredentials).toBe(false);
+
+      req.flush({});
+      await promessa;
+    });
+  });
 });
