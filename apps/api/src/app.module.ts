@@ -8,11 +8,13 @@ import { AppService } from './app.service';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthorizationModule } from './authorization/authorization.module';
+import { CompaniesModule } from './companies/companies.module';
 import { validate } from './config/env.validation';
 import { InvitationsModule } from './invitations/invitations.module';
 import { MailModule } from './mail/mail.module';
 import { PlatformModule } from './platform/platform.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { StorageModule } from './storage/storage.module';
 import { TeamModule } from './team/team.module';
 
 @Module({
@@ -32,12 +34,14 @@ import { TeamModule } from './team/team.module';
     }),
     PrismaModule,
     MailModule,
+    StorageModule,
     AuditModule,
     AuthorizationModule,
     AuthModule,
     InvitationsModule,
     PlatformModule,
     TeamModule,
+    CompaniesModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

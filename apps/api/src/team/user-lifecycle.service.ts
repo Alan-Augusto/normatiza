@@ -175,11 +175,11 @@ export class UserLifecycleService {
 
         const empresa = await this.prisma.company.findUniqueOrThrow({
           where: { id: vínculo.companyId },
-          select: { tradeName: true, isActive: true },
+          select: { tradeName: true, deactivatedAt: true },
         });
 
         // Empresa inativa não precisa de Gestor: não há operação para conduzir.
-        if (!empresa.isActive) continue;
+        if (empresa.deactivatedAt) continue;
 
         riscos.push({ companyId: vínculo.companyId, companyName: empresa.tradeName, role: papel });
       }

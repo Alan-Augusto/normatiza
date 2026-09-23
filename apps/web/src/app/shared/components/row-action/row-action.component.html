@@ -1,0 +1,35 @@
+@if (link(); as destino) {
+  <a
+    pButton
+    [text]="true"
+    [rounded]="true"
+    size="small"
+    class="p-button-icon-only"
+    [class.p-button-danger]="severity() === 'danger'"
+    [routerLink]="destino"
+    [attr.aria-label]="label()"
+    [pTooltip]="label()"
+    tooltipPosition="top"
+    tooltipEvent="both"
+  >
+    <ng-icon [name]="icon()" aria-hidden="true" />
+  </a>
+} @else {
+  <button
+    pButton
+    type="button"
+    [text]="true"
+    [rounded]="true"
+    size="small"
+    class="p-button-icon-only"
+    [class.p-button-danger]="severity() === 'danger'"
+    [disabled]="disabled()"
+    [attr.aria-label]="label()"
+    [pTooltip]="label()"
+    tooltipPosition="top"
+    tooltipEvent="both"
+    (click)="acionar.emit()"
+  >
+    <ng-icon [name]="icon()" aria-hidden="true" />
+  </button>
+}

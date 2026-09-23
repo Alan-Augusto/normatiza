@@ -242,9 +242,11 @@ describe('CompanyTeamComponent', () => {
       // acesso dela a **esta** empresa, e o cadastro segue existindo.
       await comoMarcos();
 
+      // A ação é um ícone: o nome dela mora no nome acessível, que é o que o
+      // leitor de tela lê e o que o tooltip mostra.
       const botão = acao(terceiroNaBrf.id, 'remover');
-      expect(botão.textContent).toContain('Remover da empresa');
-      expect(botão.textContent).not.toContain('Excluir');
+      expect(botão.getAttribute('aria-label')).toBe('Remover da empresa');
+      expect(botão.getAttribute('aria-label')).not.toContain('Excluir');
     });
 
     it('deve remover desativando o vínculo desta empresa', async () => {

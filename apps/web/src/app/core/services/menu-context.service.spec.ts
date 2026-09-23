@@ -158,6 +158,21 @@ describe('MenuContextService', () => {
     });
   });
 
+  describe('o cadastro de empresa é do Contexto 1', () => {
+    // "new" e "edit" moram sob /app/companies, mas não são uma empresa: lidos
+    // como id, abriam o menu da empresa em cima do formulário da carteira.
+    for (const url of ['/app/companies/new', `/app/companies/edit/${BRF.id}`]) {
+      it(`deve manter o menu da carteira em ${url}`, async () => {
+        const ctx = await menuEm(url, ['LEAD_ENGINEER']);
+
+        expect(ctx.level).toBe('consultancy');
+        expect(ctx.backLink).toBeUndefined();
+        expect(rótulos(ctx)).toContain('Empresas');
+        expect(ctx.breadcrumbs[0]).toEqual({ label: 'Empresas', route: '/app/companies' });
+      });
+    }
+  });
+
   describe('o menu do Contexto 1 é só de quem tem carteira', () => {
     it('deve montá-lo para a consultoria', async () => {
       const ctx = await menuEm('/app/dashboard', ['TECHNICIAN']);

@@ -72,4 +72,38 @@ describe('Validação de ambiente', () => {
       }),
     ).toThrow(/não pode ser igual/);
   });
+  describe('storage de arquivos', () => {
+    const firebase = {
+      FIREBASE_PROJECT_ID: 'normatiza-dev',
+      FIREBASE_CLIENT_EMAIL: 'api@normatiza-dev.iam.gserviceaccount.com',
+      FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n',
+      FIREBASE_STORAGE_BUCKET: 'normatiza-dev.appspot.com',
+    };
+
+    it('deve usar o disco local por padrão, sem exigir credencial nenhuma', () => {
+      const config = validate(ambienteMinimo);
+
+      expect(config.STORAGE_DRIVER).toBe('local');
+    });
+
+    it('deve aceitar o Firebase quando as quatro credenciais estão presentes', () => {
+      expect(() =>
+        validate({ ...ambienteMinimo, STORAGE_DRIVER: 'firebase', ...firebase }),
+      ).not.toThrow();
+    });
+
+    it('deve impedir a aplicação de subir com Firebase sem credencial', () => {
+      const { FIREBASE_PRIVATE_KEY, ...semChave } = firebase;
+
+      expect(() =>
+        validate({ ...ambienteMinimo, STORAGE_DRIVER: 'firebase', ...semChave }),
+      ).toThrow(/FIREBASE_PRIVATE_KEY/);
+    });
+
+    it('deve recusar um driver de storage desconhecido', () => {
+      expect(() => validate({ ...ambienteMinimo, STORAGE_DRIVER: 's3' })).toThrow(
+        /STORAGE_DRIVER/,
+      );
+    });
+  });
 });

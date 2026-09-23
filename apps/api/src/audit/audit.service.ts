@@ -27,6 +27,12 @@ export const AuditAction = {
   PASSWORD_CHANGED: 'user.password_changed',
   PLATFORM_ADMIN_GRANTED: 'platform_admin.granted',
   PLATFORM_ADMIN_REVOKED: 'platform_admin.revoked',
+  COMPANY_CREATED: 'company.created',
+  /** O `before`/`after` guarda o cadastro inteiro: é o que prova quem mudou o endereço do laudo. */
+  COMPANY_UPDATED: 'company.updated',
+  COMPANY_DEACTIVATED: 'company.deactivated',
+  COMPANY_REACTIVATED: 'company.reactivated',
+  COMPANY_LOGO_CHANGED: 'company.logo_changed',
 } as const;
 
 export type AuditActionValue = (typeof AuditAction)[keyof typeof AuditAction];

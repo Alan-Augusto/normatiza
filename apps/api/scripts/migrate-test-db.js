@@ -20,7 +20,19 @@ if (url === process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+// As migrações não usam `DATABASE_URL`: usam `directUrl` (o schema aponta para
+// `DIRECT_URL`, a conexão sem o pgbouncer do Neon). Trocar só a primeira
+// deixava a segunda apontando para o banco de desenvolvimento — e as migrações
+// "de teste" iam parar lá. A conexão direta da branch de teste é a mesma URL
+// sem o sufixo `-pooler` no host, salvo se `TEST_DIRECT_URL` disser outra.
+const direct = process.env.TEST_DIRECT_URL ?? url.replace('-pooler.', '.');
+
+if (direct === process.env.DIRECT_URL || direct === process.env.DATABASE_URL) {
+  console.error('A conexão direta de teste aponta para o banco de desenvolvimento. Defina TEST_DIRECT_URL.');
+  process.exit(1);
+}
+
 execFileSync('prisma', ['migrate', 'deploy'], {
   stdio: 'inherit',
-  env: { ...process.env, DATABASE_URL: url },
+  env: { ...process.env, DATABASE_URL: url, DIRECT_URL: direct },
 });

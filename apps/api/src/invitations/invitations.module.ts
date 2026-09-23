@@ -3,9 +3,10 @@ import { Module } from '@nestjs/common';
 import { InvitationsController } from './invitations.controller';
 import { InvitationsService } from './invitations.service';
 import { AuthModule } from '../auth/auth.module';
+import { CompaniesModule } from '../companies/companies.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, CompaniesModule],
   controllers: [InvitationsController],
   providers: [InvitationsService],
   exports: [InvitationsService],

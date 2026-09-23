@@ -19,3 +19,12 @@ if (!window.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList;
 }
+
+/**
+ * `scrollIntoView` também falta. O `p-select` a chama ao abrir a lista com um
+ * valor já escolhido, para trazer a opção marcada à vista — sem ela, escolher
+ * pela segunda vez num teste lança fora do teste e contamina a suíte inteira.
+ */
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}

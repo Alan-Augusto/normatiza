@@ -37,3 +37,6 @@ pnpm-debug.log*
 # Test coverage
 coverage/
 .nyc_output/
+
+# Storage local de desenvolvimento (STORAGE_DRIVER=local)
+.storage/

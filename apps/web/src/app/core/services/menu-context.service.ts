@@ -145,6 +145,22 @@ export class MenuContextService {
       };
     }
 
+    // CADASTRO DE EMPRESA — Contexto 1, embora more sob `/app/companies/`.
+    //
+    // "new" e "edit" não são uma empresa. Sem este desvio, o casamento abaixo
+    // os lia como `companyId` e abria o menu da empresa por cima do formulário
+    // da carteira — com links para `/app/companies/new/dashboard`.
+    const cadastro = url.match(/^\/app\/companies\/(new|edit)(\/|$)/);
+    if (cadastro && this.temCarteira()) {
+      return {
+        ...this.contextoDaConsultoria(url),
+        breadcrumbs: [
+          { label: 'Empresas', route: '/app/companies' },
+          { label: cadastro[1] === 'new' ? 'Nova empresa' : 'Editar empresa' },
+        ],
+      };
+    }
+
     // CONTEXTO 2 — Empresa
     const companyMatch = url.match(/\/app\/companies\/([^\/]+)/);
     if (companyMatch) {
@@ -206,6 +222,10 @@ export class MenuContextService {
     // próprio contexto.
     if (!this.temCarteira()) return this.contextoDeQuemNãoTemCarteira();
 
+    return this.contextoDaConsultoria(url);
+  }
+
+  private contextoDaConsultoria(url: string): MenuContext {
     const items: MenuItem[] = [
       { label: 'Dashboard', icon: 'pi pi-chart-pie', route: '/app/dashboard' },
       { label: 'Empresas', icon: 'pi pi-building', route: '/app/companies' },

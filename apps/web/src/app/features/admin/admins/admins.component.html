@@ -57,13 +57,12 @@
 
         <td class="text-right">
           @if (podeRevogar(admin)) {
-            <p-button
+            <app-row-action
               data-testid="acao-revogar"
-              label="Revogar acesso"
-              severity="secondary"
-              [text]="true"
-              size="small"
-              (onClick)="revogar(admin)"
+              icon="lucideShieldOff"
+              label="Revogar acesso de admin"
+              severity="danger"
+              (acionar)="revogar(admin)"
             />
           }
         </td>

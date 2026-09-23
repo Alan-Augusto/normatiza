@@ -1,22 +1,28 @@
-import type { LoginResponse, MembershipWithCompany, Role, SessionUser } from '@normatiza/shared';
+import type {
+  CompanySummary,
+  LoginResponse,
+  MembershipWithCompany,
+  Role,
+  SessionUser,
+} from '@normatiza/shared';
 
 /**
  * O mesmo elenco da documentação, do tamanho que o front precisa: Marcos é
  * Gestor da BRF, e a Seara existe para provar que ele não a enxerga.
  */
 
-export const BRF = {
+export const BRF: CompanySummary = {
   id: 'company-brf',
   tradeName: 'BRF',
   corporateName: 'BRF S.A.',
-  isActive: true,
+  status: 'ACTIVE',
 };
 
-export const SEARA = {
+export const SEARA: CompanySummary = {
   id: 'company-seara',
   tradeName: 'Seara',
   corporateName: 'Seara Alimentos Ltda.',
-  isActive: true,
+  status: 'ACTIVE',
 };
 
 export function vínculo(

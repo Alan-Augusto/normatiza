@@ -15,6 +15,33 @@ import { PrismaService } from '../../src/prisma/prisma.service';
 
 export const SENHA_PADRÃO = 'senha-de-teste-123';
 
+/**
+ * Os campos obrigatórios de uma empresa, preenchidos. Quem só precisa que a
+ * empresa **exista** — os testes de equipe, de sessão, de admin — não deveria
+ * ter de saber que ela exige endereço e contato.
+ */
+export function dadosDeEmpresa(
+  accountId: string,
+  corporateName: string,
+  tradeName: string,
+  document: string,
+) {
+  return {
+    accountId,
+    corporateName,
+    tradeName,
+    document: document.replace(/\D/g, ''),
+    contactName: `Contato ${tradeName}`,
+    contactEmail: `contato@${tradeName.toLowerCase().replace(/\W/g, '')}.com`,
+    zipCode: '89700000',
+    street: 'Rua das Indústrias',
+    addressNumber: '100',
+    district: 'Distrito Industrial',
+    city: 'Concórdia',
+    state: 'SC',
+  };
+}
+
 export interface Elenco {
   normatiza: { id: string };
   brf: { id: string };
@@ -45,11 +72,11 @@ export async function montarElenco(prisma: PrismaService): Promise<Elenco> {
 
   const empresa = (corporateName: string, tradeName: string, document: string) =>
     prisma.company.create({
-      data: { accountId: normatiza.id, corporateName, tradeName, document },
+      data: dadosDeEmpresa(normatiza.id, corporateName, tradeName, document),
     });
 
-  const brf = await empresa('BRF S.A.', 'BRF', '22.222.222/0001-22');
-  const seara = await empresa('Seara Alimentos Ltda', 'Seara', '33.333.333/0001-33');
+  const brf = await empresa('BRF S.A.', 'BRF', '22.222.222/0001-91');
+  const seara = await empresa('Seara Alimentos Ltda', 'Seara', '33.333.333/0001-91');
 
   async function pessoa(
     name: string,
@@ -146,12 +173,7 @@ export async function montarConsultoriaRival(prisma: PrismaService) {
   });
 
   const empresa = await prisma.company.create({
-    data: {
-      accountId: conta.id,
-      corporateName: 'Cliente da Rival S.A.',
-      tradeName: 'Cliente Rival',
-      document: '88.888.888/0001-88',
-    },
+    data: dadosDeEmpresa(conta.id, 'Cliente da Rival S.A.', 'Cliente Rival', '88.888.888/0001-88'),
   });
 
   return { conta, empresa };

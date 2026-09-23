@@ -92,15 +92,52 @@ Central de controle da operação.
 ### 3.2. Empresas
 Lista das empresas atendidas. Clicar em uma **muda o contexto** para o Contexto 2.
 
-**Tela:** busca por nome/CNPJ, filtro por status e por grau de adequação. Tabela com Nome, CNPJ, Cidade, Equipamentos, % de adequação, Pontos em aberto, Última análise.
+*Acesso:* Engenheiro Responsável, Engenheiro da Consultoria e Técnico — cada um vendo **só a própria carteira**. Cadastram, editam, desativam e reativam o Engenheiro Responsável e o Engenheiro da Consultoria; o Técnico só consulta. O lado cliente nunca vê esta tela.
 
-**Formulário de Empresa:**
-- *Identificação:* Razão Social, Nome Fantasia, CNPJ, Inscrição Estadual
-- *Contato técnico:* Responsável, Cargo, E-mail, Telefone, Celular
+**Tela — tabela, não cartões.** É uma lista de comparação ("qual cliente está pior?"), que precisa ordenar por coluna e aguentar carteiras de centenas de empresas. Cartão com foto é o formato do inventário de equipamentos (§4.2), onde a imagem é informação; o logo de uma empresa não é.
+
+**Colunas:** Nome fantasia (com a razão social abaixo) · CNPJ · Cidade/UF · Gestor · Equipamentos · % de adequação · Pontos em aberto · Última análise · Status.
+
+> **Coluna sem dado mostra "—", nunca zero inventado.** Equipamentos e Pontos em aberto mostram **0** quando não há nenhum, porque zero é verdade. % de adequação e Última análise mostram **—** enquanto não houver análise: "0% adequada" afirmaria que nada foi adequado, e sem análise não há o que medir. As colunas existem desde a primeira versão da tela, e passam a se preencher sozinhas conforme equipamentos e análises existirem.
+
+**Busca:** um campo só, que procura em todas as informações cadastradas — razão social, nome fantasia, CNPJ (com ou sem máscara), inscrição estadual, endereço, grupo, código interno, contato e nome do Gestor —, sem diferenciar acento nem maiúscula. **Observações ficam de fora:** texto livre produz resultado que ninguém entende, e quem busca "prensa" e recebe a Seara porque alguém anotou "prensa" acha que a busca quebrou.
+
+**Filtros:** status (padrão: todas menos as inativas) e grau de adequação. Busca e filtros ficam na URL, para o "voltar" encontrar a lista como ela estava.
+
+**Status da empresa:**
+
+| Status | Quando | O que muda |
+| :--- | :--- | :--- |
+| **Em implantação** | Nenhum Gestor, nem convidado | Consultoria cadastra equipamentos e faz levantamento; **não conclui análise** |
+| **Aguardando Gestor** | Há Gestor convidado, nenhum aceitou | Igual à anterior. Convite expirado ou cancelado devolve a empresa a *em implantação* |
+| **Ativa** | Ao menos um Gestor aceitou o convite | Operação completa |
+| **Inativa** | Desativada pela consultoria | **Modo leitura** para todos; laudos seguem baixáveis. Reativar devolve a *ativa* ou *em implantação*, conforme haja Gestor |
+
+Os três primeiros não são escolhidos por ninguém: decorrem de haver ou não Gestor. Só *inativa* é um ato — e é o único que o formulário oferece. Regras em [01 §4 e §5](./01_papeis_e_permissoes.md).
+
+**Ações da linha:** ver os dados (abre o mesmo diálogo de §4.0, sem entrar na empresa — disponível a todos que veem a lista), editar, desativar e reativar.
+
+**Formulário de Empresa** — página própria, e não diálogo: um formulário desse tamanho num diálogo rola por dentro, se perde num clique fora e não tem endereço. A mesma página serve ao cadastro (`/app/companies/new`) e à edição (`/app/companies/edit/:id`), ambas no Contexto 1.
+
+É dividido em **quatro etapas**, na ordem em que a informação chega: Identificação → Endereço → Contato → Organização interna. No cadastro, só se avança com a etapa em ordem — o erro aparece ali, no campo, e não três telas depois — e só se cadastra na última; volta-se a qualquer etapa já vista. Na edição, qualquer etapa é um clique e salvar vale de qualquer uma; se houver campo inválido, o formulário leva à etapa dele. As ações (cancelar, voltar, avançar, salvar) ficam fixas no rodapé.
+
+**Enter não salva.** Com vinte campos, um Enter esbarrado no meio do caminho mandaria um cadastro pela metade ou salvaria uma edição ainda em revisão. Salvar é sempre um clique.
+
+- *Identificação:* Razão Social, Nome Fantasia, CNPJ, Inscrição Estadual, Logo
+- *Contato técnico:* Responsável, Cargo, E-mail, Telefone, Celular — pessoa livre, que não precisa ter login. Quando a empresa já tem Gestor, a seção oferece **usar os dados do Gestor**
 - *Endereço:* CEP (busca automática), Logradouro, Número, Complemento, Bairro, Cidade, UF
-- *Agrupamento:* **Grupo empresarial** (ex.: "Grupo BRF") — agrupa empresas do mesmo cliente **apenas para consolidar relatórios do lado consultoria**. Não concede acesso: pertencer ao mesmo grupo não faz a BRF enxergar a Seara
+- *Agrupamento:* **Grupo empresarial** (ex.: "Grupo BRF") — agrupa empresas do mesmo cliente **apenas para consolidar relatórios do lado consultoria**. Não concede acesso: pertencer ao mesmo grupo não faz a BRF enxergar a Seara. O grupo é escolhido ou **criado ali mesmo**, digitando o nome; a lista oferecida contém só os grupos com empresa na carteira de quem cadastra, e um nome que já exista fora dela é reaproveitado sem ser revelado
 - *Metadados:* Código interno / ERP, Observações
-- *Logo da empresa* — aparece nos laudos
+- *Logo da empresa* (na Identificação) — aparece nos laudos. PNG, JPG ou WebP, até 2 MB. **SVG não**: pode carregar script, e o gerador de laudo lida mal com ele
+
+**Obrigatórios:** Razão Social, Nome Fantasia, CNPJ (com dígito verificador válido e único na conta), nome e e-mail do contato, e o endereço completo — CEP, logradouro, número, bairro, cidade e UF. O endereço vai impresso no laudo; empresa sem ele não teria laudo emitível.
+
+**Preenchimento automático:** o CNPJ busca razão social, nome fantasia e endereço; o CEP busca o endereço. As duas mostram que estão buscando, e se o serviço externo não responder, os campos seguem abertos para preenchimento manual com um aviso — um serviço fora do ar não impede cadastro. As regras de sobrescrita são diferentes, de propósito:
+
+- **A busca por CNPJ só ocupa campo vazio.** O cadastro na Receita envelhece, e o que a pessoa digitou costuma estar mais certo.
+- **O endereço é do CEP.** Trocar o CEP troca logradouro, bairro, cidade e UF — inclusive esvaziando o que o CEP novo não informa (CEP de cidade pequena não traz rua), porque a rua do CEP antigo não pertence ao novo. Número e complemento o CEP não sabe: ficam com quem digitou. Sair do campo sem mudar o CEP não consulta de novo.
+
+**Gestor:** o cadastro não exige Gestor. O convite dele é feito pela Equipe da Empresa (§4.5) ou oferecido logo após salvar, e a empresa segue a tabela de status acima.
 
 ### 3.3. Equipe
 Gestão dos usuários da conta.
@@ -165,6 +202,12 @@ Visão consolidada para apresentar ao cliente ou usar internamente:
 
 *Acesso: todos os papéis com escopo naquela empresa — dos dois lados.*
 *O cabeçalho da aplicação deve deixar permanentemente visível qual empresa está em contexto.*
+
+### 4.0. Dados da Empresa
+
+Clicar no **nome da empresa** na sidebar abre um diálogo de leitura — texto formatado, sem campo de formulário — com os dados principais: nome fantasia e razão social, CNPJ e inscrição estadual, endereço, contato técnico, status, e a linha de contexto de quem presta o serviço e assina por ele (§1 de [01](./01_papeis_e_permissoes.md), "A lista do cliente é a da empresa dele").
+
+**O lado cliente vê, não edita.** Grupo empresarial, código interno e observações **não aparecem para ele**: são anotações da consultoria sobre o cliente, e o recorte é do servidor. A consultoria vê o diálogo com esses campos e um botão **Editar**, que leva ao formulário de §3.2.
 
 ### 4.1. Dashboard da Empresa
 Visão executiva da situação de segurança da planta.

@@ -12,3 +12,4 @@ Arquivos de trabalho **efêmeros**, um por feature em desenvolvimento. Cada arqu
 ## Planos ativos
 
 - [Gestão de Equipe](./gestao-de-equipe.md)
+- [Cadastro de Empresas](./cadastro-de-empresas.md)

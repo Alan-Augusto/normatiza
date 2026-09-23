@@ -12,6 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideSidebarClose, lucideSidebarOpen } from '@ng-icons/lucide';
+import { Dialog } from 'primeng/dialog';
 import { Tooltip } from 'primeng/tooltip';
 import { ThemeService } from '../../services/theme.service';
 import { MenuContextService } from '@core/services/menu-context.service';
@@ -22,11 +23,12 @@ import { MenuItem } from 'primeng/api';
 import { ROLE_LABEL } from '@normatiza/shared';
 import { AuthService } from '@core/auth/auth.service';
 import { rotaDaConsultoria } from '@core/auth/entry-route';
+import { CompanyInfoComponent } from '../company-info/company-info.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NgIconComponent, Tooltip, MenuModule],
+  imports: [RouterLink, RouterLinkActive, NgIconComponent, Tooltip, MenuModule, Dialog, CompanyInfoComponent],
   providers: [provideIcons({ lucideSidebarClose, lucideSidebarOpen })],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.css',
@@ -139,6 +141,10 @@ export class SidebarComponent {
    * ícone, não há o que exibir — o bloco fecha inteiro em vez de deixar um vão.
    */
   protected readonly contextCompany = computed(() => this.activeContext.company()?.name ?? null);
+  protected readonly activeCompanyId = computed(() => this.activeContext.company()?.id ?? null);
+
+  /** O diálogo de dados da empresa em contexto — aberto pelo nome dela. */
+  protected readonly dadosDaEmpresaAbertos = signal(false);
   protected readonly contextEquipment = computed(
     () => this.activeContext.equipment()?.name ?? null,
   );

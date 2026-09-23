@@ -1,0 +1,117 @@
+@if (empresa(); as empresa) {
+  <div class="space-y-5 text-sm">
+    <div class="flex items-start gap-4">
+      @if (empresa.logoUrl) {
+        <img
+          [src]="empresa.logoUrl"
+          alt=""
+          class="size-14 shrink-0 rounded-lg border border-surface-200 object-contain p-1 dark:border-surface-700"
+        />
+      }
+      <div class="min-w-0">
+        <p class="text-base font-semibold text-surface-900 dark:text-surface-0">{{ empresa.tradeName }}</p>
+        <p class="text-muted-color">{{ empresa.corporateName }}</p>
+        <p class="mt-1 tabular-nums text-surface-700 dark:text-surface-300">
+          CNPJ {{ cnpj(empresa.document) }}
+          @if (empresa.stateRegistration) {
+            <span class="text-muted-color"> · IE {{ empresa.stateRegistration }}</span>
+          }
+        </p>
+      </div>
+    </div>
+
+    <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-muted-color">Endereço</dt>
+        <dd class="mt-1 text-surface-900 dark:text-surface-0">
+          {{ linhaDoEndereco(empresa) }}<br />
+          {{ empresa.address.district }} · {{ empresa.address.city }}/{{ empresa.address.state }}<br />
+          <span class="tabular-nums text-muted-color">CEP {{ cep(empresa.address.zipCode) }}</span>
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-muted-color">Contato técnico</dt>
+        <dd class="mt-1 text-surface-900 dark:text-surface-0">
+          {{ empresa.contact.name }}
+          @if (empresa.contact.role) {
+            <span class="text-muted-color"> · {{ empresa.contact.role }}</span>
+          }
+          <br />
+          {{ empresa.contact.email }}
+          @if (empresa.contact.phone || empresa.contact.mobile) {
+            <br />
+            <span class="tabular-nums">{{ empresa.contact.phone || empresa.contact.mobile }}</span>
+          }
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-muted-color">Situação</dt>
+        <dd class="mt-1 text-surface-900 dark:text-surface-0">{{ status(empresa) }}</dd>
+      </div>
+
+      <!-- A linha de contexto de quem presta o serviço e assina por ele (01 §4, D25). -->
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-muted-color">Serviço de adequação</dt>
+        <dd class="mt-1 text-surface-900 dark:text-surface-0">
+          {{ empresa.accountName }}
+          @for (responsavel of empresa.technicalResponsibles; track responsavel.name) {
+            <br />
+            <span class="text-muted-color">Resp. técnico:</span> {{ responsavel.name }}
+            @if (responsavel.registryNumber) {
+              <span class="text-muted-color"> — {{ responsavel.registryNumber }}</span>
+            }
+          }
+        </dd>
+      </div>
+    </dl>
+
+    <!-- Só existe na projeção da consultoria: o cliente nunca recebe estes campos. -->
+    @if (daConsultoria(); as interno) {
+      @if (interno.group || interno.externalCode || interno.notes) {
+        <div class="space-y-3 border-t border-surface-200 pt-4 dark:border-surface-700">
+          <p class="text-xs font-medium uppercase tracking-wide text-muted-color">
+            Anotações da consultoria · não visíveis ao cliente
+          </p>
+          <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            @if (interno.group) {
+              <div>
+                <dt class="text-xs text-muted-color">Grupo empresarial</dt>
+                <dd class="text-surface-900 dark:text-surface-0">{{ interno.group.name }}</dd>
+              </div>
+            }
+            @if (interno.externalCode) {
+              <div>
+                <dt class="text-xs text-muted-color">Código interno</dt>
+                <dd class="text-surface-900 dark:text-surface-0">{{ interno.externalCode }}</dd>
+              </div>
+            }
+            @if (interno.notes) {
+              <div class="sm:col-span-2">
+                <dt class="text-xs text-muted-color">Observações</dt>
+                <dd class="whitespace-pre-line text-surface-900 dark:text-surface-0">{{ interno.notes }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+      }
+
+      @if (interno.actions.edit) {
+        <div class="flex justify-end" data-testid="editar-empresa">
+          <a pButton [routerLink]="['/app/companies/edit', interno.id]">
+            <span pButtonLabel>Editar dados</span>
+          </a>
+        </div>
+      }
+    }
+  </div>
+} @else if (erro()) {
+  <p-message severity="error" styleClass="w-full" text="Não foi possível carregar os dados da empresa." />
+} @else {
+  <div class="space-y-3">
+    <p-skeleton width="60%" height="1.25rem" />
+    <p-skeleton width="40%" />
+    <p-skeleton height="5rem" />
+  </div>
+}

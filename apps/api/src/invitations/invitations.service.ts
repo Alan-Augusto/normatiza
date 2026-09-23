@@ -6,6 +6,7 @@ import type { Invitation, User } from '@prisma/client';
 import type { CreateInvitationRequest, InvitationSummary } from '@normatiza/shared';
 
 import { AuditAction, AuditService } from '../audit/audit.service';
+import { CompanyWriteGuard } from '../companies/company-write-guard.service';
 import { EnvironmentVariables } from '../config/env.validation';
 import { PermissionService, SessionScope } from '../authorization/permission.service';
 import { PasswordService } from '../auth/password.service';
@@ -34,6 +35,7 @@ export class InvitationsService {
     private readonly audit: AuditService,
     private readonly mail: MailService,
     private readonly config: ConfigService<EnvironmentVariables, true>,
+    private readonly writeGuard: CompanyWriteGuard,
   ) {}
 
   /**
@@ -51,6 +53,9 @@ export class InvitationsService {
         throw new ForbiddenException(`Você não pode conceder o papel ${papel}.`);
       }
     }
+
+    // Empresa inativa é modo leitura: ninguém novo entra nela (docs/produto/01 §5).
+    await this.writeGuard.assertWritable(inviter.accountId, dto.companyIds);
 
     const token = randomBytes(32).toString('base64url');
     const email = dto.email.trim().toLowerCase();

@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { accountOwnerGuard } from './core/guards/account-owner.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { companyAdminGuard } from './core/guards/company-admin.guard';
+import { unsavedChangesGuard } from './features/app/companies/company-form/unsaved-changes.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { CONTEXTO_1, VÊ_A_EMPRESA } from './core/auth/entry-route';
 
@@ -82,6 +84,31 @@ export const routes: Routes = [
           label: 'Empresas',
           icon: 'pi pi-building',
           subtitle: 'Carteira de empresas atendidas. Abrir uma empresa muda o contexto de navegação.'
+        }
+      },
+      {
+        // Cadastro e edição moram no Contexto 1, e **antes** de
+        // `companies/:companyId`: declarados depois, "new" e "edit" seriam lidos
+        // como um id de empresa e abririam o layout do Contexto 2.
+        path: 'companies/new',
+        canActivate: [companyAdminGuard],
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () => import('./features/app/companies/company-form/company-form.component').then(m => m.CompanyFormComponent),
+        data: {
+          label: 'Nova empresa',
+          icon: 'pi pi-building',
+          subtitle: 'Cadastre uma empresa atendida. Ela nasce em implantação e fica ativa quando o Gestor aceitar o convite.'
+        }
+      },
+      {
+        path: 'companies/edit/:companyId',
+        canActivate: [companyAdminGuard],
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () => import('./features/app/companies/company-form/company-form.component').then(m => m.CompanyFormComponent),
+        data: {
+          label: 'Editar empresa',
+          icon: 'pi pi-building',
+          subtitle: 'Dados cadastrais, endereço dos laudos, contato técnico e logo.'
         }
       },
       {

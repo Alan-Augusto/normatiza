@@ -91,10 +91,11 @@ interface Membership {
 
 **Invariantes obrigatórias, validadas no servidor:**
 1. Papéis cujo escopo **é a empresa** — `MANAGER`, `CLIENT_ENGINEER` e `DIRECTOR` — só podem existir em **um** `Membership` ativo por usuário. `EXECUTOR` é exceção: seu escopo são as próprias tarefas, não a empresa, e ele pode ter vários vínculos ativos dentro da mesma conta.
-2. Toda empresa ativa tem ao menos um `Membership` ativo contendo `MANAGER`.
+2. Toda empresa ativa tem ao menos um `Membership` ativo contendo `MANAGER` **de um usuário que aceitou o convite**. Não é uma checagem sobre um campo de status: é a própria definição de ativa (§2, `CompanyStatus`).
 3. No convite, o conjunto de empresas oferecido é subconjunto do escopo de quem convida.
 4. Todo `Membership` de um usuário pertence à mesma `Account` do `User` — o vínculo nunca atravessa contas.
 5. `User.email` é único **dentro da conta**, não globalmente. É a consequência aritmética da invariante anterior: se a mesma pessoa tem um login por consultoria, o mesmo e-mail existe em duas contas.
+6. Criar uma `Company` cria, na mesma transação, um `Membership` para quem a criou e um para cada usuário ativo da conta com `LEAD_ENGINEER`. Sem isso a empresa nasceria invisível — inclusive para o dono da conta, cujo escopo também é feito de vínculos.
 
 > **A identidade pertence a uma conta.** `User.accountId` é singular por decisão: o isolamento entre contas fica verificável na identidade, e não dependente de cada query acertar o escopo. A consequência é que um executor terceiro que atenda clientes de **duas consultorias diferentes** terá dois logins — um por conta. Dentro de uma mesma conta, um login basta, por mais empresas que ele atenda (invariante 1).
 >
@@ -108,8 +109,15 @@ interface Membership {
 interface CompanyGroup {
   id: string;
   accountId: string;
-  name: string;                  // ex.: "Grupo BRF"
+  name: string;                  // ex.: "Grupo BRF" — único na conta, sem distinguir acento/maiúscula
 }
+
+// Derivado, nunca gravado — exceto INACTIVE, que é o único que alguém decide.
+type CompanyStatus =
+  | 'IMPLANTATION'      // nenhum Gestor, nem convidado
+  | 'AWAITING_MANAGER'  // Gestor convidado, nenhum aceitou
+  | 'ACTIVE'            // ao menos um Gestor aceitou
+  | 'INACTIVE';         // deactivatedAt preenchido: modo leitura
 
 interface Company {
   id: string;
@@ -133,7 +141,8 @@ interface Company {
   externalCode?: string;         // código interno / ERP
   notes?: string;
   logoFileId?: string;           // aparece nos laudos
-  isActive: boolean;
+  deactivatedAt?: Date;          // preenchido = INACTIVE
+  deactivatedByUserId?: string;
 }
 
 interface Sector {
@@ -146,6 +155,8 @@ interface Sector {
 }
 ```
 
+> **Por que `CompanyStatus` é calculado e não gravado:** três dos quatro estados decorrem de haver ou não Gestor, e um deles muda **sem evento nenhum** — o convite do Gestor expira por tempo, e a empresa volta a *em implantação* sem que ninguém aperte botão. Um status gravado mentiria até a próxima escrita. Só a desativação é ato de alguém, e só ela ocupa coluna.
+>
 > `groupId` agrupa **apenas para relatório do lado consultoria**. Pertencer ao mesmo grupo não altera escopo: a BRF continua sem enxergar a Seara. Qualquer consulta que use `groupId` precisa ser filtrada pelo escopo do operador antes de agrupar.
 
 ---

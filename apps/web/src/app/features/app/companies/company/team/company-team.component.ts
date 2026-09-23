@@ -32,6 +32,7 @@ import {
   RoleEditorComponent,
   type VinculoEditavel,
 } from '../../../../../shared/components/team/role-editor.component';
+import { RowActionComponent } from '../../../../../shared/components/row-action/row-action.component';
 
 /**
  * Equipe da Empresa — Contexto 2.
@@ -58,6 +59,7 @@ import {
   selector: 'app-company-team',
   standalone: true,
   imports: [
+    RowActionComponent,
     DatePipe,
     Button,
     Dialog,

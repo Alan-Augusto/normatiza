@@ -31,6 +31,7 @@ import {
   type VinculoEditavel,
 } from '../../../shared/components/team/role-editor.component';
 import { DisableDialogComponent } from './components/disable-dialog.component';
+import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
 
 /**
  * Equipe — Contexto 1.
@@ -47,6 +48,7 @@ import { DisableDialogComponent } from './components/disable-dialog.component';
   selector: 'app-team',
   standalone: true,
   imports: [
+    RowActionComponent,
     DatePipe,
     FormsModule,
     Button,

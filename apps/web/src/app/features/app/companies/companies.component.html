@@ -1,26 +1,207 @@
-<!-- Tela provisória: lista mínima para exercer a troca de contexto. -->
-<div class="space-y-3">
-  <p
-    data-testid="aviso-provisorio"
-    class="rounded-lg bg-warning/15 px-3 py-2 text-xs font-medium text-warning"
-  >
-    Tela de teste. As empresas são reais, mas a listagem é só uma lista de links para abrir o
-    contexto da empresa — o cadastro de empresas ainda não foi feito.
-  </p>
+<div class="space-y-4">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="busca-empresa" class="text-xs font-medium text-muted-color">Buscar</label>
+        <div class="relative">
+          <ng-icon
+            name="lucideSearch"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-color"
+          />
+          <input
+            pInputText
+            id="busca-empresa"
+            data-testid="busca"
+            type="search"
+            class="w-80 max-w-full pl-9"
+            placeholder="Nome, CNPJ, cidade, grupo, Gestor…"
+            [value]="termo()"
+            (input)="aoDigitar($any($event.target).value)"
+          />
+        </div>
+      </div>
 
-  <div class="space-y-2">
-    @for (empresa of empresas(); track empresa.id) {
-      <a
-        data-testid="empresa"
-        [attr.data-company]="empresa.id"
-        [routerLink]="['/app/companies', empresa.id, 'dashboard']"
-        class="block rounded-lg border border-surface-200 p-3 hover:bg-surface-50 dark:border-surface-700 dark:hover:bg-surface-800"
-      >
-        <div class="font-medium text-surface-900 dark:text-surface-0">{{ empresa.tradeName }}</div>
-        <div class="text-xs text-muted-color">{{ empresa.corporateName }}</div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-muted-color">Situação</label>
+        <!--
+          Sem escolha, a lista traz as empresas **em operação** — todas menos as
+          inativas. É a carteira que se trabalha; a inativa se pede.
+        -->
+        <p-select
+          data-testid="filtro-status"
+          [options]="opcoesDeStatus"
+          [ngModel]="filtros().status ?? null"
+          (ngModelChange)="filtrarStatus($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Em operação"
+          [showClear]="true"
+          styleClass="w-56"
+        />
+      </div>
+    </div>
+
+    @if (podeCadastrar()) {
+      <a pButton routerLink="/app/companies/new" data-testid="nova-empresa">
+        <span pButtonLabel>Nova empresa</span>
       </a>
-    } @empty {
-      <p class="text-sm text-muted-color">Nenhuma empresa na sua carteira.</p>
     }
   </div>
+
+  @if (erro()) {
+    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
+
+  <app-data-table
+    [dados]="empresas()"
+    [carregando]="carregando()"
+    [vazio]="tituloDoVazio()"
+    [vazioDetalhe]="detalheDoVazio()"
+  >
+    <ng-template appCabecalho>
+      <tr>
+        <th>Empresa</th>
+        <th>CNPJ</th>
+        <th>Cidade</th>
+        <th>Gestor</th>
+        <th class="text-right">Equipamentos</th>
+        <th class="text-right">Adequação</th>
+        <th class="text-right">Pontos em aberto</th>
+        <th>Última análise</th>
+        <th>Situação</th>
+        <th data-testid="coluna-acoes" aria-label="Ações"></th>
+      </tr>
+    </ng-template>
+
+    <ng-template appLinha [appLinhaDe]="empresas()" let-empresa>
+      <tr data-testid="linha" [attr.data-company]="empresa.id">
+        <td>
+          <a
+            data-testid="abrir-empresa"
+            [routerLink]="['/app/companies', empresa.id, 'dashboard']"
+            class="font-medium text-surface-900 hover:text-primary dark:text-surface-0"
+          >
+            {{ empresa.tradeName }}
+          </a>
+          <div class="text-xs text-muted-color">{{ empresa.corporateName }}</div>
+        </td>
+
+        <td class="whitespace-nowrap tabular-nums">{{ cnpj(empresa.document) }}</td>
+
+        <td class="whitespace-nowrap">{{ empresa.city }}/{{ empresa.state }}</td>
+
+        <td>
+          @for (gestor of empresa.managers; track gestor.id) {
+            <div>
+              {{ gestor.name }}
+              @if (gestor.pending) {
+                <span data-testid="gestor-pendente" class="text-xs text-muted-color">· convite pendente</span>
+              }
+            </div>
+          } @empty {
+            <span class="text-muted-color">Sem Gestor</span>
+          }
+        </td>
+
+        <!--
+          Zero onde é zero, e "—" onde ainda não há medida. Sem análise não
+          existe grau de adequação: "0%" diria que nada foi adequado.
+        -->
+        <td data-testid="equipamentos" class="text-right tabular-nums">{{ empresa.equipmentsCount }}</td>
+        <td data-testid="adequacao" class="text-right tabular-nums">
+          {{ empresa.adequacyPercent !== undefined ? (empresa.adequacyPercent | number: '1.0-0') + '%' : '—' }}
+        </td>
+        <td data-testid="pontos-abertos" class="text-right tabular-nums">{{ empresa.openPointsCount }}</td>
+        <td data-testid="ultima-analise" class="whitespace-nowrap">
+          {{ empresa.lastAnalysisAt ? (empresa.lastAnalysisAt | date: 'dd/MM/yyyy') : '—' }}
+        </td>
+
+        <td>
+          <span class="selo" [attr.data-status]="empresa.status">{{ rotuloDoStatus(empresa.status) }}</span>
+        </td>
+
+        <!-- "Ver" existe para todos: ler o cadastro não é administrá-lo. -->
+        <td>
+            <div class="flex justify-end gap-0.5">
+              <app-row-action data-testid="acao-ver" icon="lucideEye" label="Ver dados da empresa" (acionar)="vendo.set(empresa)" />
+              @if (empresa.actions.edit) {
+                <app-row-action
+                  data-testid="acao-editar"
+                  icon="lucidePencil"
+                  label="Editar"
+                  [link]="['/app/companies/edit', empresa.id]"
+                />
+              }
+              @if (empresa.actions.reactivate) {
+                <app-row-action data-testid="acao-reativar" icon="lucideRotateCcw" label="Reativar" (acionar)="reativar(empresa)" />
+              }
+              @if (empresa.actions.deactivate) {
+                <app-row-action
+                  data-testid="acao-desativar"
+                  icon="lucidePower"
+                  label="Desativar"
+                  severity="danger"
+                  (acionar)="desativando.set(empresa)"
+                />
+              }
+            </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <!-- Carteira vazia oferece o cadastro; busca vazia pede outro termo, não uma empresa nova. -->
+    @if (podeCadastrar() && !buscando()) {
+      <ng-template appAcaoVazia>
+        <a pButton routerLink="/app/companies/new" data-testid="nova-empresa-vazio">
+          <span pButtonLabel>Cadastrar a primeira empresa</span>
+        </a>
+      </ng-template>
+    }
+  </app-data-table>
 </div>
+
+@if (desativando(); as empresa) {
+  <p-dialog
+    [header]="'Desativar ' + empresa.tradeName"
+    [visible]="true"
+    (visibleChange)="desativando.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '32rem' }"
+  >
+    <div class="space-y-4">
+      <p class="text-sm text-surface-700 dark:text-surface-300">
+        A {{ empresa.tradeName }} fica em <strong>modo leitura</strong>: ninguém perde o acesso e
+        os laudos continuam disponíveis, mas nada mais é alterado nela — cadastro, convites,
+        análises e plano de ação. Dá para reativar depois.
+      </p>
+      <div class="flex justify-end gap-2">
+        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="desativando.set(null)" />
+        <p-button
+          data-testid="confirmar-desativar"
+          label="Desativar empresa"
+          severity="danger"
+          [loading]="processando()"
+          (onClick)="confirmarDesativar()"
+        />
+      </div>
+    </div>
+  </p-dialog>
+}
+
+@if (vendo(); as empresa) {
+  <p-dialog
+    header="Dados da empresa"
+    [visible]="true"
+    (visibleChange)="vendo.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: '40rem' }"
+    [breakpoints]="{ '640px': '95vw' }"
+  >
+    <app-company-info [companyId]="empresa.id" />
+  </p-dialog>
+}

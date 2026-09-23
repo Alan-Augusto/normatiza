@@ -1,0 +1,7 @@
+:host {
+  display: inline-flex;
+}
+
+ng-icon {
+  font-size: 1rem;
+}

@@ -61,12 +61,25 @@
     >
       <div>
         <div class="min-w-0 px-3 pt-3 pb-1">
-          <p
-            data-testid="contexto-empresa"
-            class="text-[0.6875rem] font-semibold tracking-wide text-primary uppercase truncate"
+          <!--
+            O nome abre os dados da empresa — CNPJ, endereço, contato — em texto,
+            sem sair da tela em que a pessoa está (docs/produto/03 §4.0).
+          -->
+          <button
+            type="button"
+            data-testid="abrir-dados-empresa"
+            class="block w-full min-w-0 cursor-pointer rounded-sm text-left hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+            [attr.aria-label]="'Ver os dados de ' + empresaExibida()"
+            [attr.tabindex]="contextCompany() ? null : -1"
+            (click)="dadosDaEmpresaAbertos.set(true)"
           >
-            {{ empresaExibida() }}
-          </p>
+            <p
+              data-testid="contexto-empresa"
+              class="text-[0.6875rem] font-semibold tracking-wide text-primary uppercase truncate"
+            >
+              {{ empresaExibida() }}
+            </p>
+          </button>
           <span class="revela" [class.aberto]="contextEquipment() !== null">
             <span
               data-testid="contexto-equipamento"
@@ -315,4 +328,21 @@
       </div>
     </div>
   </div>
+}
+
+@if (dadosDaEmpresaAbertos() && activeCompanyId(); as companyId) {
+  <p-dialog
+    header="Dados da empresa"
+    appendTo="body"
+    [visible]="true"
+    (visibleChange)="dadosDaEmpresaAbertos.set(false)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: '40rem' }"
+    [breakpoints]="{ '640px': '95vw' }"
+  >
+    <app-company-info [companyId]="companyId" />
+  </p-dialog>
 }

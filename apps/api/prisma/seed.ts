@@ -36,8 +36,9 @@ const SENHA = process.env.SEED_PASSWORD ?? 'normatiza2026';
  */
 const RESETAR = process.env.SEED_RESET === '1';
 
-const BRF = '22.222.222/0001-22';
-const SEARA = '33.333.333/0001-33';
+/** Só dígitos, como o banco guarda — e com dígito verificador válido, para o formulário aceitar editar. */
+const BRF = '22222222000191';
+const SEARA = '33333333000191';
 
 /** Quem é quem — a ordem é a da árvore de convites, e ela importa. */
 type Pessoa = {
@@ -178,16 +179,62 @@ async function main() {
     create: { name: 'Normatiza', document: '11.111.111/0001-11' },
   });
 
+  // A Seara fica **sem Gestor** de propósito: é a empresa em implantação do
+  // elenco, a que exercita o status derivado (docs/produto/03 §3.2).
+  const grupo = await prisma.companyGroup.upsert({
+    where: { accountId_normalizedName: { accountId: conta.id, normalizedName: 'grupo brf' } },
+    update: {},
+    create: { accountId: conta.id, name: 'Grupo BRF', normalizedName: 'grupo brf' },
+  });
+
+  const cadastro = {
+    [BRF]: {
+      corporateName: 'BRF S.A.',
+      tradeName: 'BRF',
+      stateRegistration: '254.123.456',
+      contactName: 'Marcos',
+      contactRole: 'Coordenador de SST',
+      contactEmail: 'marcos@email.com',
+      contactPhone: '4934411000',
+      zipCode: '89700000',
+      street: 'Rua Senador Atílio Fontana',
+      addressNumber: '86',
+      district: 'Centro',
+      city: 'Concórdia',
+      state: 'SC',
+      externalCode: 'CLI-0001',
+      notes: 'Visitas técnicas só às terças, com agendamento na portaria.',
+      groupId: grupo.id,
+    },
+    [SEARA]: {
+      corporateName: 'Seara Alimentos Ltda.',
+      tradeName: 'Seara',
+      contactName: 'Helena Prado',
+      contactRole: 'Supervisora de Segurança do Trabalho',
+      contactEmail: 'helena.prado@email.com',
+      contactMobile: '47999990000',
+      zipCode: '89770000',
+      street: 'Rodovia SC-283',
+      addressNumber: 's/n',
+      complement: 'Km 12',
+      district: 'Zona Industrial',
+      city: 'Seara',
+      state: 'SC',
+      externalCode: 'CLI-0002',
+    },
+  };
+
   const empresas = new Map<string, string>();
-  for (const [document, corporateName, tradeName] of [
-    [BRF, 'BRF S.A.', 'BRF'],
-    [SEARA, 'Seara Alimentos Ltda.', 'Seara'],
-  ] as const) {
-    const empresa = await prisma.company.upsert({
-      where: { accountId_document: { accountId: conta.id, document } },
-      update: {},
-      create: { accountId: conta.id, corporateName, tradeName, document },
+  for (const [document, dados] of Object.entries(cadastro)) {
+    // Procura também pelo nome: bancos semeados antes desta versão guardam o
+    // CNPJ antigo, e um upsert só por documento criaria uma segunda BRF ao lado
+    // da primeira — com o elenco inteiro vinculado à errada.
+    const existente = await prisma.company.findFirst({
+      where: { accountId: conta.id, OR: [{ document }, { tradeName: dados.tradeName }] },
     });
+    const empresa = existente
+      ? await prisma.company.update({ where: { id: existente.id }, data: { document, ...dados } })
+      : await prisma.company.create({ data: { accountId: conta.id, document, ...dados } });
     empresas.set(document, empresa.id);
   }
 
@@ -266,7 +313,7 @@ async function main() {
     create: { userId: ids.get('josue')! },
   });
 
-  console.log('\nSeed pronto — Normatiza atendendo BRF e Seara.\n');
+  console.log('\nSeed pronto — Normatiza atendendo BRF (ativa) e Seara (em implantação, sem Gestor).\n');
   console.log('  CONSULTORIA');
   console.log('    josue@email.com       Eng. Responsável · BRF + Seara · titular · admin da plataforma');
   console.log('    carla@email.com       Eng. da Consultoria · BRF + Seara');

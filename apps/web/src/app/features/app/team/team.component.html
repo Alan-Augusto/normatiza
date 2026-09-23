@@ -169,41 +169,27 @@
           <td>
             <div class="flex justify-end gap-1">
               @if (membro.actions.resendInvitation) {
-                <p-button
-                  data-testid="acao-reenviar"
-                  label="Reenviar"
-                  [text]="true"
-                  size="small"
-                  (onClick)="reenviar(membro)"
-                />
-              }
-              @if (membro.actions.revokeInvitation) {
-                <p-button
-                  data-testid="acao-revogar"
-                  label="Revogar"
-                  severity="secondary"
-                  [text]="true"
-                  size="small"
-                  (onClick)="revogar(membro)"
-                />
+                <app-row-action data-testid="acao-reenviar" icon="lucideSend" label="Reenviar convite" (acionar)="reenviar(membro)" />
               }
               @if (membro.actions.changeRoles) {
-                <p-button
-                  data-testid="acao-trocar-papel"
-                  label="Trocar papel"
-                  [text]="true"
-                  size="small"
-                  (onClick)="editando.set(membro)"
+                <app-row-action data-testid="acao-trocar-papel" icon="lucideUserCog" label="Trocar papel" (acionar)="editando.set(membro)" />
+              }
+              @if (membro.actions.revokeInvitation) {
+                <app-row-action
+                  data-testid="acao-revogar"
+                  icon="lucideMailX"
+                  label="Revogar convite"
+                  severity="danger"
+                  (acionar)="revogar(membro)"
                 />
               }
               @if (membro.actions.disableFromAccount) {
-                <p-button
+                <app-row-action
                   data-testid="acao-desligar"
-                  label="Desligar"
-                  severity="secondary"
-                  [text]="true"
-                  size="small"
-                  (onClick)="desligando.set(membro)"
+                  icon="lucideUserX"
+                  label="Desligar da conta"
+                  severity="danger"
+                  (acionar)="desligando.set(membro)"
                 />
               }
             </div>

@@ -17,6 +17,11 @@ allowBuilds:
   # aborta sem eles autorizados.
   '@parcel/watcher': true
   msgpackr-extract: true
+  # Dependências do firebase-admin (storage da API). Negados de propósito: o
+  # script do @firebase/util gera configuração para navegador, e o do protobufjs
+  # só confere versão — nenhum dos dois faz falta no servidor.
+  '@firebase/util': false
+  protobufjs: false
 minimumReleaseAgeExclude:
   - '@primeicons/angular@8.0.0-rc.1'
   - '@primeicons/core@8.0.0-rc.1'

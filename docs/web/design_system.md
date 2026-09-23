@@ -200,6 +200,38 @@ mesma coluna responde a uma pergunta de verdade e fica.
 Quem decide o que pode ser feito continua sendo o servidor (`actions`, D13); a
 tela só pergunta se **alguma** linha tem algo a oferecer.
 
+### Ações de linha: ícone, com nome — `app-row-action`
+
+Nenhuma tabela escreve a ação por extenso na linha. "Reenviar · Trocar papel ·
+Desligar" em cada linha comia a largura das colunas que a pessoa veio ler. Toda
+ação de linha passa por
+[`shared/components/row-action`](../../apps/web/src/app/shared/components/row-action/row-action.component.ts):
+
+```html
+<app-row-action data-testid="acao-editar" icon="lucidePencil" label="Editar" [link]="['/app/companies/edit', id]" />
+<app-row-action data-testid="acao-desativar" icon="lucidePower" label="Desativar" severity="danger" (acionar)="desativando.set(linha)" />
+```
+
+As regras:
+
+1. **Ícone não dispensa nome.** `label` vai no `aria-label` e no tooltip, que
+   abre no hover **e no foco do teclado**. É o nome da ação como a pessoa diria:
+   "Remover da empresa", nunca "Excluir".
+2. **Um ícone por significado, no sistema inteiro.** O vocabulário é fechado em
+   `RowActionIcon`: olho é ver, lápis é editar, `power` é desativar, seta
+   circular é reativar, envelope é convite. Ícone novo entra na lista antes de
+   entrar numa linha.
+3. **Link quando a ação é ir; botão quando ela acontece aqui.** Editar abre uma
+   página e tem endereço; desativar abre um diálogo.
+4. **Ordem: ver, editar, as de estado, e a destrutiva por último**, em cor de
+   perigo (`severity="danger"`) — e a destrutiva **sempre confirma** antes.
+5. **Switch, só para booleano imediato e reversível.** Um `p-toggleswitch` na
+   linha diz "clique e está feito". Serve para marcar um item da tabela de
+   preços como ativo; não serve para desativar uma empresa, que tem
+   consequência e pede confirmação — ali o switch mentiria sobre o que o clique faz.
+6. A regra de superfície vale igual: ação que não veio em `actions` não é
+   renderizada, nem desabilitada.
+
 ---
 
 ## 🧑‍🔧 7. Papéis: nunca um nome de cargo sozinho

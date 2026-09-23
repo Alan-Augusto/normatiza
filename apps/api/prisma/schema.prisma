@@ -65,6 +65,13 @@ enum PasswordAlgo {
   LEGACY_SHA256
 }
 
+/// Regra de negócio, não de interface: um arquivo `CONSULTANCY_ONLY` não pode
+/// aparecer em resposta nenhuma para papel do lado cliente (docs/produto/04 §8).
+enum FileVisibility {
+  CONSULTANCY_ONLY
+  CLIENT_VISIBLE
+}
+
 enum InvitationStatus {
   PENDING
   ACCEPTED
@@ -88,8 +95,10 @@ model Account {
   ownerUserId String? @unique
   owner       User?   @relation("AccountOwner", fields: [ownerUserId], references: [id])
 
-  users       User[]       @relation("AccountUsers")
+  users       User[]         @relation("AccountUsers")
   companies   Company[]
+  groups      CompanyGroup[]
+  files       FileAsset[]
   memberships Membership[]
   invitations Invitation[]
 
@@ -117,8 +126,8 @@ model User {
   // ── Credenciais ────────────────────────────────────────────────────────────
   /// Nulo enquanto o usuário está `INVITED`: quem convida cria o acesso, o
   /// convidado define a senha pelo link.
-  passwordHash String?
-  passwordAlgo PasswordAlgo?
+  passwordHash       String?
+  passwordAlgo       PasswordAlgo?
   /// Salt de 32 bytes do sistema legado. Só faz sentido com `LEGACY_SHA256`, e
   /// é apagado no mesmo ato em que a senha é reescrita em Argon2id.
   legacyPasswordSalt String?
@@ -140,13 +149,13 @@ model User {
   succeededBy       User?   @relation("Succession", fields: [succeededByUserId], references: [id])
   succeeded         User[]  @relation("Succession")
 
-  memberships        Membership[]
-  refreshTokens      RefreshToken[]
-  passwordResets     PasswordResetToken[]
-  invitation         Invitation?          @relation("InvitedUser")
-  sentInvitations    Invitation[]         @relation("InvitationAuthor")
-  ownedAccount       Account?             @relation("AccountOwner")
-  platformAdmin      PlatformAdmin?       @relation("PlatformAdminUser")
+  memberships     Membership[]
+  refreshTokens   RefreshToken[]
+  passwordResets  PasswordResetToken[]
+  invitation      Invitation?          @relation("InvitedUser")
+  sentInvitations Invitation[]         @relation("InvitationAuthor")
+  ownedAccount    Account?             @relation("AccountOwner")
+  platformAdmin   PlatformAdmin?       @relation("PlatformAdminUser")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -198,21 +207,82 @@ model PlatformAdmin {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Empresa
-// Modelagem mínima: só o suficiente para o vínculo existir. O cadastro completo
-// (contato, endereço, grupo, logo) entra na feature de empresas.
+// Regras: docs/produto/03_navegacao_e_telas.md §3.2 e 04_modelo_de_dados.md §2
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Agrupa empresas do mesmo cliente **só para relatório da consultoria**. Não
+/// concede acesso: pertencer ao grupo "BRF" não faz ninguém enxergar a Seara.
+model CompanyGroup {
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  name           String
+  /// `name` sem acento, sem maiúscula e sem espaço sobrando. É por ele que
+  /// "Grupo BRF" e "grupo brf" são o mesmo grupo — e que um nome repetido é
+  /// reaproveitado em vez de duplicado.
+  normalizedName String
+
+  companies Company[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([accountId, normalizedName])
+  @@map("company_groups")
+}
 
 model Company {
   id        String  @id @default(cuid())
   accountId String
   account   Account @relation(fields: [accountId], references: [id])
 
-  corporateName String
-  tradeName     String
-  document      String
-  isActive      Boolean @default(true)
+  /// Relação simples, e não composta com `accountId` como em `Membership`: o
+  /// Prisma não aceita relação opcional sobre chave com parte obrigatória. Que
+  /// o grupo seja da mesma conta é conferido pelo serviço.
+  groupId String?
+  group   CompanyGroup? @relation(fields: [groupId], references: [id])
+
+  // ── Identificação ──────────────────────────────────────────────────────────
+  corporateName     String
+  tradeName         String
+  /// CNPJ **só com dígitos**. A máscara é apresentação.
+  document          String
+  stateRegistration String?
+
+  // ── Contato técnico — pessoa livre, não precisa ter login ─────────────────
+  contactName   String
+  contactRole   String?
+  contactEmail  String
+  contactPhone  String?
+  contactMobile String?
+
+  // ── Endereço — obrigatório: vai impresso no laudo ─────────────────────────
+  zipCode       String
+  street        String
+  addressNumber String
+  complement    String?
+  district      String
+  city          String
+  state         String
+
+  // ── Metadados da consultoria — nunca chegam ao lado cliente ───────────────
+  externalCode String?
+  notes        String?
+
+  logoFileId String?    @unique
+  logo       FileAsset? @relation("CompanyLogo", fields: [logoFileId], references: [id])
+
+  /// Único status **gravado**, porque é o único que alguém decide. Os demais
+  /// (em implantação, aguardando Gestor, ativa) são derivados dos vínculos de
+  /// Gestor — o convite expira por tempo, sem evento, e um status gravado
+  /// mentiria até a próxima escrita. docs/produto/04 §2.
+  deactivatedAt       DateTime?
+  deactivatedByUserId String?
 
   memberships Membership[]
+  files       FileAsset[]  @relation("CompanyFiles")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -247,7 +317,7 @@ model Membership {
   executorType ExecutorType?
   /// Fornecedor do executor terceiro. Sem relação por enquanto: `Supplier` é da
   /// feature de custos e ainda não existe.
-  supplierId String?
+  supplierId   String?
 
   isActive Boolean @default(true)
 
@@ -307,7 +377,7 @@ model PasswordResetToken {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
-  tokenHash String   @unique
+  tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
 
@@ -385,4 +455,53 @@ model AuditLog {
   @@index([actorUserId, occurredAt])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Arquivos
+// Regras: docs/produto/05_regras_transversais.md §4
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// O registro de um arquivo no storage. Os bytes moram no bucket; aqui mora de
+/// quem ele é, quem o enviou e quem pode vê-lo.
+///
+/// Nunca apagado: trocar o logo cria outro `FileAsset`, porque o laudo emitido
+/// no ano passado continua apontando para o antigo.
+model FileAsset {
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  companyId String?
+  company   Company? @relation("CompanyFiles", fields: [companyId], references: [id])
+
+  title       String?
+  description String?
+  /// Para que o arquivo existe: `COMPANY_LOGO`, e as categorias que vierem com
+  /// fotos e documentos.
+  category    String?
+
+  /// Caminho no bucket, sempre prefixado por `accounts/{accountId}/`. Escrito
+  /// pelo servidor, nunca por quem envia.
+  storageKey String @unique
+  /// Lido dos bytes, não declarado pelo navegador.
+  mimeType   String
+  sizeBytes  Int
+
+  thumbnailKey String?
+  visibility   FileVisibility
+  expiresAt    DateTime?
+
+  capturedAt       DateTime?
+  capturedByUserId String?
+
+  logoOf Company? @relation("CompanyLogo")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@index([accountId])
+  @@index([companyId])
+  @@map("file_assets")
 }

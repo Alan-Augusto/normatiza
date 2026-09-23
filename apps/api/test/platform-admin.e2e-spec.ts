@@ -1,6 +1,6 @@
 import * as request from 'supertest';
 
-import { Elenco, SENHA_PADRÃO, montarConsultoriaRival, montarElenco } from './helpers/elenco';
+import { Elenco, SENHA_PADRÃO, dadosDeEmpresa, montarConsultoriaRival, montarElenco } from './helpers/elenco';
 import { TestApp, createTestApp } from './helpers/test-app';
 
 /**
@@ -346,12 +346,7 @@ describe('Admin da Plataforma (e2e)', () => {
         data: { name: 'Consultoria Rival', document: '99.999.999/0001-99' },
       });
       const empresaDaRival = await ctx.prisma.company.create({
-        data: {
-          accountId: rival.id,
-          corporateName: 'Cliente da Rival S.A.',
-          tradeName: 'Rival Cliente',
-          document: '88.888.888/0001-88',
-        },
+        data: dadosDeEmpresa(rival.id, 'Cliente da Rival S.A.', 'Rival Cliente', '88.888.888/0001-88'),
       });
 
       await comoAdmin(elenco.josué.id);

@@ -142,22 +142,10 @@
           <td>
             <div class="flex justify-end gap-1">
               @if (membro.actions.resendInvitation) {
-                <p-button
-                  data-testid="acao-reenviar"
-                  label="Reenviar"
-                  [text]="true"
-                  size="small"
-                  (onClick)="reenviar(membro)"
-                />
+                <app-row-action data-testid="acao-reenviar" icon="lucideSend" label="Reenviar convite" (acionar)="reenviar(membro)" />
               }
               @if (membro.actions.changeRoles) {
-                <p-button
-                  data-testid="acao-trocar-papel"
-                  label="Trocar papel"
-                  [text]="true"
-                  size="small"
-                  (onClick)="editando.set(membro)"
-                />
+                <app-row-action data-testid="acao-trocar-papel" icon="lucideUserCog" label="Trocar papel" (acionar)="editando.set(membro)" />
               }
               <!--
               "Remover da empresa", e nunca "Excluir": o Gestor encerra o acesso
@@ -165,13 +153,12 @@
               desligá-la da conta não é ato desta tela (D8).
             -->
               @if (membro.actions.removeFromCompany) {
-                <p-button
+                <app-row-action
                   data-testid="acao-remover"
+                  icon="lucideUserMinus"
                   label="Remover da empresa"
-                  severity="secondary"
-                  [text]="true"
-                  size="small"
-                  (onClick)="removendo.set(membro)"
+                  severity="danger"
+                  (acionar)="removendo.set(membro)"
                 />
               }
             </div>

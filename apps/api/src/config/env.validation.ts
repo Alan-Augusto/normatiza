@@ -108,6 +108,38 @@ export class EnvironmentVariables {
   @IsString()
   APP_URL: string = 'http://localhost:8080';
 
+  // ── Arquivos ────────────────────────────────────────────────────────────────
+
+  /**
+   * `local` grava em disco, na pasta `STORAGE_LOCAL_DIR`, e é o padrão: o
+   * desenvolvimento não depende de credencial nenhuma para enviar um logo.
+   * `firebase` é o storage de verdade (docs/produto/05 §4).
+   */
+  @IsOptional()
+  @IsIn(['local', 'firebase'], { message: 'STORAGE_DRIVER deve ser `local` ou `firebase`.' })
+  STORAGE_DRIVER: string = 'local';
+
+  @IsOptional()
+  @IsString()
+  STORAGE_LOCAL_DIR: string = '.storage';
+
+  @IsOptional()
+  @IsString()
+  FIREBASE_PROJECT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  FIREBASE_CLIENT_EMAIL?: string;
+
+  /** A chave PEM da conta de serviço, com as quebras de linha escritas como `\n`. */
+  @IsOptional()
+  @IsString()
+  FIREBASE_PRIVATE_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  FIREBASE_STORAGE_BUCKET?: string;
+
   @IsOptional()
   @IsInt()
   PORT: number = 3000;
@@ -172,6 +204,24 @@ export function validate(raw: Record<string, unknown>): EnvironmentVariables {
         'elenco de testes usam endereços de domínios inexistentes, e enviar para ' +
         'eles queima a reputação do domínio remetente.',
     );
+  }
+
+  if (config.STORAGE_DRIVER === 'firebase') {
+    const faltando = (
+      [
+        'FIREBASE_PROJECT_ID',
+        'FIREBASE_CLIENT_EMAIL',
+        'FIREBASE_PRIVATE_KEY',
+        'FIREBASE_STORAGE_BUCKET',
+      ] as const
+    ).filter((chave) => !config[chave]);
+
+    if (faltando.length) {
+      throw new Error(
+        `STORAGE_DRIVER=firebase exige ${faltando.join(', ')}. Sem elas a API subiria ` +
+          'e o primeiro upload falharia na mão de quem estivesse cadastrando a empresa.',
+      );
+    }
   }
 
   return config;

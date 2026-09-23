@@ -186,6 +186,7 @@ Convida qualquer papel, inclusive os do lado cliente — é ele quem faz o onboa
 
 ### Engenheiro da Consultoria — consultoria · Carla
 Engenheira da equipe ou parceira. Faz análises de risco, **conclui** análises, valida evidências entregues pelo cliente, define HRN residual e emite laudos — nas empresas do escopo que recebeu do Josué.
+Também **cadastra empresas**: a que ela cria entra na carteira dela (§5). Edita, desativa e reativa só as empresas do próprio escopo — as demais ela não vê.
 Convida: Técnico, dentro do próprio escopo.
 
 ### Técnico — consultoria · Fernando
@@ -202,7 +203,9 @@ Não convida ninguém.
 Além disso, é o administrador do lado cliente: convida Engenheiro do Cliente, Diretor e Executor, e mantém a tabela de preços da empresa.
 **Escopo: uma empresa.**
 
-> **Toda empresa precisa ter pelo menos um Gestor.** Não existe empresa ativa sem gestor — é ele quem recebe o plano de ação e aprova. A regra é validada no cadastro da empresa e no desligamento: não se remove o último gestor de uma empresa sem indicar o sucessor.
+> **Não existe empresa ativa sem Gestor** — é ele quem recebe o plano de ação e aprova. A empresa pode ser **cadastrada** sem ele, mas nasce **em implantação** e só se torna ativa quando um Gestor **aceita** o convite: convite enviado e ainda não aceito não conta, porque quem não entrou no sistema não aprova nada. O ciclo completo está em [03 §3.2](./03_navegacao_e_telas.md). Depois de ativa, a regra se mantém no desligamento: não se remove o último gestor de uma empresa sem indicar o sucessor.
+>
+> **Enquanto a empresa não está ativa, nenhuma análise é concluída nela.** A consultoria pode cadastrar equipamentos e fazer o levantamento de campo — o campo muitas vezes vem antes do onboarding do cliente —, mas concluir a análise gera tarefas e notifica o cliente, e sem Gestor não há quem as receba.
 
 ### Engenheiro do Cliente — cliente · Antonio
 O personagem central da fase de execução, e o papel que mais cresceu em relação ao sistema atual. Engenheiro de segurança **da própria empresa cliente**. Recebe a análise pronta e **gerencia a adequação**: define responsável, prazo e orçamento de cada ponto, aciona equipe interna ou terceiro, acompanha a obra e entrega a evidência.
@@ -257,6 +260,12 @@ Um executor pode atender **várias empresas** da mesma conta com um login só (�
 Isso resolve o cliente pequeno sem inventar exceção no fluxo: a etapa de aprovação continua existindo, o registro de "aprovado por Fulano" continua sendo gerado, e o histórico mostra que quem aprovou foi quem orçou. **Não há trava — apenas rastro.**
 
 > **Consequência para a modelagem:** o vínculo de um usuário com uma empresa carrega **um ou mais papéis**, não um só. A permissão efetiva é a união dos papéis daquele vínculo. Ver a entidade `Membership` em [04 — Modelo de Dados](./04_modelo_de_dados.md).
+
+**Empresa nova nasce no escopo de quem a cria — e de todo Engenheiro Responsável da conta.** O escopo de qualquer papel é feito de vínculos, inclusive o do Engenheiro Responsável: "todas as empresas da conta" não é regra implícita, é ter um vínculo com cada uma. Por isso cadastrar uma empresa cria, no mesmo ato, o vínculo de quem cadastrou e o de cada Engenheiro Responsável ativo da conta. Se a Carla cadastra a JBS, a JBS entra na carteira dela e na do Josué — e não na de mais ninguém. A regra é por **papel**, nunca pela árvore de convites: se a Carla tivesse sido convidada por outro Engenheiro Responsável, "quem está acima dela" esqueceria o Josué, que é o dono da conta.
+
+O **titular da conta sempre pode cadastrar empresa**, e entra nela como Engenheiro Responsável. Numa consultoria recém-aberta ele ainda não tem vínculo com empresa nenhuma — e como o papel mora no vínculo, sem esta regra não haveria como cadastrar a primeira.
+
+**Empresa inativa fica em modo leitura.** Desativar uma empresa não apaga nada nem derruba acesso: todo mundo que tinha vínculo continua vendo o que via, e os laudos continuam baixáveis. O que para é qualquer alteração dentro dela — cadastro, análise, plano de ação, convite — e quem recusa é o **servidor**, não o botão. Desativam e reativam o Engenheiro Responsável e o Engenheiro da Consultoria, dentro do escopo de cada um. Reativar devolve a empresa a *ativa* se ela ainda tiver Gestor, e a *em implantação* se não tiver.
 
 **Herança de conta.** Todo usuário convidado em qualquer nível pertence à conta raiz. Quem "aperta o botão convidar" é irrelevante para efeito de propriedade dos dados. Isso importa na cobrança: **a conta é a unidade de faturamento, não o usuário.**
 

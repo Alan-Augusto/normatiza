@@ -1,0 +1,442 @@
+@if (criada(); as empresa) {
+  <!-- Os próximos passos: a empresa nasce em implantação e espera o Gestor. -->
+  <div data-testid="sucesso" class="mx-auto max-w-xl space-y-5 rounded-xl border border-surface-200 bg-surface-0 p-6 dark:border-surface-700 dark:bg-surface-900">
+    <div class="space-y-1">
+      <p class="text-lg font-semibold text-surface-900 dark:text-surface-0">{{ empresa.tradeName }} cadastrada.</p>
+      <p class="text-sm text-surface-700 dark:text-surface-300">
+        Ela fica <strong>em implantação</strong> até um Gestor aceitar o convite — é ele quem aprova
+        orçamento e prazo do plano de ação. Enquanto isso, a consultoria já pode cadastrar equipamentos
+        e fazer o levantamento de campo.
+      </p>
+    </div>
+
+    @if (avisoDoLogo()) {
+      <p-message severity="warn" styleClass="w-full" [text]="avisoDoLogo()!" />
+    }
+
+    <div class="flex flex-wrap justify-end gap-2">
+      <a pButton [outlined]="true" data-testid="abrir-empresa" [routerLink]="['/app/companies', empresa.id, 'dashboard']">
+        <span pButtonLabel>Abrir a empresa</span>
+      </a>
+      <a pButton data-testid="convidar-gestor" [routerLink]="['/app/companies', empresa.id, 'team']">
+        <span pButtonLabel>Convidar o Gestor</span>
+      </a>
+    </div>
+  </div>
+} @else {
+  <!--
+    Sem `ngSubmit` e sem botão de envio: salvar é um clique, nunca um Enter
+    esbarrado no meio do caminho. `semEnter` barra o envio implícito do
+    navegador — e deixa a área de texto quebrar linha.
+  -->
+  <form [formGroup]="form" (keydown.enter)="semEnter($event)" class="formulario" novalidate>
+    <div class="mx-auto w-full max-w-3xl space-y-6">
+      @if (bloqueada()) {
+        <p-message
+          severity="warn"
+          styleClass="w-full"
+          text="Esta empresa está inativa e em modo leitura. Reative-a na lista de empresas para editar o cadastro."
+        />
+      }
+      @if (erro()) {
+        <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+      }
+
+      <p-stepper [value]="passo()">
+        <p-step-list>
+          @for (etapa of etapas; track etapa.valor) {
+            <p-step [value]="etapa.valor" [disabled]="etapa.valor > alcancado()" [attr.data-testid]="'passo-' + etapa.chave">
+              <ng-template #content let-active="active">
+                <button
+                  type="button"
+                  class="etapa"
+                  [class.ativa]="etapa.valor === passo()"
+                  [class.feita]="etapa.valor < passo()"
+                  [disabled]="etapa.valor > alcancado()"
+                  [attr.aria-current]="etapa.valor === passo() ? 'step' : null"
+                  (click)="irPara(etapa.valor)"
+                >
+                  <span class="etapa-icone">
+                    <ng-icon [name]="etapa.valor < passo() && !editando() ? 'lucideCheck' : etapa.icone" />
+                  </span>
+                  <span class="etapa-titulo">{{ etapa.titulo }}</span>
+                </button>
+              </ng-template>
+            </p-step>
+          }
+        </p-step-list>
+      </p-stepper>
+
+      <!-- Uma etapa por vez: os campos das outras não existem na tela, e o foco não tropeça neles. -->
+      <section data-testid="etapa-atual" [attr.data-etapa]="etapaAtual().chave" [attr.aria-label]="etapaAtual().titulo">
+        @switch (etapaAtual().chave) {
+          @case ('identificacao') {
+            <div class="grade sm:grid-cols-2">
+              <div class="campo">
+                <label for="empresa-cnpj">CNPJ</label>
+                <div class="relative">
+                  <input
+                    pInputText
+                    id="empresa-cnpj"
+                    data-testid="campo-cnpj"
+                    class="w-full"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    formControlName="cnpj"
+                    placeholder="00.000.000/0000-00"
+                    (blur)="aoSairDoCnpj()"
+                    [attr.aria-invalid]="erroDe('cnpj') !== null"
+                    aria-describedby="erro-cnpj"
+                  />
+                  @if (buscandoCnpj()) {
+                    <ng-icon data-testid="buscando-cnpj" name="lucideLoaderCircle" class="girando" aria-label="Consultando a Receita" />
+                  }
+                </div>
+                <p id="erro-cnpj" class="erro">
+                  <span data-testid="erro-cnpj" role="alert">{{ erroDe('cnpj') }}</span>
+                  @if (!erroDe('cnpj') && !editando()) {
+                    <span class="ajuda">{{ buscandoCnpj() ? 'Consultando a Receita…' : 'Ao sair do campo, buscamos os dados na Receita.' }}</span>
+                  }
+                </p>
+              </div>
+
+              <div class="campo">
+                <label for="empresa-ie">Inscrição estadual <span class="opcional">opcional</span></label>
+                <input pInputText id="empresa-ie" data-testid="campo-ie" class="w-full" formControlName="ie" />
+                <p class="erro"></p>
+              </div>
+
+              <div class="campo">
+                <label for="empresa-razao">Razão social</label>
+                <input
+                  pInputText
+                  id="empresa-razao"
+                  data-testid="campo-razao"
+                  class="w-full"
+                  formControlName="razao"
+                  [attr.aria-invalid]="erroDe('razao') !== null"
+                  aria-describedby="erro-razao"
+                />
+                <p id="erro-razao" data-testid="erro-razao" role="alert" class="erro">{{ erroDe('razao') }}</p>
+              </div>
+
+              <div class="campo">
+                <label for="empresa-fantasia">Nome fantasia</label>
+                <input
+                  pInputText
+                  id="empresa-fantasia"
+                  data-testid="campo-fantasia"
+                  class="w-full"
+                  formControlName="fantasia"
+                  [attr.aria-invalid]="erroDe('fantasia') !== null"
+                  aria-describedby="erro-fantasia"
+                />
+                <p id="erro-fantasia" data-testid="erro-fantasia" role="alert" class="erro">{{ erroDe('fantasia') }}</p>
+              </div>
+
+              <!-- O logo mora com a identidade da empresa: é o que vai no cabeçalho do laudo. -->
+              <div class="campo sm:col-span-2">
+                <span class="rotulo">Logo <span class="opcional">opcional · aparece nos laudos</span></span>
+                <div class="relative flex flex-wrap items-center gap-3">
+                  @if (logoPrevia()) {
+                    <img [src]="logoPrevia()" alt="Logo da empresa" class="logo-previa" />
+                  }
+                  <label for="empresa-logo" class="botao-arquivo">
+                    {{ logoPrevia() ? 'Trocar logo' : 'Escolher logo' }}
+                  </label>
+                  <input
+                    id="empresa-logo"
+                    data-testid="logo-arquivo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    class="sr-only"
+                    [disabled]="bloqueada()"
+                    (change)="aoEscolherLogo($event)"
+                  />
+                  @if (logoPrevia()) {
+                    <p-button data-testid="remover-logo" label="Remover" severity="secondary" [text]="true" size="small" (onClick)="removerLogo()" />
+                  }
+                  <span class="text-xs text-muted-color">PNG, JPG ou WebP, até 2 MB.</span>
+                </div>
+                <p data-testid="logo-erro" role="alert" class="erro">{{ erroDoLogo() }}</p>
+              </div>
+            </div>
+
+            @if (avisoDoCnpj()) {
+              <p-message data-testid="aviso-busca" severity="warn" styleClass="mt-2 w-full" [text]="avisoDoCnpj()!" />
+            }
+          }
+
+          @case ('endereco') {
+            <div class="grade sm:grid-cols-6">
+              <div class="campo sm:col-span-2">
+                <label for="empresa-cep">CEP</label>
+                <div class="relative">
+                  <input
+                    pInputText
+                    id="empresa-cep"
+                    data-testid="campo-cep"
+                    class="w-full"
+                    inputmode="numeric"
+                    autocomplete="postal-code"
+                    formControlName="cep"
+                    placeholder="00000-000"
+                    (blur)="aoSairDoCep()"
+                    [attr.aria-invalid]="erroDe('cep') !== null"
+                    aria-describedby="erro-cep"
+                  />
+                  @if (buscandoCep()) {
+                    <ng-icon data-testid="buscando-cep" name="lucideLoaderCircle" class="girando" aria-label="Buscando o endereço" />
+                  }
+                </div>
+                <p id="erro-cep" class="erro">
+                  <span data-testid="erro-cep" role="alert">{{ erroDe('cep') }}</span>
+                  @if (!erroDe('cep') && buscandoCep()) {
+                    <span class="ajuda" aria-live="polite">Buscando o endereço…</span>
+                  }
+                </p>
+              </div>
+
+              <div class="campo sm:col-span-4">
+                <label for="empresa-logradouro">Logradouro</label>
+                <input
+                  pInputText
+                  id="empresa-logradouro"
+                  data-testid="campo-logradouro"
+                  class="w-full"
+                  formControlName="logradouro"
+                  [attr.aria-invalid]="erroDe('logradouro') !== null"
+                  aria-describedby="erro-logradouro"
+                />
+                <p id="erro-logradouro" data-testid="erro-logradouro" role="alert" class="erro">{{ erroDe('logradouro') }}</p>
+              </div>
+
+              <div class="campo sm:col-span-2">
+                <label for="empresa-numero">Número</label>
+                <input
+                  pInputText
+                  id="empresa-numero"
+                  data-testid="campo-numero"
+                  class="w-full"
+                  formControlName="numero"
+                  [attr.aria-invalid]="erroDe('numero') !== null"
+                  aria-describedby="erro-numero"
+                />
+                <p id="erro-numero" data-testid="erro-numero" role="alert" class="erro">{{ erroDe('numero') }}</p>
+              </div>
+
+              <div class="campo sm:col-span-4">
+                <label for="empresa-complemento">Complemento <span class="opcional">opcional</span></label>
+                <input pInputText id="empresa-complemento" data-testid="campo-complemento" class="w-full" formControlName="complemento" />
+                <p class="erro"></p>
+              </div>
+
+              <div class="campo sm:col-span-2">
+                <label for="empresa-bairro">Bairro</label>
+                <input
+                  pInputText
+                  id="empresa-bairro"
+                  data-testid="campo-bairro"
+                  class="w-full"
+                  formControlName="bairro"
+                  [attr.aria-invalid]="erroDe('bairro') !== null"
+                  aria-describedby="erro-bairro"
+                />
+                <p id="erro-bairro" data-testid="erro-bairro" role="alert" class="erro">{{ erroDe('bairro') }}</p>
+              </div>
+
+              <div class="campo sm:col-span-3">
+                <label for="empresa-cidade">Cidade</label>
+                <input
+                  pInputText
+                  id="empresa-cidade"
+                  data-testid="campo-cidade"
+                  class="w-full"
+                  formControlName="cidade"
+                  [attr.aria-invalid]="erroDe('cidade') !== null"
+                  aria-describedby="erro-cidade"
+                />
+                <p id="erro-cidade" data-testid="erro-cidade" role="alert" class="erro">{{ erroDe('cidade') }}</p>
+              </div>
+
+              <div class="campo sm:col-span-1">
+                <label for="empresa-uf">UF</label>
+                <p-select
+                  inputId="empresa-uf"
+                  data-testid="campo-uf"
+                  [options]="ufs"
+                  optionLabel="label"
+                  optionValue="value"
+                  formControlName="uf"
+                  placeholder="—"
+                  [filter]="true"
+                  styleClass="w-full"
+                />
+                <p data-testid="erro-uf" role="alert" class="erro">{{ erroDe('uf') }}</p>
+              </div>
+            </div>
+
+            @if (avisoDoCep()) {
+              <p-message data-testid="aviso-busca" severity="warn" styleClass="mt-2 w-full" [text]="avisoDoCep()!" />
+            }
+          }
+
+          @case ('contato') {
+            @if (gestor(); as g) {
+              <div class="mb-3 flex justify-end">
+                <p-button
+                  data-testid="usar-gestor"
+                  [label]="'Usar dados de ' + g.name + ' (Gestor)'"
+                  [text]="true"
+                  size="small"
+                  [disabled]="bloqueada()"
+                  (onClick)="usarDadosDoGestor()"
+                />
+              </div>
+            }
+
+            <div class="grade sm:grid-cols-2">
+              <div class="campo">
+                <label for="contato-nome">Nome</label>
+                <input
+                  pInputText
+                  id="contato-nome"
+                  data-testid="campo-contato-nome"
+                  class="w-full"
+                  formControlName="contatoNome"
+                  [attr.aria-invalid]="erroDe('contatoNome') !== null"
+                  aria-describedby="erro-contato-nome"
+                />
+                <p id="erro-contato-nome" data-testid="erro-contato-nome" role="alert" class="erro">{{ erroDe('contatoNome') }}</p>
+              </div>
+
+              <div class="campo">
+                <label for="contato-cargo">Cargo <span class="opcional">opcional</span></label>
+                <input pInputText id="contato-cargo" data-testid="campo-contato-cargo" class="w-full" formControlName="contatoCargo" />
+                <p class="erro"></p>
+              </div>
+
+              <div class="campo">
+                <label for="contato-email">E-mail</label>
+                <input
+                  pInputText
+                  id="contato-email"
+                  data-testid="campo-contato-email"
+                  class="w-full"
+                  type="email"
+                  autocomplete="email"
+                  formControlName="contatoEmail"
+                  (blur)="aoSairDoEmail()"
+                  [attr.aria-invalid]="erroDe('contatoEmail') !== null"
+                  aria-describedby="erro-contato-email"
+                />
+                <p id="erro-contato-email" data-testid="erro-contato-email" role="alert" class="erro">{{ erroDe('contatoEmail') }}</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-x-4">
+                <div class="campo">
+                  <label for="contato-telefone">Telefone <span class="opcional">opcional</span></label>
+                  <input pInputText id="contato-telefone" data-testid="campo-contato-telefone" class="w-full" type="tel" formControlName="contatoTelefone" />
+                  <p class="erro"></p>
+                </div>
+                <div class="campo">
+                  <label for="contato-celular">Celular <span class="opcional">opcional</span></label>
+                  <input pInputText id="contato-celular" data-testid="campo-contato-celular" class="w-full" type="tel" formControlName="contatoCelular" />
+                  <p class="erro"></p>
+                </div>
+              </div>
+            </div>
+          }
+
+          @case ('organizacao') {
+            <div class="grade sm:grid-cols-2">
+              <div class="campo">
+                <label for="empresa-grupo">Grupo empresarial <span class="opcional">opcional</span></label>
+                <!--
+                  Texto livre com sugestões: o grupo é resolvido **pelo nome** no
+                  servidor, que reaproveita o existente ou cria. Um nome novo é
+                  dito antes de salvar, não descoberto depois.
+                -->
+                <input
+                  pInputText
+                  id="empresa-grupo"
+                  data-testid="campo-grupo"
+                  class="w-full"
+                  list="grupos-sugeridos"
+                  autocomplete="off"
+                  formControlName="grupo"
+                  placeholder="Ex.: Grupo BRF"
+                  (input)="aoDigitarGrupo($any($event.target).value)"
+                  aria-describedby="ajuda-grupo"
+                />
+                <datalist id="grupos-sugeridos">
+                  @for (nome of gruposSugeridos(); track nome) {
+                    <option [value]="nome"></option>
+                  }
+                </datalist>
+                <p id="ajuda-grupo" class="erro ajuda">
+                  {{ grupoNovo() ? 'Grupo novo — será criado ao salvar.' : 'Só consolida relatórios; não dá acesso a ninguém.' }}
+                </p>
+              </div>
+
+              <div class="campo">
+                <label for="empresa-codigo">Código interno / ERP <span class="opcional">opcional</span></label>
+                <input pInputText id="empresa-codigo" data-testid="campo-codigo" class="w-full" formControlName="codigo" />
+                <p class="erro"></p>
+              </div>
+
+              <div class="campo sm:col-span-2">
+                <label for="empresa-observacoes">Observações <span class="opcional">opcional</span></label>
+                <textarea
+                  pTextarea
+                  id="empresa-observacoes"
+                  data-testid="campo-observacoes"
+                  class="w-full"
+                  rows="3"
+                  formControlName="observacoes"
+                ></textarea>
+              </div>
+            </div>
+
+            <p class="mt-3 text-xs text-muted-color">Nada desta etapa chega ao cliente.</p>
+          }
+        }
+      </section>
+    </div>
+
+    <!-- Fixo no rodapé da área de conteúdo: as ações ficam à mão em qualquer etapa. -->
+    <footer class="rodape">
+      <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-2">
+        <a pButton [text]="true" routerLink="/app/companies">
+          <span pButtonLabel>Cancelar</span>
+        </a>
+
+        <div class="flex items-center gap-2">
+          @if (passo() > 1) {
+            <p-button data-testid="voltar" type="button" label="Voltar" severity="secondary" [outlined]="true" (onClick)="voltar()" />
+          }
+          @if (!ultimaEtapa()) {
+            <p-button
+              data-testid="avancar"
+              type="button"
+              label="Avançar"
+              [outlined]="editando()"
+              (onClick)="avancar()"
+            />
+          }
+          <!-- No cadastro, só no fim; na edição o cadastro já está completo, e salvar vale de qualquer etapa. -->
+          @if (editando() || ultimaEtapa()) {
+            <p-button
+              data-testid="salvar"
+              type="button"
+              [label]="editando() ? 'Salvar alterações' : 'Cadastrar empresa'"
+              [loading]="salvando()"
+              [disabled]="bloqueada() || carregando()"
+              (onClick)="salvar()"
+            />
+          }
+        </div>
+      </div>
+    </footer>
+  </form>
+}

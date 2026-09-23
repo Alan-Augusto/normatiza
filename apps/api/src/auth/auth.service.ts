@@ -22,6 +22,7 @@ import { EnvironmentVariables } from '../config/env.validation';
 import { MailService } from '../mail/mail.service';
 import { PlatformAdminService } from '../platform/platform-admin.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { COM_GESTORES, resumoDaEmpresa, type EmpresaComGestores } from '../companies/company-status';
 
 /**
  * Mensagem única para toda falha de autenticação — e-mail inexistente, senha
@@ -337,7 +338,7 @@ export class AuthService {
     const [memberships, isPlatformAdmin] = await Promise.all([
       this.prisma.membership.findMany({
         where: { userId: user.id, isActive: true, accountId: user.accountId },
-        include: { company: true },
+        include: { company: { include: COM_GESTORES } },
       }),
       this.platformAdmins.isPlatformAdmin(user.id),
     ]);
@@ -393,9 +394,7 @@ function paraContratoDeConta(account: Account): AccountContract {
   };
 }
 
-function paraContratoDeVínculo(
-  m: Membership & { company: { id: string; tradeName: string; corporateName: string; isActive: boolean } },
-): MembershipWithCompany {
+function paraContratoDeVínculo(m: Membership & { company: EmpresaComGestores }): MembershipWithCompany {
   return {
     id: m.id,
     accountId: m.accountId,
@@ -405,11 +404,6 @@ function paraContratoDeVínculo(
     executorType: m.executorType ?? undefined,
     supplierId: m.supplierId ?? undefined,
     isActive: m.isActive,
-    company: {
-      id: m.company.id,
-      tradeName: m.company.tradeName,
-      corporateName: m.company.corporateName,
-      isActive: m.company.isActive,
-    },
+    company: resumoDaEmpresa(m.company),
   };
 }

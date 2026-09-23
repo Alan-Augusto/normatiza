@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
+import { CompaniesModule } from '../companies/companies.module';
 import { MemberPolicyService } from './member-policy.service';
 import { ProfileService } from './profile.service';
 import {
@@ -21,7 +22,7 @@ import { UserLifecycleService } from './user-lifecycle.service';
  * continua valendo por trinta dias.
  */
 @Module({
-  imports: [AuthModule, AuthorizationModule, AuditModule],
+  imports: [AuthModule, AuthorizationModule, AuditModule, CompaniesModule],
   controllers: [UsersController, CompanyMembersController, MembershipsController],
   providers: [MemberPolicyService, TeamService, UserLifecycleService, ProfileService],
   exports: [MemberPolicyService, TeamService, UserLifecycleService, ProfileService],

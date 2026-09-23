@@ -21,6 +21,7 @@ import {
   CabecalhoDaTabela,
   LinhaDaTabela,
 } from '../../../shared/components/data-table/data-table.directives';
+import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
 
 /**
  * Admins da Plataforma — Contexto 0.
@@ -43,6 +44,7 @@ import {
   selector: 'app-admin-admins',
   standalone: true,
   imports: [
+    RowActionComponent,
     DatePipe,
     FormsModule,
     Button,

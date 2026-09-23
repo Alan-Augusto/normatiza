@@ -10,6 +10,7 @@
  * Regra de negócio: docs/produto/04_modelo_de_dados.md §1
  */
 
+import type { CompanyStatus } from '../companies/status';
 import type { Role } from './roles';
 
 export type AccountStatus = 'ACTIVE' | 'SUSPENDED';
@@ -63,7 +64,7 @@ export interface CompanySummary {
   id: string;
   tradeName: string;
   corporateName: string;
-  isActive: boolean;
+  status: CompanyStatus;
 }
 
 /** Vínculo já resolvido com a empresa, como o front consome. */

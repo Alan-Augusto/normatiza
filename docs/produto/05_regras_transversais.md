@@ -63,6 +63,14 @@ As fotos são o **principal ativo de prova** do sistema e o principal peso do la
 
 O par foto do perigo (antes) × foto da evidência (depois) é o que dá valor ao Laudo de Adequação. As duas precisam sobreviver a qualquer reprocessamento de acervo.
 
+### Onde os arquivos moram
+
+Todo arquivo — foto, logo, documento — vive no **Firebase Storage**, o mesmo do acervo legado, e é registrado como `FileAsset` ([04 §8](./04_modelo_de_dados.md)).
+
+- **O envio passa pela API, nunca direto do navegador ou do app para o storage.** As regras de segurança do storage não conhecem nossas sessões nem o `accountId`; o isolamento por conta só se sustenta se quem grava for o servidor.
+- **A leitura é por URL assinada, com validade curta.** Nenhum arquivo tem endereço público permanente: um link vazado deixa de funcionar sozinho, e a regra de `visibility` continua valendo depois do primeiro acesso.
+- **O tipo do arquivo é conferido pelo conteúdo, não pela extensão.** Um `.png` que é HTML por dentro é recusado.
+
 ---
 
 ## 5. Isolamento de dados

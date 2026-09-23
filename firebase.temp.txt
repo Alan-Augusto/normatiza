@@ -1,0 +1,21 @@
+# Configuração
+```
+// npm install firebase
+import { initializeApp } from "firebase/app";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
+
+const firebaseConfig = {
+  apiKey: "demo-key", // ignorado pelo emulador
+  projectId: "demo-normatiza-v2",
+  storageBucket: "demo-normatiza-v2.appspot.com",
+};
+
+const app = initializeApp(firebaseConfig);
+export const storage = getStorage(app);
+
+// chame isso só em dev (gate com a env var do seu bundler), antes de
+// qualquer upload/download -- em produção não chame, e use as credenciais
+// reais do Firebase no firebaseConfig acima.
+connectStorageEmulator(storage, "192.168.15.15", 9199);
+```
+

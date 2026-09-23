@@ -17,13 +17,15 @@ import type {
 } from '@normatiza/shared';
 
 import { AuditAction, AuditService } from '../audit/audit.service';
+import { COM_GESTORES, resumoDaEmpresa } from '../companies/company-status';
+import { CompanyWriteGuard } from '../companies/company-write-guard.service';
 import { PermissionService, SessionScope } from '../authorization/permission.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemberPolicyService, TargetMember } from './member-policy.service';
 
 /** O que as duas listagens precisam carregar do banco para decidir e projetar. */
 const COM_TUDO_QUE_A_ALÇADA_PEDE = {
-  memberships: { include: { company: true } },
+  memberships: { include: { company: { include: COM_GESTORES } } },
   invitedBy: { select: { id: true, name: true } },
   succeededBy: { select: { id: true, name: true } },
   invitation: true,
@@ -44,6 +46,7 @@ export class TeamService {
     private readonly permissions: PermissionService,
     private readonly policy: MemberPolicyService,
     private readonly audit: AuditService,
+    private readonly writeGuard: CompanyWriteGuard,
   ) {}
 
   /** Contexto 1 — as pessoas da conta, dentro do escopo de quem pergunta. */
@@ -197,6 +200,7 @@ export class TeamService {
     const { vínculo, alvo } = await this.carregarVínculo(actor, membershipId);
 
     this.policy.assertCanChangeRoles(actor, alvo, vínculo.companyId, dto.roles);
+    await this.writeGuard.assertWritable(actor.accountId, [vínculo.companyId]);
     await this.assertPapelDeEmpresaÚnico(alvo, vínculo.companyId, dto.roles);
 
     await this.prisma.membership.update({
@@ -220,6 +224,7 @@ export class TeamService {
     const { vínculo, alvo } = await this.carregarVínculo(actor, membershipId);
 
     this.policy.assertCanRemoveFromCompany(actor, alvo, vínculo.companyId);
+    await this.writeGuard.assertWritable(actor.accountId, [vínculo.companyId]);
     await this.assertNãoDeixaAEmpresaÓrfã(vínculo);
 
     await this.prisma.membership.update({
@@ -343,20 +348,6 @@ function paraAlvo(pessoa: PessoaComVínculos, ownerUserId: string | null): Targe
   };
 }
 
-function resumoDaEmpresa(company: {
-  id: string;
-  tradeName: string;
-  corporateName: string;
-  isActive: boolean;
-}) {
-  return {
-    id: company.id,
-    tradeName: company.tradeName,
-    corporateName: company.corporateName,
-    isActive: company.isActive,
-  };
-}
-
 /**
  * Quem responde tecnicamente por esta empresa, na forma que o cliente pode ver.
  *
@@ -366,7 +357,7 @@ function resumoDaEmpresa(company: {
  * responsabilidade que o justifique
  * ([01 §4](../../../../docs/produto/01_papeis_e_permissoes.md)).
  */
-function responsáveisTécnicos(
+export function responsáveisTécnicos(
   vínculos: {
     roles: Role[];
     user: {
