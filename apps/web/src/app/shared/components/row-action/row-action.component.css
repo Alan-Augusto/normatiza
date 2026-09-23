@@ -1,5 +1,18 @@
+/*
+ * `flex: none` em toda a cadeia. O botão do PrimeNG e o `ng-icon` têm
+ * `overflow: hidden`, e item flexível com overflow escondido pode encolher até
+ * zero: numa tabela larga, a coluna de ações era espremida pelas outras e os
+ * ícones saíam cortados. Sem encolher, a coluna passa a pedir a largura dos
+ * botões — e a tabela rola de lado, dentro da própria caixa, se não couber.
+ */
 :host {
   display: inline-flex;
+  flex: none;
+}
+
+:host > .p-button,
+ng-icon {
+  flex: none;
 }
 
 ng-icon {

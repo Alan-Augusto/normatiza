@@ -357,23 +357,22 @@
                   servidor, que reaproveita o existente ou cria. Um nome novo é
                   dito antes de salvar, não descoberto depois.
                 -->
-                <input
-                  pInputText
-                  id="empresa-grupo"
+                <p-autocomplete
+                  inputId="empresa-grupo"
                   data-testid="campo-grupo"
-                  class="w-full"
-                  list="grupos-sugeridos"
-                  autocomplete="off"
                   formControlName="grupo"
+                  [suggestions]="gruposSugeridos()"
+                  (completeMethod)="filtrarGrupos($event)"
+                  [dropdown]="true"
+                  [completeOnFocus]="true"
+                  [showEmptyMessage]="false"
+                  [delay]="0"
+                  appendTo="body"
                   placeholder="Ex.: Grupo BRF"
-                  (input)="aoDigitarGrupo($any($event.target).value)"
-                  aria-describedby="ajuda-grupo"
+                  dropdownAriaLabel="Mostrar grupos"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
                 />
-                <datalist id="grupos-sugeridos">
-                  @for (nome of gruposSugeridos(); track nome) {
-                    <option [value]="nome"></option>
-                  }
-                </datalist>
                 <p id="ajuda-grupo" class="erro ajuda">
                   {{ grupoNovo() ? 'Grupo novo — será criado ao salvar.' : 'Só consolida relatórios; não dá acesso a ninguém.' }}
                 </p>

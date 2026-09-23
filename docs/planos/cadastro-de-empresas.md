@@ -249,6 +249,11 @@ Quatro melhorias:
 
 ---
 
+### Segunda rodada (2026-09-23)
+
+- **Grupo empresarial:** o `datalist` nativo só buscava depois de digitar, não abria no foco e o navegador não reabre a lista quando as opções chegam depois. Trocado por `p-autocomplete` com texto livre; os grupos da carteira vêm uma vez ao abrir o formulário e o filtro é local (sem acento e caixa).
+- **Ícones cortados nas tabelas:** o botão do PrimeNG e o `ng-icon` têm `overflow: hidden`, e item flexível assim encolhe até zero — a coluna de ações era espremida. `flex: none` em `app-row-action` resolve em todas as tabelas.
+
 ## 7. Riscos
 
 - **Troca de `isActive` por `status` na sessão** atravessa auth, Equipe e sidebar. Fazer na Fase 1, com a suíte inteira verde antes de seguir.

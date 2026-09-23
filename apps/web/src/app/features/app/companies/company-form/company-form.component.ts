@@ -18,13 +18,14 @@ import {
   lucideMapPin,
   lucideUserRound,
 } from '@ng-icons/lucide';
+import { AutoComplete, type AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { Step, StepList, Stepper } from 'primeng/stepper';
 import { Textarea } from 'primeng/textarea';
-import { Observable, Subject, catchError, debounceTime, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
 import {
   BRAZIL_STATES,
@@ -136,6 +137,7 @@ const ETAPAS: readonly Etapa[] = [
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    AutoComplete,
     RouterLink,
     NgIconComponent,
     Stepper,
@@ -234,8 +236,12 @@ export class CompanyFormComponent implements OnInit {
   readonly criada = signal<CompanyDetail | null>(null);
   readonly avisoDoLogo = signal<string | null>(null);
 
+  /**
+   * Os grupos da carteira, carregados uma vez: são poucos por conta, e filtrar
+   * aqui faz a lista abrir no foco e responder a cada tecla sem ida ao servidor.
+   */
+  private readonly grupos = signal<string[]>([]);
   readonly gruposSugeridos = signal<string[]>([]);
-  private readonly grupoDigitado = new Subject<string>();
 
   // O logo é enviado **depois** de a empresa existir: no cadastro ela ainda
   // não tem id, e o arquivo precisa de uma empresa a que pertencer.
@@ -258,7 +264,7 @@ export class CompanyFormComponent implements OnInit {
   readonly grupoNovo = computed(() => {
     const nome = normalizeForSearch(this.valores().grupo ?? '');
     if (!nome) return false;
-    const conhecidos = [...this.gruposSugeridos(), this.original()?.group?.name ?? ''].map(normalizeForSearch);
+    const conhecidos = [...this.grupos(), this.original()?.group?.name ?? ''].map(normalizeForSearch);
     return !conhecidos.includes(nome);
   });
 
@@ -271,13 +277,11 @@ export class CompanyFormComponent implements OnInit {
       this.carregar(id);
     }
 
-    this.grupoDigitado
-      .pipe(
-        debounceTime(300),
-        switchMap((q) => this.companies.listGroups(q).pipe(catchError(() => of([])))),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((grupos) => this.gruposSugeridos.set(grupos.map((g) => g.name)));
+    // Sem a lista, o campo continua aceitando texto livre — só perde as sugestões.
+    this.companies
+      .listGroups()
+      .pipe(catchError(() => of([])), takeUntilDestroyed(this.destroyRef))
+      .subscribe((grupos) => this.grupos.set(grupos.map((g) => g.name)));
   }
 
   private carregar(id: string): void {
@@ -433,8 +437,9 @@ export class CompanyFormComponent implements OnInit {
     }
   }
 
-  aoDigitarGrupo(valor: string): void {
-    this.grupoDigitado.next(valor);
+  filtrarGrupos(evento: AutoCompleteCompleteEvent): void {
+    const termo = normalizeForSearch(evento.query ?? '');
+    this.gruposSugeridos.set(this.grupos().filter((nome) => normalizeForSearch(nome).includes(termo)));
   }
 
   usarDadosDoGestor(): void {

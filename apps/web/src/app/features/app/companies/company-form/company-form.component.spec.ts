@@ -64,11 +64,20 @@ describe('CompanyFormComponent', () => {
     await login;
   });
 
+  let gruposDaConta: string[] = [];
+  beforeEach(() => (gruposDaConta = ['Grupo BRF', 'Grupo Aurora']));
+
   afterEach(() => http.verify());
 
   const raiz = () => harness.routeNativeElement as HTMLElement;
   const el = (seletor: string) => raiz().querySelector<HTMLElement>(seletor);
-  const campo = (nome: string) => el(`[data-testid="campo-${nome}"]`) as HTMLInputElement;
+  // Um componente (o autocomplete do grupo) leva o testid no hospedeiro; o campo é o input dentro dele.
+  const campo = (nome: string) => {
+    const alvo = el(`[data-testid="campo-${nome}"]`);
+    return (alvo?.matches('input, textarea') ? alvo : alvo?.querySelector('input')) as HTMLInputElement;
+  };
+  const grupos = (nomes: string[] = []) =>
+    http.expectOne(`${API}/company-groups`).flush(nomes.map((name, i) => ({ id: `g-${i}`, name })));
   const erroDe = (nome: string) => el(`[data-testid="erro-${nome}"]`)?.textContent?.trim() ?? '';
   const esperar = (ms = 0) => new Promise((r) => setTimeout(r, ms));
   const etapaAtual = () => el('[data-testid="etapa-atual"]')?.getAttribute('data-etapa');
@@ -94,11 +103,13 @@ describe('CompanyFormComponent', () => {
   async function novo() {
     harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/app/companies/new', CompanyFormComponent);
+    grupos(gruposDaConta);
   }
 
   async function editarBrf(detalhe = detalheDaBrf()) {
     harness = await RouterTestingHarness.create();
     await harness.navigateByUrl(`/app/companies/edit/${BRF.id}`, CompanyFormComponent);
+    grupos(gruposDaConta);
     http.expectOne(`${API}/companies/${BRF.id}`).flush(detalhe);
     harness.detectChanges();
     await harness.fixture.whenStable();
@@ -340,13 +351,53 @@ describe('CompanyFormComponent', () => {
     });
   });
 
+  describe('grupo empresarial', () => {
+    const opcoes = () => [...document.body.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim());
+
+    async function abrirOrganizacao() {
+      await editarBrf();
+      clicar('passo-organizacao');
+    }
+
+    it('deve mostrar os grupos da carteira assim que a pessoa entra no campo', async () => {
+      await abrirOrganizacao();
+      campo('grupo').value = '';
+      campo('grupo').dispatchEvent(new Event('focus'));
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+
+      expect(opcoes()).toEqual(['Grupo BRF', 'Grupo Aurora']);
+    });
+
+    it('deve filtrar pelo que foi digitado, sem ligar para acento e caixa', async () => {
+      gruposDaConta = ['Grupo BRF', 'Cooperativa Aurora', 'Grupo São Martinho'];
+      await abrirOrganizacao();
+
+      digitar('grupo', 'sao', false);
+      await esperar();
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+
+      expect(opcoes()).toEqual(['Grupo São Martinho']);
+    });
+
+    it('deve avisar que um nome fora da lista cria um grupo novo', async () => {
+      await abrirOrganizacao();
+      expect(el('#ajuda-grupo')?.textContent).not.toContain('Grupo novo');
+
+      digitar('grupo', 'Grupo Friboi');
+      expect(el('#ajuda-grupo')?.textContent).toContain('Grupo novo');
+
+      digitar('grupo', 'grupo aurora');
+      expect(el('#ajuda-grupo')?.textContent).not.toContain('Grupo novo');
+    });
+  });
+
   describe('cadastrar', () => {
     it('deve enviar o cadastro, atualizar a sessão e oferecer os próximos passos', async () => {
       await novo();
       preencherTudo();
       digitar('grupo', 'Grupo Friboi', false);
-      await esperar(350);
-      http.match((r) => r.url === `${API}/company-groups`).forEach((r) => r.flush([]));
 
       salvar();
 
