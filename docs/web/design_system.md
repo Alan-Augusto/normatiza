@@ -40,6 +40,12 @@ Adotamos a tipografia **Geist** como a fonte principal do sistema por sua alta l
 - A fonte é importada de forma global em [styles.css](../../apps/web/src/styles.css).
 - É definida no Tailwind (`--font-sans`) e no PrimeNG (`--p-font-family`).
 
+### Escala
+- A base da página é **`html { font-size: 78.75% }`** (≈ 12,6px). Tudo o que é medido em `rem` — Tailwind e PrimeNG — acompanha. O número veio de uso real: a base antiga (87,5%) com o zoom do navegador em 90%, aprovada num MacBook Air e num notebook Windows.
+- Sempre em **porcentagem**, nunca em px: respeita quem aumentou a fonte padrão do navegador.
+- Uma escala só para todas as telas. Não criar regras por largura de tela para mudar o tamanho da fonte; quem quiser maior usa o zoom do navegador.
+- **Piso do texto pequeno:** `--text-xs` é `max(0.75rem, 11px)`. Texto miúdo usa `text-xs` (ou `var(--text-xs)` no CSS do componente), e não um `rem` avulso abaixo disso.
+
 ---
 
 ## 🛠️ 4. Configuração do Preset (theme.ts)

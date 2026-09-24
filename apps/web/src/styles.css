@@ -28,6 +28,13 @@
   /* Variáveis de Espaçamento Estruturais do Layout */
   --spacing-layout-padding: 1.5rem; /* 24px */
   --spacing-sidebar-width: 18rem;   /* 288px */
+
+  /*
+   * Piso para o texto pequeno. Com a base reduzida, 0,75rem daria 9,5px —
+   * abaixo do legível. `max()` mantém a proporção onde a base é maior e não
+   * deixa o texto miúdo passar de 11px para baixo.
+   */
+  --text-xs: max(0.75rem, 11px);
 }
 
 @layer primeng-overrides {
@@ -43,8 +50,14 @@
 }
 
 
+/*
+ * A escala da aplicação (docs/web/design_system.md §3). 78,75% = 87,5% × 0,9:
+ * o que foi aprovado olhando a tela com zoom de 90% sobre a base antiga, num
+ * MacBook Air e num notebook Windows. Em porcentagem, e não em px, para
+ * respeitar quem aumentou a fonte padrão do navegador.
+ */
 html {
-  font-size: 87.5%; /* Escala base reduzida de 16px para 14px para um layout mais compacto (Design System) */
+  font-size: 78.75%;
 }
 
 body {

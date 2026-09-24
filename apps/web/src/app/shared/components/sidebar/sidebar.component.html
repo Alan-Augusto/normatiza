@@ -44,7 +44,7 @@
         @if (!isCollapsed()) {
           <span class="text-[0.8rem] font-medium flex-1 text-left truncate">Buscar...</span>
           <span
-            class="text-[0.65rem] font-semibold bg-surface-200 dark:bg-surface-800 px-1.5 py-0.5 rounded-sm text-surface-500 dark:text-surface-400 shrink-0 border border-surface-300 dark:border-surface-700"
+            class="text-xs font-semibold bg-surface-200 dark:bg-surface-800 px-1.5 py-0.5 rounded-sm text-surface-500 dark:text-surface-400 shrink-0 border border-surface-300 dark:border-surface-700"
             >Ctrl+K</span
           >
         }
@@ -75,7 +75,7 @@
           >
             <p
               data-testid="contexto-empresa"
-              class="text-[0.6875rem] font-semibold tracking-wide text-primary uppercase truncate"
+              class="text-xs font-semibold tracking-wide text-primary uppercase truncate"
             >
               {{ empresaExibida() }}
             </p>
@@ -83,7 +83,7 @@
           <span class="revela" [class.aberto]="contextEquipment() !== null">
             <span
               data-testid="contexto-equipamento"
-              class="block text-[0.6875rem] text-muted-color truncate"
+              class="block text-xs text-muted-color truncate"
             >
               {{ equipamentoExibido() }}
             </span>
@@ -181,7 +181,7 @@
             >
               {{ identidade()?.name }}
             </p>
-            <p class="text-[0.6875rem] text-muted-color truncate leading-tight">
+            <p class="text-xs text-muted-color truncate leading-tight">
               {{ papelExibido() || identidade()?.email }}
             </p>
           </div>
@@ -311,7 +311,7 @@
         />
         <button
           (click)="closeSearch()"
-          class="text-[0.65rem] font-semibold bg-surface-100 dark:bg-surface-800 px-2 py-1 rounded-md text-surface-500 hover:text-surface-900 dark:hover:text-surface-0 cursor-pointer border border-surface-200 dark:border-surface-700 transition-colors"
+          class="text-xs font-semibold bg-surface-100 dark:bg-surface-800 px-2 py-1 rounded-md text-surface-500 hover:text-surface-900 dark:hover:text-surface-0 cursor-pointer border border-surface-200 dark:border-surface-700 transition-colors"
         >
           ESC
         </button>
