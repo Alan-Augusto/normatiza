@@ -243,6 +243,13 @@ As regras:
    consequência e pede confirmação — ali o switch mentiria sobre o que o clique faz.
 6. A regra de superfície vale igual: ação que não veio em `actions` não é
    renderizada, nem desabilitada.
+7. **As ações aparecem com a linha.** Com mouse, ficam ocultas até o hover — ou
+   até o foco do teclado entrar na linha — e surgem num fade curto (150ms, com
+   um deslize de 4px da direita; sem deslize para quem pediu menos movimento).
+   Só a opacidade muda: a coluna segue com a largura reservada e a tabela não
+   pula. Em tela de toque, onde não há hover, ficam sempre à vista. É global
+   (`styles.css`), vale para toda `app-row-action` dentro de `app-data-table`
+   — nenhuma tela liga ou desliga.
 
 ---
 

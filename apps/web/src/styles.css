@@ -81,6 +81,35 @@ body {
   white-space: nowrap;
 }
 
+/*
+ * Ações de linha aparecem com a linha (docs/web/design_system.md §6): no hover
+ * e quando o foco do teclado entra nela. Só a opacidade muda — o espaço segue
+ * reservado, e a tabela não pula. Sem mouse (toque) não há hover, então lá elas
+ * ficam sempre à vista; e quem pediu menos movimento as vê surgir sem deslize.
+ */
+@media (hover: hover) {
+  .p-datatable-tbody > tr app-row-action {
+    opacity: 0;
+    transform: translateX(0.25rem);
+    transition:
+      opacity 150ms ease-out,
+      transform 150ms ease-out;
+  }
+
+  .p-datatable-tbody > tr:hover app-row-action,
+  .p-datatable-tbody > tr:focus-within app-row-action {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .p-datatable-tbody > tr app-row-action {
+    transform: none;
+    transition: opacity 150ms ease-out;
+  }
+}
+
 /* Tooltip */
 .p-tooltip {
   font-size: .8rem;
