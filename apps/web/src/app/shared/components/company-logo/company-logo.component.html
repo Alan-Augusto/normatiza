@@ -1,0 +1,5 @@
+@if (imagem(); as src) {
+  <img [src]="src" alt="" loading="lazy" decoding="async" (error)="aoFalhar()" />
+} @else {
+  <ng-icon name="lucideBuilding2" aria-hidden="true" />
+}

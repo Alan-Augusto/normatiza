@@ -64,9 +64,9 @@
         <th>CNPJ</th>
         <th>Cidade</th>
         <th>Gestor</th>
-        <th class="text-right">Equipamentos</th>
-        <th class="text-right">Adequação</th>
-        <th class="text-right">Pontos em aberto</th>
+        <th>Equipamentos</th>
+        <th>Adequação</th>
+        <th>Pontos em aberto</th>
         <th>Última análise</th>
         <th>Situação</th>
         <th data-testid="coluna-acoes" aria-label="Ações"></th>
@@ -74,16 +74,23 @@
     </ng-template>
 
     <ng-template appLinha [appLinhaDe]="empresas()" let-empresa>
-      <tr data-testid="linha" [attr.data-company]="empresa.id">
+      <!--
+        A linha inteira é alvo de clique, por conveniência do mouse. Para o
+        teclado e o leitor de tela, a entrada continua sendo o link do nome —
+        e é ele que abre em outra aba com Ctrl/⌘.
+      -->
+      <tr data-testid="linha" class="linha-clicavel" [attr.data-company]="empresa.id" (click)="entrar(empresa, $event)">
         <td>
-          <a
-            data-testid="abrir-empresa"
-            [routerLink]="['/app/companies', empresa.id, 'dashboard']"
-            class="font-medium text-surface-900 hover:text-primary dark:text-surface-0"
-          >
-            {{ empresa.tradeName }}
-          </a>
-          <div class="text-xs text-muted-color">{{ empresa.corporateName }}</div>
+          <div class="flex items-center gap-2.5">
+            <app-company-logo [url]="empresa.logoUrl" />
+            <a
+              data-testid="abrir-empresa"
+              [routerLink]="['/app/companies', empresa.id, 'dashboard']"
+              class="font-medium text-surface-900 hover:text-primary dark:text-surface-0"
+            >
+              {{ empresa.tradeName }}
+            </a>
+          </div>
         </td>
 
         <td class="whitespace-nowrap tabular-nums">{{ cnpj(empresa.document) }}</td>
@@ -107,11 +114,11 @@
           Zero onde é zero, e "—" onde ainda não há medida. Sem análise não
           existe grau de adequação: "0%" diria que nada foi adequado.
         -->
-        <td data-testid="equipamentos" class="text-right tabular-nums">{{ empresa.equipmentsCount }}</td>
-        <td data-testid="adequacao" class="text-right tabular-nums">
+        <td data-testid="equipamentos" class="tabular-nums">{{ empresa.equipmentsCount }}</td>
+        <td data-testid="adequacao" class="tabular-nums">
           {{ empresa.adequacyPercent !== undefined ? (empresa.adequacyPercent | number: '1.0-0') + '%' : '—' }}
         </td>
-        <td data-testid="pontos-abertos" class="text-right tabular-nums">{{ empresa.openPointsCount }}</td>
+        <td data-testid="pontos-abertos" class="tabular-nums">{{ empresa.openPointsCount }}</td>
         <td data-testid="ultima-analise" class="whitespace-nowrap">
           {{ empresa.lastAnalysisAt ? (empresa.lastAnalysisAt | date: 'dd/MM/yyyy') : '—' }}
         </td>

@@ -28,3 +28,11 @@
   color: var(--p-blue-500);
   background: color-mix(in srgb, var(--p-blue-500) 15%, transparent);
 }
+
+.linha-clicavel {
+  cursor: pointer;
+}
+
+.linha-clicavel:hover > td {
+  background: var(--p-datatable-row-hover-background, var(--p-content-hover-background));
+}

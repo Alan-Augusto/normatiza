@@ -206,6 +206,12 @@ mesma coluna responde a uma pergunta de verdade e fica.
 Quem decide o que pode ser feito continua sendo o servidor (`actions`, D13); a
 tela só pergunta se **alguma** linha tem algo a oferecer.
 
+### Cabeçalho e linha: o que é rótulo e o que é dado
+- **O cabeçalho é rótulo, não mais uma linha.** Fundo um tom abaixo do corpo (`surface.50`; `surface.800` no escuro), texto em cor de apoio, peso médio, `text-xs`, numa linha só. Fica no tema (`theme.ts`, `datatable`) e em `styles.css` — nenhuma tela estiliza o próprio cabeçalho.
+- **Colunas alinhadas à esquerda**, inclusive as de contagem e porcentagem curtas. Direita só para valores que se comparam por ordem de grandeza (dinheiro, por exemplo), sempre com `tabular-nums`.
+- **Linha clicável** quando ela representa algo que se abre (a empresa, na Carteira): cursor de mão, fundo no hover, e o clique ignora as ações da linha e a seleção de texto. O teclado entra pelo link da primeira coluna — a linha clicável é conveniência do mouse, nunca o único caminho.
+- **A empresa aparece com o logo** — `app-company-logo`, quadrado pequeno ao lado do nome, com o ícone de empresa quando não há logo ou quando ele não carrega.
+
 ### Ações de linha: ícone, com nome — `app-row-action`
 
 Nenhuma tabela escreve a ação por extenso na linha. "Reenviar · Trocar papel ·

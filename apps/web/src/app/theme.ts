@@ -32,6 +32,22 @@ export const MyCustomPreset = definePreset(Aura, {
         paddingX: '0.75rem',
         paddingY: '0.375rem',
       }
-    }
+    },
+    // Cabeçalho de tabela como rótulo, e não como mais uma linha: fundo um tom
+    // abaixo, texto em cor de apoio, peso médio. O tamanho da letra está em
+    // styles.css — o tema não tem token para ele (docs/web/design_system.md §6).
+    datatable: {
+      headerCell: {
+        color: '{text.muted.color}',
+        padding: '0.5rem 1rem',
+      },
+      columnTitle: {
+        fontWeight: '500',
+      },
+      colorScheme: {
+        light: { headerCell: { background: '{surface.50}' } },
+        dark: { headerCell: { background: '{surface.800}' } },
+      },
+    },
   }
 });

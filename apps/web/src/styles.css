@@ -71,6 +71,16 @@ body {
 
 /* ======== COMPONENTES PRIMENG ============ */
 
+/*
+ * Cabeçalho de tabela: letra pequena e numa linha só. Cor, fundo e peso vêm do
+ * tema (theme.ts); o tamanho fica aqui porque o tema não tem token para ele.
+ */
+.p-datatable-thead > tr > th {
+  font-size: var(--text-xs);
+  line-height: 1rem;
+  white-space: nowrap;
+}
+
 /* Tooltip */
 .p-tooltip {
   font-size: .8rem;

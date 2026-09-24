@@ -26,6 +26,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { CompaniesService } from '../../../core/services/companies.service';
 import { CompanyInfoComponent } from '../../../shared/components/company-info/company-info.component';
+import { CompanyLogoComponent } from '../../../shared/components/company-logo/company-logo.component';
 import { DataTable } from '../../../shared/components/data-table/data-table.component';
 import {
   AcaoVazia,
@@ -49,6 +50,7 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
   selector: 'app-companies',
   standalone: true,
   imports: [
+    CompanyLogoComponent,
     RowActionComponent,
     CompanyInfoComponent,
     DatePipe,
@@ -174,6 +176,18 @@ export class CompaniesComponent implements OnInit {
       queryParams: { q: próximo.q || null, status: próximo.status || null },
       replaceUrl: true,
     });
+  }
+
+  /**
+   * Clique na linha entra na empresa — menos quando ele foi num controle da
+   * própria linha (o link do nome, as ações) ou terminou uma seleção de texto:
+   * quem arrasta para copiar um CNPJ não quer ser levado embora.
+   */
+  entrar(empresa: CompanyListItem, evento: MouseEvent): void {
+    const alvo = evento.target as HTMLElement | null;
+    if (alvo?.closest('a, button, input, [role="button"]')) return;
+    if (window.getSelection()?.toString()) return;
+    this.router.navigate(['/app/companies', empresa.id, 'dashboard']);
   }
 
   cnpj(documento: string): string {

@@ -606,6 +606,15 @@ describe('Cadastro de empresas (e2e)', () => {
       expect(brf.logoUrl).toBeTruthy();
     });
 
+    it('deve trazer o logo também na lista, e nada onde não há logo', async () => {
+      const josué = await escopo(elenco.josué.id);
+      await companies.setLogo(josué, elenco.brf.id, PNG);
+
+      const lista = await companies.list(josué, { status: 'ALL' });
+      expect(lista.find((e) => e.id === elenco.brf.id)?.logoUrl).toBeTruthy();
+      expect(lista.find((e) => e.id !== elenco.brf.id)?.logoUrl).toBeUndefined();
+    });
+
     it('deve guardar o arquivo como da conta e da empresa, visível ao cliente', async () => {
       await companies.setLogo(await escopo(elenco.josué.id), elenco.brf.id, PNG);
 

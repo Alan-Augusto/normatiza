@@ -80,20 +80,25 @@ export class CompaniesService {
     const agora = new Date();
     const status = query.status;
 
-    return empresas
+    const linhas = empresas
       .map((empresa) => ({ empresa, status: statusDaEmpresa(empresa, agora) }))
       .filter((e) =>
         status === 'ALL' ? true : status ? e.status === status : e.status !== 'INACTIVE',
       )
       .filter((e) => !query.q || corresponde(e.empresa, query.q))
-      .sort((a, b) => a.empresa.tradeName.localeCompare(b.empresa.tradeName, 'pt-BR'))
-      .map(({ empresa, status }) => ({
+      .sort((a, b) => a.empresa.tradeName.localeCompare(b.empresa.tradeName, 'pt-BR'));
+
+    // Assinadas só as que sobraram do filtro. Assinar é conta local com a
+    // chave do serviço, e não uma ida ao bucket — cabe numa lista.
+    return Promise.all(
+      linhas.map(async ({ empresa, status }) => ({
         id: empresa.id,
         tradeName: empresa.tradeName,
         corporateName: empresa.corporateName,
         document: empresa.document,
         city: empresa.city,
         state: empresa.state,
+        logoUrl: empresa.logo ? ((await this.files.readUrl(empresa.logo)) ?? undefined) : undefined,
         status,
         managers: gestoresDaEmpresa(empresa).map((g) => ({
           id: g.id,
@@ -102,7 +107,8 @@ export class CompaniesService {
         })),
         ...métricasDaEmpresa(),
         actions: this.açõesSobre(actor, empresa.id, status),
-      }));
+      })),
+    );
   }
 
   /**

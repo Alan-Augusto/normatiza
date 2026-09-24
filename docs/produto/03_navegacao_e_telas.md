@@ -96,7 +96,9 @@ Lista das empresas atendidas. Clicar em uma **muda o contexto** para o Contexto 
 
 **Tela — tabela, não cartões.** É uma lista de comparação ("qual cliente está pior?"), que precisa ordenar por coluna e aguentar carteiras de centenas de empresas. Cartão com foto é o formato do inventário de equipamentos (§4.2), onde a imagem é informação; o logo de uma empresa não é.
 
-**Colunas:** Nome fantasia (com a razão social abaixo) · CNPJ · Cidade/UF · Gestor · Equipamentos · % de adequação · Pontos em aberto · Última análise · Status.
+**Colunas:** Nome fantasia (com o logo pequeno ao lado; sem logo, o ícone de empresa) · CNPJ · Cidade/UF · Gestor · Equipamentos · % de adequação · Pontos em aberto · Última análise · Status. Todas alinhadas à esquerda: são poucos números, e pequenos — a coluna se lê de cima a baixo sem precisar comparar ordens de grandeza.
+
+**Entrar na empresa:** clicar em qualquer ponto da linha abre o Contexto 2 da empresa — menos nas ações da linha e ao terminar uma seleção de texto. Para o teclado, a entrada é o link do nome, que também abre em outra aba.
 
 > **Coluna sem dado mostra "—", nunca zero inventado.** Equipamentos e Pontos em aberto mostram **0** quando não há nenhum, porque zero é verdade. % de adequação e Última análise mostram **—** enquanto não houver análise: "0% adequada" afirmaria que nada foi adequado, e sem análise não há o que medir. As colunas existem desde a primeira versão da tela, e passam a se preencher sozinhas conforme equipamentos e análises existirem.
 

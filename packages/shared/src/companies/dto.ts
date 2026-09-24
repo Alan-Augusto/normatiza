@@ -83,6 +83,8 @@ export interface CompanyListItem extends CompanyMetrics {
   document: string;
   city: string;
   state: string;
+  /** URL de leitura assinada, de vida curta; ausente quando não há logo. */
+  logoUrl?: string;
   status: CompanyStatus;
   managers: CompanyManagerRef[];
   actions: CompanyActions;

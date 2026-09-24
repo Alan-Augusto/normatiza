@@ -83,10 +83,23 @@ describe('CompaniesComponent', () => {
 
       const brf = linhaDe(BRF.id)!;
       expect(brf.textContent).toContain('BRF');
-      expect(brf.textContent).toContain('BRF S.A.');
+      // A razão social não disputa espaço com o nome pelo qual a empresa é chamada.
+      expect(brf.textContent).not.toContain('BRF S.A.');
       expect(brf.textContent).toContain('22.222.222/0001-91');
       expect(brf.textContent).toContain('Concórdia/SC');
       expect(brf.textContent).toContain('Marcos');
+    });
+
+    it('deve mostrar o logo ao lado do nome, e o ícone de empresa quando não há logo', async () => {
+      await comoJosué();
+      await abrir('/app/companies', [
+        linhaDeEmpresa({ logoUrl: 'https://arquivos.teste/brf.png' }),
+        { ...CARTEIRA[1] },
+      ]);
+
+      expect(linhaDe(BRF.id)!.querySelector('app-company-logo img')?.getAttribute('src')).toBe('https://arquivos.teste/brf.png');
+      expect(linhaDe(SEARA.id)!.querySelector('app-company-logo img')).toBeNull();
+      expect(linhaDe(SEARA.id)!.querySelector('app-company-logo ng-icon')).not.toBeNull();
     });
 
     it('deve mostrar zero onde é zero, e "—" onde ainda não há medida', async () => {
@@ -132,6 +145,27 @@ describe('CompaniesComponent', () => {
 
       const link = el(`[data-company="${BRF.id}"] [data-testid="abrir-empresa"]`) as HTMLAnchorElement;
       expect(link.getAttribute('href')).toBe(`/app/companies/${BRF.id}/dashboard`);
+    });
+
+    it('deve entrar na empresa clicando em qualquer ponto da linha', async () => {
+      await comoJosué();
+      await abrir();
+
+      (el(`[data-company="${SEARA.id}"] [data-testid="equipamentos"]`) as HTMLElement).click();
+      await harness.fixture.whenStable();
+
+      expect(TestBed.inject(Router).url).toBe(`/app/companies/${SEARA.id}/dashboard`);
+    });
+
+    it('não deve entrar na empresa quando o clique é numa ação da linha', async () => {
+      await comoJosué();
+      await abrir();
+
+      el(`[data-company="${BRF.id}"] [data-testid="acao-desativar"] button`)!.click();
+      harness.detectChanges();
+      await harness.fixture.whenStable();
+
+      expect(TestBed.inject(Router).url).toBe('/app/companies');
     });
   });
 
