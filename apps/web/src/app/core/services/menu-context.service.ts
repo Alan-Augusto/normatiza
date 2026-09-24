@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActiveContextService } from './active-context.service';
 import { AuthService } from '../auth/auth.service';
 import { CONTEXTO_1, rotaDaConsultoria, rotaDeEntrada } from '../auth/entry-route';
+import { ROTAS } from '../routing/rotas';
 
 export interface MenuItem {
   label: string;
@@ -22,7 +23,7 @@ export interface BreadcrumbItem {
  * produto (notificações, segurança, plano), e é por isso que são um contexto
  * próprio e não um item solto em cada menu.
  */
-const CONFIGURAÇÕES = ['/app/profile', '/app/billing'];
+const CONFIGURAÇÕES = [ROTAS.perfil, ROTAS.assinatura];
 
 /** Os contextos de navegação definidos em docs/produto/03 — Navegação e Telas. */
 export type ContextLevel =
@@ -83,13 +84,13 @@ export class MenuContextService {
     // o perfil mostrava Empresas e Documentos ao lado cliente.
     if (CONFIGURAÇÕES.some((rota) => url.startsWith(rota))) {
       const items: MenuItem[] = [
-        { label: 'Meu Perfil', icon: 'pi pi-user', route: '/app/profile' }
+        { label: 'Meu Perfil', icon: 'pi pi-user', route: ROTAS.perfil }
       ];
 
       // Faturamento é do titular da conta — quem responde por ela. Ver
       // `account-owner.guard.ts` para por que não se pergunta pelo papel.
       if (this.auth.isAccountOwner()) {
-        items.push({ label: 'Plano / Créditos', icon: 'pi pi-star', route: '/app/billing' });
+        items.push({ label: 'Plano / Créditos', icon: 'pi pi-star', route: ROTAS.assinatura });
       }
       const activeItem = items.find((i) => url.startsWith(i.route));
 
@@ -102,34 +103,35 @@ export class MenuContextService {
     }
 
     // ÁREA DE EXECUÇÃO — transversal
-    if (url.startsWith('/app/execution')) {
+    if (url.startsWith(ROTAS.execucao)) {
       return {
         level: 'execution' as const,
-        items: [{ label: 'Minhas Tarefas', icon: 'pi pi-check-square', route: '/app/execution' }],
+        items: [{ label: 'Minhas Tarefas', icon: 'pi pi-check-square', route: ROTAS.execucao }],
         breadcrumbs: [{ label: 'Minhas Tarefas' }]
       };
     }
 
     // CONTEXTO 3 — Equipamento
-    const equipmentMatch = url.match(/\/app\/companies\/([^\/]+)\/equipments\/([^\/]+)/);
+    const equipmentMatch = url.match(/^\/app\/empresas\/([^\/]+)\/equipamentos\/([^\/]+)/);
     if (equipmentMatch) {
       const companyId = equipmentMatch[1];
       const equipmentId = equipmentMatch[2];
-      const base = `/app/companies/${companyId}/equipments/${equipmentId}`;
+      const daEmpresa = ROTAS.empresa(companyId);
+      const rotas = daEmpresa.equipamento(equipmentId);
 
       const items: MenuItem[] = [
-        { label: 'Dashboard', icon: 'pi pi-chart-pie', route: `${base}/dashboard` },
-        { label: 'Análises de Risco', icon: 'pi pi-shield', route: `${base}/analysis` },
-        { label: 'Histórico', icon: 'pi pi-history', route: `${base}/history` }
+        { label: 'Dashboard', icon: 'pi pi-chart-pie', route: rotas.painel },
+        { label: 'Análises de Risco', icon: 'pi pi-shield', route: rotas.analise },
+        { label: 'Histórico', icon: 'pi pi-history', route: rotas.historico }
       ];
 
       const companyName = this.activeContext.company()?.name ?? `Empresa ${companyId}`;
       const equipmentName = this.activeContext.equipment()?.name ?? `Equipamento ${equipmentId}`;
 
       const breadcrumbs: BreadcrumbItem[] = [
-        { label: 'Empresas', route: '/app/companies' },
-        { label: companyName, route: `/app/companies/${companyId}/dashboard` },
-        { label: equipmentName, route: `${base}/dashboard` }
+        { label: 'Empresas', route: ROTAS.empresas },
+        { label: companyName, route: daEmpresa.painel },
+        { label: equipmentName, route: rotas.painel }
       ];
 
       const activeItem = items.find(i => url.startsWith(i.route));
@@ -139,48 +141,49 @@ export class MenuContextService {
 
       return {
         level: 'equipment' as const,
-        backLink: { label: 'Voltar para Equipamentos', route: `/app/companies/${companyId}/equipments` },
+        backLink: { label: 'Voltar para Equipamentos', route: daEmpresa.equipamentos },
         items,
         breadcrumbs
       };
     }
 
-    // CADASTRO DE EMPRESA — Contexto 1, embora more sob `/app/companies/`.
+    // CADASTRO DE EMPRESA — Contexto 1, embora more sob `/app/empresas/`.
     //
-    // "new" e "edit" não são uma empresa. Sem este desvio, o casamento abaixo
-    // os lia como `companyId` e abria o menu da empresa por cima do formulário
-    // da carteira — com links para `/app/companies/new/dashboard`.
-    const cadastro = url.match(/^\/app\/companies\/(new|edit)(\/|$)/);
+    // "nova" não é uma empresa, e editar o cadastro não é entrar nela. Sem
+    // este desvio, o casamento abaixo lia "nova" como `companyId` e abria o
+    // menu da empresa por cima do formulário da carteira — com links para
+    // `/app/empresas/nova/painel`.
+    const cadastro = url.match(/^\/app\/empresas\/(nova|[^\/]+\/editar)(\/|$)/);
     if (cadastro && this.temCarteira()) {
       return {
         ...this.contextoDaConsultoria(url),
         breadcrumbs: [
-          { label: 'Empresas', route: '/app/companies' },
-          { label: cadastro[1] === 'new' ? 'Nova empresa' : 'Editar empresa' },
+          { label: 'Empresas', route: ROTAS.empresas },
+          { label: cadastro[1] === 'nova' ? 'Nova empresa' : 'Editar empresa' },
         ],
       };
     }
 
     // CONTEXTO 2 — Empresa
-    const companyMatch = url.match(/\/app\/companies\/([^\/]+)/);
+    const companyMatch = url.match(/^\/app\/empresas\/([^\/]+)/);
     if (companyMatch) {
       const companyId = companyMatch[1];
-      const base = `/app/companies/${companyId}`;
+      const rotas = ROTAS.empresa(companyId);
 
       const items: MenuItem[] = [
-        { label: 'Dashboard', icon: 'pi pi-chart-pie', route: `${base}/dashboard` },
-        { label: 'Equipamentos', icon: 'pi pi-box', route: `${base}/equipments` },
-        { label: 'Planos de Ação', icon: 'pi pi-list-check', route: `${base}/action-plan` },
-        { label: 'Equipe', icon: 'pi pi-users', route: `${base}/team` }
+        { label: 'Dashboard', icon: 'pi pi-chart-pie', route: rotas.painel },
+        { label: 'Equipamentos', icon: 'pi pi-box', route: rotas.equipamentos },
+        { label: 'Planos de Ação', icon: 'pi pi-list-check', route: rotas.planoDeAcao },
+        { label: 'Equipe', icon: 'pi pi-users', route: rotas.equipe }
       ];
 
       const companyName = this.activeContext.company()?.name ?? `Empresa ${companyId}`;
       const breadcrumbs: BreadcrumbItem[] = this.temCarteira()
         ? [
-            { label: 'Empresas', route: '/app/companies' },
-            { label: companyName, route: `${base}/dashboard` }
+            { label: 'Empresas', route: ROTAS.empresas },
+            { label: companyName, route: rotas.painel }
           ]
-        : [{ label: companyName, route: `${base}/dashboard` }];
+        : [{ label: companyName, route: rotas.painel }];
 
       const activeItem = items.find(i => url.startsWith(i.route));
       if (activeItem && activeItem.label !== 'Dashboard') {
@@ -190,7 +193,7 @@ export class MenuContextService {
       return {
         level: 'company' as const,
         backLink: this.temCarteira()
-          ? { label: 'Voltar para Empresas', route: '/app/companies' }
+          ? { label: 'Voltar para Empresas', route: ROTAS.empresas }
           : undefined,
         items,
         breadcrumbs
@@ -198,12 +201,12 @@ export class MenuContextService {
     }
 
     // CONTEXTO 0 — Admin do Sistema
-    if (url.startsWith('/admin')) {
+    if (url.startsWith(ROTAS.admin.raiz)) {
       const items: MenuItem[] = [
-        { label: 'Contas', icon: 'pi pi-users', route: '/admin/accounts' },
-        { label: 'Admins da Plataforma', icon: 'pi pi-shield', route: '/admin/admins' },
-        { label: 'Compras', icon: 'pi pi-shopping-cart', route: '/admin/purchases' },
-        { label: 'Design System', icon: 'pi pi-palette', route: '/admin/design-system' }
+        { label: 'Contas', icon: 'pi pi-users', route: ROTAS.admin.contas },
+        { label: 'Admins da Plataforma', icon: 'pi pi-shield', route: ROTAS.admin.administradores },
+        { label: 'Compras', icon: 'pi pi-shopping-cart', route: ROTAS.admin.compras },
+        { label: 'Design System', icon: 'pi pi-palette', route: ROTAS.admin.designSystem }
       ];
 
       const activeItem = items.find(i => url.startsWith(i.route));
@@ -227,10 +230,10 @@ export class MenuContextService {
 
   private contextoDaConsultoria(url: string): MenuContext {
     const items: MenuItem[] = [
-      { label: 'Dashboard', icon: 'pi pi-chart-pie', route: '/app/dashboard' },
-      { label: 'Empresas', icon: 'pi pi-building', route: '/app/companies' },
-      { label: 'Equipe', icon: 'pi pi-users', route: '/app/team' },
-      { label: 'Documentos', icon: 'pi pi-book', route: '/app/catalogs/solutions' }
+      { label: 'Dashboard', icon: 'pi pi-chart-pie', route: ROTAS.painel },
+      { label: 'Empresas', icon: 'pi pi-building', route: ROTAS.empresas },
+      { label: 'Equipe', icon: 'pi pi-users', route: ROTAS.equipe },
+      { label: 'Documentos', icon: 'pi pi-book', route: ROTAS.solucoes }
     ];
 
     const activeItem = items.find(i => url.startsWith(i.route));
@@ -244,14 +247,14 @@ export class MenuContextService {
   /** A saída das configurações: de volta ao universo de onde a pessoa veio. */
   private voltaParaOContexto(): { label: string; route: string } {
     const sessão = this.auth.session();
-    if (!sessão) return { label: 'Voltar', route: '/app' };
+    if (!sessão) return { label: 'Voltar', route: ROTAS.app };
 
     const route = rotaDeEntrada(sessão);
-    const label = route.startsWith('/admin')
+    const label = route.startsWith(ROTAS.admin.raiz)
       ? 'Voltar para a Plataforma'
-      : route === '/app/dashboard'
+      : route === ROTAS.painel
         ? 'Voltar para a Consultoria'
-        : route === '/app/execution'
+        : route === ROTAS.execucao
           ? 'Voltar para Minhas Tarefas'
           : 'Voltar para a Empresa';
 
@@ -267,7 +270,7 @@ export class MenuContextService {
    */
   private contextoDeQuemNãoTemCarteira(): MenuContext {
     const sessão = this.auth.session();
-    const destino = sessão ? rotaDaConsultoria(sessão) : '/app/profile';
+    const destino = sessão ? rotaDaConsultoria(sessão) : ROTAS.perfil;
 
     return this.montarPara(destino);
   }

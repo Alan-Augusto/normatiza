@@ -5,6 +5,7 @@ import { COMPANY_ADMIN_ROLES } from '@normatiza/shared';
 
 import { AuthService } from '../auth/auth.service';
 import { rotaDeEntrada } from '../auth/entry-route';
+import { ROTAS } from '../routing/rotas';
 
 /**
  * Quem administra o cadastro de empresas: Engenheiro Responsável e Engenheiro
@@ -21,7 +22,7 @@ export const companyAdminGuard: CanActivateFn = (_route, state) => {
   const router = inject(Router);
 
   if (!auth.isAuthenticated()) {
-    return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+    return router.createUrlTree([ROTAS.entrar], { queryParams: { returnUrl: state.url } });
   }
 
   if (auth.isAccountOwner() || auth.hasRole(COMPANY_ADMIN_ROLES)) return true;

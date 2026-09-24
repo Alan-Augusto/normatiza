@@ -5,6 +5,7 @@ import { catchError, switchMap, throwError } from 'rxjs';
 
 import { API_BASE_URL } from './api.config';
 import { AuthService } from './auth.service';
+import { ROTAS } from '../routing/rotas';
 
 /**
  * Rotas em que um `401` é a resposta, não um sintoma.
@@ -50,7 +51,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         switchMap(() => next(comCredenciais(req, auth.token()))),
         catchError((falha: unknown) => {
           auth.encerrarLocalmente();
-          void router.navigate(['/login']);
+          void router.navigate([ROTAS.entrar]);
           return throwError(() => falha);
         }),
       );

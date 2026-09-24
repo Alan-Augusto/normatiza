@@ -1,18 +1,22 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, ViewChild, afterNextRender } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideArrowRight, lucideCheck, lucideAlertTriangle, lucideClock, lucideCheckCircle, lucideUsers } from '@ng-icons/lucide';
+import { ROTAS } from '../../../../../core/routing/rotas';
 
 
 @Component({
   selector: 'app-landing-hero',
   standalone: true,
-  imports: [NgIconComponent],
+  imports: [NgIconComponent, RouterLink],
   providers: [provideIcons({ lucideArrowRight, lucideCheck, lucideAlertTriangle, lucideClock, lucideCheckCircle, lucideUsers })],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './landing-hero.component.html',
   styleUrl: './landing-hero.component.scss',
 })
 export class LandingHeroComponent {
+  protected readonly rotas = ROTAS;
+
   @ViewChild('tiltContainer') tiltContainerRef!: ElementRef<HTMLElement>;
 
   constructor() {

@@ -12,7 +12,7 @@ import { BRF, SEARA, sessão, vínculo } from './testing/sessao';
 describe('rotaDeEntrada', () => {
   it('deve levar ao Contexto 0 o admin que só opera a plataforma', () => {
     // Sem vínculo em conta nenhuma, não há aplicação do outro lado: mandá-lo
-    // para `/app/profile` seria abrir uma tela que não é o trabalho dele.
+    // para `/app/perfil` seria abrir uma tela que não é o trabalho dele.
     expect(rotaDeEntrada(sessão([], true))).toBe('/admin');
   });
 
@@ -22,7 +22,7 @@ describe('rotaDeEntrada', () => {
     // quando e dono da consultoria todo dia — o backoffice é porta ao lado, não
     // porta maior, e ele a toma pelo menu quando quiser.
     expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])], true))).toBe(
-      '/app/dashboard',
+      '/app/painel',
     );
   });
 
@@ -30,7 +30,7 @@ describe('rotaDeEntrada', () => {
     // A dimensão de plataforma não muda de que lado a pessoa trabalha: ela
     // continua nascendo dentro do Contexto 2 da empresa dela.
     expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['MANAGER'])], true))).toBe(
-      `/app/companies/${BRF.id}/dashboard`,
+      `/app/empresas/${BRF.id}/painel`,
     );
   });
 
@@ -42,7 +42,7 @@ describe('rotaDeEntrada', () => {
   });
 
   it('deve levar o Engenheiro Responsável ao Contexto 1', () => {
-    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])]))).toBe('/app/dashboard');
+    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])]))).toBe('/app/painel');
   });
 
   it('deve levar a consultoria com carteira ao Contexto 1', () => {
@@ -50,36 +50,36 @@ describe('rotaDeEntrada', () => {
       vínculo(BRF.id, ['CONSULTANT_ENGINEER']),
       vínculo(SEARA.id, ['CONSULTANT_ENGINEER']),
     ];
-    expect(rotaDeEntrada(sessão(carteira))).toBe('/app/dashboard');
+    expect(rotaDeEntrada(sessão(carteira))).toBe('/app/painel');
   });
 
   it('deve levar o Gestor direto ao Contexto 2 da empresa dele', () => {
     expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['MANAGER'])]))).toBe(
-      `/app/companies/${BRF.id}/dashboard`,
+      `/app/empresas/${BRF.id}/painel`,
     );
   });
 
   it('deve levar o Engenheiro do Cliente direto ao Contexto 2', () => {
     expect(rotaDeEntrada(sessão([vínculo(SEARA.id, ['CLIENT_ENGINEER'])]))).toBe(
-      `/app/companies/${SEARA.id}/dashboard`,
+      `/app/empresas/${SEARA.id}/painel`,
     );
   });
 
   it('deve levar o Diretor ao dashboard da empresa dele', () => {
     expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['DIRECTOR'])]))).toBe(
-      `/app/companies/${BRF.id}/dashboard`,
+      `/app/empresas/${BRF.id}/painel`,
     );
   });
 
   it('deve levar o Executor direto à Área de Execução', () => {
-    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['EXECUTOR'])]))).toBe('/app/execution');
+    expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['EXECUTOR'])]))).toBe('/app/execucao');
   });
 
   it('deve preferir o contexto mais alto quando a pessoa acumula papéis', () => {
     // Quem é Engenheiro da Consultoria e também Executor tem uma carteira para
     // administrar; cair na fila de tarefas seria entrar pela porta menor.
     const acumulado = [vínculo(BRF.id, ['CONSULTANT_ENGINEER', 'EXECUTOR'])];
-    expect(rotaDeEntrada(sessão(acumulado))).toBe('/app/dashboard');
+    expect(rotaDeEntrada(sessão(acumulado))).toBe('/app/painel');
   });
 
   it('deve ignorar vínculo desativado ao decidir a porta de entrada', () => {
@@ -87,12 +87,12 @@ describe('rotaDeEntrada', () => {
       vínculo(BRF.id, ['MANAGER'], { isActive: false }),
       vínculo(SEARA.id, ['MANAGER']),
     ];
-    expect(rotaDeEntrada(sessão(desligadoDaBrf))).toBe(`/app/companies/${SEARA.id}/dashboard`);
+    expect(rotaDeEntrada(sessão(desligadoDaBrf))).toBe(`/app/empresas/${SEARA.id}/painel`);
   });
 
   it('deve mandar para o perfil quem entrou sem vínculo ativo nenhum', () => {
     // Acontece com quem foi desligado de todas as empresas mas ainda tem login.
     // Precisa de uma tela que exista, não de um dashboard vazio sem explicação.
-    expect(rotaDeEntrada(sessão([]))).toBe('/app/profile');
+    expect(rotaDeEntrada(sessão([]))).toBe('/app/perfil');
   });
 });

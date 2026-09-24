@@ -3,6 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from '../auth/auth.service';
 import { rotaDeEntrada } from '../auth/entry-route';
+import { ROTAS } from '../routing/rotas';
 
 /**
  * O Contexto 0 é o backoffice da plataforma.
@@ -16,7 +17,7 @@ export const adminGuard: CanActivateFn = (_route, state) => {
   const router = inject(Router);
 
   if (!auth.isAuthenticated()) {
-    return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+    return router.createUrlTree([ROTAS.entrar], { queryParams: { returnUrl: state.url } });
   }
 
   if (auth.isPlatformAdmin()) return true;

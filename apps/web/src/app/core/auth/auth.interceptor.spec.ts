@@ -137,7 +137,7 @@ describe('authInterceptor', () => {
 
       await promessa;
       expect(auth.isAuthenticated()).toBe(false);
-      expect(navegou).toContain('/login');
+      expect(navegou).toContain('/entrar');
     });
 
     it('não deve tentar refresh quando é o próprio refresh que falha', async () => {

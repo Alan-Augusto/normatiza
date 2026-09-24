@@ -21,7 +21,7 @@ describe('MenuContextService', () => {
   let http: HttpTestingController;
 
   const API = 'http://api.teste';
-  const DENTRO_DA_EMPRESA = `/app/companies/${BRF.id}/dashboard`;
+  const DENTRO_DA_EMPRESA = `/app/empresas/${BRF.id}/painel`;
 
   async function menuEm(url: string, papéis: Role[], isPlatformAdmin = false, éDono = false) {
     TestBed.resetTestingModule();
@@ -55,7 +55,7 @@ describe('MenuContextService', () => {
     it('deve oferecer a volta para a carteira a quem é da consultoria', async () => {
       const ctx = await menuEm(DENTRO_DA_EMPRESA, ['CONSULTANT_ENGINEER']);
 
-      expect(ctx.backLink?.route).toBe('/app/companies');
+      expect(ctx.backLink?.route).toBe('/app/empresas');
       expect(ctx.breadcrumbs[0].label).toBe('Empresas');
     });
 
@@ -81,9 +81,9 @@ describe('MenuContextService', () => {
 
   describe('Configurações — transversal', () => {
     it('deve montar o próprio contexto, e não o da consultoria', async () => {
-      // Era aqui que vazava: `/app/profile` não era reconhecido e caía no menu
+      // Era aqui que vazava: `/app/perfil` não era reconhecido e caía no menu
       // do Contexto 1, com Empresas e Documentos à vista do cliente.
-      const ctx = await menuEm('/app/profile', ['CLIENT_ENGINEER']);
+      const ctx = await menuEm('/app/perfil', ['CLIENT_ENGINEER']);
 
       expect(ctx.level).toBe('settings');
       expect(rótulos(ctx)).not.toContain('Empresas');
@@ -92,23 +92,23 @@ describe('MenuContextService', () => {
     });
 
     it('deve valer igual para quem é da consultoria', async () => {
-      const ctx = await menuEm('/app/profile', ['LEAD_ENGINEER']);
+      const ctx = await menuEm('/app/perfil', ['LEAD_ENGINEER']);
       expect(ctx.level).toBe('settings');
     });
 
     it('deve oferecer uma saída de volta ao contexto de quem entrou', async () => {
       // Sem isto, o único jeito de sair das configurações é clicar num item de
       // menu que a pessoa nem deveria estar vendo.
-      const cliente = await menuEm('/app/profile', ['MANAGER']);
-      expect(cliente.backLink?.route).toBe(`/app/companies/${BRF.id}/dashboard`);
+      const cliente = await menuEm('/app/perfil', ['MANAGER']);
+      expect(cliente.backLink?.route).toBe(`/app/empresas/${BRF.id}/painel`);
 
-      const consultoria = await menuEm('/app/profile', ['LEAD_ENGINEER']);
-      expect(consultoria.backLink?.route).toBe('/app/dashboard');
+      const consultoria = await menuEm('/app/perfil', ['LEAD_ENGINEER']);
+      expect(consultoria.backLink?.route).toBe('/app/painel');
     });
 
     it('deve levar de volta ao backoffice o admin que só opera a plataforma', async () => {
       // Sem vínculo nenhum, é de lá que ele veio e é para lá que ele volta.
-      const ctx = await menuEm('/app/profile', [], true);
+      const ctx = await menuEm('/app/perfil', [], true);
       expect(ctx.backLink?.route).toBe('/admin');
     });
 
@@ -116,12 +116,12 @@ describe('MenuContextService', () => {
       // O Josué está dentro de `/app`: a saída das configurações é o trabalho
       // dele, não a dimensão de plataforma. Ele vai ao backoffice pelo bloco
       // "Plataforma" do menu, quando quiser.
-      const ctx = await menuEm('/app/profile', ['LEAD_ENGINEER'], true);
-      expect(ctx.backLink?.route).toBe('/app/dashboard');
+      const ctx = await menuEm('/app/perfil', ['LEAD_ENGINEER'], true);
+      expect(ctx.backLink?.route).toBe('/app/painel');
     });
 
     it('deve oferecer Plano / Créditos ao titular da conta', async () => {
-      const ctx = await menuEm('/app/profile', ['LEAD_ENGINEER'], false, true);
+      const ctx = await menuEm('/app/perfil', ['LEAD_ENGINEER'], false, true);
       expect(rótulos(ctx)).toContain('Plano / Créditos');
     });
 
@@ -129,11 +129,11 @@ describe('MenuContextService', () => {
       // A conta é a unidade de faturamento ([01 §5]): quem contrata é a
       // consultoria, e quem responde por ela é o titular. O Gestor da BRF é
       // funcionário do cliente — o plano da Normatiza não é assunto dele.
-      const gestor = await menuEm('/app/profile', ['MANAGER'], false, false);
+      const gestor = await menuEm('/app/perfil', ['MANAGER'], false, false);
       expect(rótulos(gestor)).not.toContain('Plano / Créditos');
 
       const engenheiroSemTitularidade = await menuEm(
-        '/app/profile',
+        '/app/perfil',
         ['CONSULTANT_ENGINEER'],
         false,
         false,
@@ -142,16 +142,16 @@ describe('MenuContextService', () => {
     });
 
     it('deve manter Meu Perfil para todos', async () => {
-      const ctx = await menuEm('/app/profile', ['EXECUTOR']);
+      const ctx = await menuEm('/app/perfil', ['EXECUTOR']);
       expect(rótulos(ctx)).toContain('Meu Perfil');
     });
   });
 
   describe('Área de Execução', () => {
     it('deve reconhecer a rota da execução', async () => {
-      // O serviço procurava `/app/my-tasks`, mas a rota é `/app/execution`:
+      // O serviço procurava `/app/my-tasks`, mas a rota é `/app/execucao`:
       // o ramo estava morto e o Executor recebia o menu da consultoria.
-      const ctx = await menuEm('/app/execution', ['EXECUTOR']);
+      const ctx = await menuEm('/app/execucao', ['EXECUTOR']);
 
       expect(ctx.level).toBe('execution');
       expect(rótulos(ctx)).not.toContain('Empresas');
@@ -159,23 +159,23 @@ describe('MenuContextService', () => {
   });
 
   describe('o cadastro de empresa é do Contexto 1', () => {
-    // "new" e "edit" moram sob /app/companies, mas não são uma empresa: lidos
+    // "new" e "edit" moram sob /app/empresas, mas não são uma empresa: lidos
     // como id, abriam o menu da empresa em cima do formulário da carteira.
-    for (const url of ['/app/companies/new', `/app/companies/edit/${BRF.id}`]) {
+    for (const url of ['/app/empresas/nova', `/app/empresas/${BRF.id}/editar`]) {
       it(`deve manter o menu da carteira em ${url}`, async () => {
         const ctx = await menuEm(url, ['LEAD_ENGINEER']);
 
         expect(ctx.level).toBe('consultancy');
         expect(ctx.backLink).toBeUndefined();
         expect(rótulos(ctx)).toContain('Empresas');
-        expect(ctx.breadcrumbs[0]).toEqual({ label: 'Empresas', route: '/app/companies' });
+        expect(ctx.breadcrumbs[0]).toEqual({ label: 'Empresas', route: '/app/empresas' });
       });
     }
   });
 
   describe('o menu do Contexto 1 é só de quem tem carteira', () => {
     it('deve montá-lo para a consultoria', async () => {
-      const ctx = await menuEm('/app/dashboard', ['TECHNICIAN']);
+      const ctx = await menuEm('/app/painel', ['TECHNICIAN']);
       expect(rótulos(ctx)).toContain('Empresas');
     });
 

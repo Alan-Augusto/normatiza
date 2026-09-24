@@ -42,7 +42,7 @@
     </div>
 
     @if (podeCadastrar()) {
-      <a pButton routerLink="/app/companies/new" data-testid="nova-empresa">
+      <a pButton [routerLink]="rotas.novaEmpresa" data-testid="nova-empresa">
         <span pButtonLabel>Nova empresa</span>
       </a>
     }
@@ -85,7 +85,7 @@
             <app-company-logo [url]="empresa.logoUrl" />
             <a
               data-testid="abrir-empresa"
-              [routerLink]="['/app/companies', empresa.id, 'dashboard']"
+              [routerLink]="rotas.empresa(empresa.id).painel"
               class="font-medium text-surface-900 hover:text-primary dark:text-surface-0"
             >
               {{ empresa.tradeName }}
@@ -136,7 +136,7 @@
                   data-testid="acao-editar"
                   icon="lucidePencil"
                   label="Editar"
-                  [link]="['/app/companies/edit', empresa.id]"
+                  [link]="rotas.editarEmpresa(empresa.id)"
                 />
               }
               @if (empresa.actions.reactivate) {
@@ -159,7 +159,7 @@
     <!-- Carteira vazia oferece o cadastro; busca vazia pede outro termo, não uma empresa nova. -->
     @if (podeCadastrar() && !buscando()) {
       <ng-template appAcaoVazia>
-        <a pButton routerLink="/app/companies/new" data-testid="nova-empresa-vazio">
+        <a pButton [routerLink]="rotas.novaEmpresa" data-testid="nova-empresa-vazio">
           <span pButtonLabel>Cadastrar a primeira empresa</span>
         </a>
       </ng-template>

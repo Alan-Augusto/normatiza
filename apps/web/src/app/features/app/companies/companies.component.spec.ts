@@ -35,10 +35,10 @@ describe('CompaniesComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
-          { path: 'app/companies', component: CompaniesComponent },
-          { path: 'app/companies/new', component: Destino },
-          { path: 'app/companies/edit/:companyId', component: Destino },
-          { path: 'app/companies/:companyId/dashboard', component: Destino },
+          { path: 'app/empresas', component: CompaniesComponent },
+          { path: 'app/empresas/nova', component: Destino },
+          { path: 'app/empresas/:companyId/editar', component: Destino },
+          { path: 'app/empresas/:companyId/painel', component: Destino },
         ]),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -58,7 +58,7 @@ describe('CompaniesComponent', () => {
   }
 
   /** Abre a carteira na URL dada e responde a primeira busca com `carteira`. */
-  async function abrir(url = '/app/companies', carteira: CompanyListItem[] = CARTEIRA) {
+  async function abrir(url = '/app/empresas', carteira: CompanyListItem[] = CARTEIRA) {
     harness = await RouterTestingHarness.create();
     await harness.navigateByUrl(url, CompaniesComponent);
     http.expectOne((r) => r.url === `${API}/companies`).flush(carteira);
@@ -92,7 +92,7 @@ describe('CompaniesComponent', () => {
 
     it('deve mostrar o logo ao lado do nome, e o ícone de empresa quando não há logo', async () => {
       await comoJosué();
-      await abrir('/app/companies', [
+      await abrir('/app/empresas', [
         linhaDeEmpresa({ logoUrl: 'https://arquivos.teste/brf.png' }),
         { ...CARTEIRA[1] },
       ]);
@@ -115,7 +115,7 @@ describe('CompaniesComponent', () => {
 
     it('deve mostrar o grau de adequação quando ele existir', async () => {
       await comoJosué();
-      await abrir('/app/companies', [linhaDeEmpresa({ adequacyPercent: 72.4 })]);
+      await abrir('/app/empresas', [linhaDeEmpresa({ adequacyPercent: 72.4 })]);
 
       expect(el('[data-testid="adequacao"]')!.textContent!.trim()).toBe('72%');
     });
@@ -131,7 +131,7 @@ describe('CompaniesComponent', () => {
 
     it('deve avisar que o Gestor ainda não aceitou o convite', async () => {
       await comoJosué();
-      await abrir('/app/companies', [
+      await abrir('/app/empresas', [
         linhaDeEmpresa({ status: 'AWAITING_MANAGER', managers: [{ id: 'u', name: 'Helena', pending: true }] }),
       ]);
 
@@ -144,7 +144,7 @@ describe('CompaniesComponent', () => {
       await abrir();
 
       const link = el(`[data-company="${BRF.id}"] [data-testid="abrir-empresa"]`) as HTMLAnchorElement;
-      expect(link.getAttribute('href')).toBe(`/app/companies/${BRF.id}/dashboard`);
+      expect(link.getAttribute('href')).toBe(`/app/empresas/${BRF.id}/painel`);
     });
 
     it('deve entrar na empresa clicando em qualquer ponto da linha', async () => {
@@ -154,7 +154,7 @@ describe('CompaniesComponent', () => {
       (el(`[data-company="${SEARA.id}"] [data-testid="equipamentos"]`) as HTMLElement).click();
       await harness.fixture.whenStable();
 
-      expect(TestBed.inject(Router).url).toBe(`/app/companies/${SEARA.id}/dashboard`);
+      expect(TestBed.inject(Router).url).toBe(`/app/empresas/${SEARA.id}/painel`);
     });
 
     it('não deve entrar na empresa quando o clique é numa ação da linha', async () => {
@@ -165,7 +165,7 @@ describe('CompaniesComponent', () => {
       harness.detectChanges();
       await harness.fixture.whenStable();
 
-      expect(TestBed.inject(Router).url).toBe('/app/companies');
+      expect(TestBed.inject(Router).url).toBe('/app/empresas');
     });
   });
 
@@ -179,21 +179,21 @@ describe('CompaniesComponent', () => {
 
     it('não deve oferecer cadastrar ao Técnico', async () => {
       await comoFernando();
-      await abrir('/app/companies', [linhaDeEmpresa({ actions: NADA })]);
+      await abrir('/app/empresas', [linhaDeEmpresa({ actions: NADA })]);
 
       expect(el('[data-testid="nova-empresa"]')).toBeNull();
     });
 
     it('deve deixar o titular sem vínculo nenhum cadastrar a primeira empresa', async () => {
       await entrarComo([], true);
-      await abrir('/app/companies', []);
+      await abrir('/app/empresas', []);
 
       expect(el('[data-testid="nova-empresa-vazio"]')).not.toBeNull();
     });
 
     it('deve mostrar só as ações que o servidor ofereceu — ao Técnico, só ver', async () => {
       await comoFernando();
-      await abrir('/app/companies', [linhaDeEmpresa({ actions: NADA })]);
+      await abrir('/app/empresas', [linhaDeEmpresa({ actions: NADA })]);
 
       expect(el('[data-testid="acao-ver"]')).not.toBeNull();
       expect(el('[data-testid="acao-editar"]')).toBeNull();
@@ -202,7 +202,7 @@ describe('CompaniesComponent', () => {
 
     it('deve abrir a prévia da empresa sem entrar nela — para todos, inclusive o Técnico', async () => {
       await comoFernando();
-      await abrir('/app/companies', [linhaDeEmpresa({ actions: NADA })]);
+      await abrir('/app/empresas', [linhaDeEmpresa({ actions: NADA })]);
 
       el(`[data-company="${BRF.id}"] [data-testid="acao-ver"] button`)!.click();
       harness.detectChanges();
@@ -210,7 +210,7 @@ describe('CompaniesComponent', () => {
       http.expectOne(`${API}/companies/${BRF.id}`).flush(perfilDaBrf());
       harness.detectChanges();
       expect(document.body.textContent).toContain('Rua Senador Atílio Fontana, 86');
-      expect(TestBed.inject(Router).url).toBe('/app/companies');
+      expect(TestBed.inject(Router).url).toBe('/app/empresas');
     });
 
     it('deve levar à edição fora do contexto da empresa', async () => {
@@ -218,7 +218,7 @@ describe('CompaniesComponent', () => {
       await abrir();
 
       const editar = el(`[data-company="${BRF.id}"] [data-testid="acao-editar"] a`) as HTMLAnchorElement;
-      expect(editar.getAttribute('href')).toBe(`/app/companies/edit/${BRF.id}`);
+      expect(editar.getAttribute('href')).toBe(`/app/empresas/${BRF.id}/editar`);
     });
 
     it('deve pedir confirmação antes de desativar, dizendo que a empresa fica em modo leitura', async () => {
@@ -238,7 +238,7 @@ describe('CompaniesComponent', () => {
 
     it('deve reativar sem cerimônia — reativar não tira nada de ninguém', async () => {
       await comoJosué();
-      await abrir('/app/companies?status=INACTIVE', [
+      await abrir('/app/empresas?status=INACTIVE', [
         linhaDeEmpresa({ status: 'INACTIVE', actions: { edit: false, deactivate: false, reactivate: true } }),
       ]);
 
@@ -267,7 +267,7 @@ describe('CompaniesComponent', () => {
     it('deve abrir já filtrada quando a URL traz a busca — o "voltar" encontra a lista como estava', async () => {
       await comoJosué();
       harness = await RouterTestingHarness.create();
-      await harness.navigateByUrl('/app/companies?q=seara&status=ALL', CompaniesComponent);
+      await harness.navigateByUrl('/app/empresas?q=seara&status=ALL', CompaniesComponent);
 
       const req = http.expectOne((r) => r.url === `${API}/companies`);
       expect(req.request.params.get('q')).toBe('seara');
@@ -292,10 +292,10 @@ describe('CompaniesComponent', () => {
 
     it('não deve confundir carteira vazia com busca sem resultado', async () => {
       await comoJosué();
-      await abrir('/app/companies', []);
+      await abrir('/app/empresas', []);
       expect(texto()).toContain('Nenhuma empresa na sua carteira');
 
-      await harness.navigateByUrl('/app/companies?q=zzz');
+      await harness.navigateByUrl('/app/empresas?q=zzz');
       http.expectOne((r) => r.url === `${API}/companies`).flush([]);
       harness.detectChanges();
       expect(texto()).toContain('Nenhuma empresa encontrada');

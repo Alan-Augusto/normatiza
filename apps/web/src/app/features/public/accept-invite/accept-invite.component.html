@@ -52,7 +52,7 @@
         {{ enviando() ? 'Salvando…' : 'Definir senha e entrar' }}
       </button>
 
-      <a routerLink="/login" class="mt-4 block text-center text-sm text-muted-color hover:text-primary">
+      <a [routerLink]="rotas.entrar" class="mt-4 block text-center text-sm text-muted-color hover:text-primary">
         Já tenho senha
       </a>
     </form>

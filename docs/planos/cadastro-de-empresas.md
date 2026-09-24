@@ -8,7 +8,7 @@
 
 ## 1. Objetivo
 
-Substituir a lista provisória de `/app/companies` pelo cadastro de verdade: **listar, buscar, cadastrar, editar, desativar e reativar** empresas — e dar ao lado cliente uma forma de ver os dados da própria empresa sem editá-los.
+Substituir a lista provisória de `/app/empresas` pelo cadastro de verdade: **listar, buscar, cadastrar, editar, desativar e reativar** empresas — e dar ao lado cliente uma forma de ver os dados da própria empresa sem editá-los.
 
 Escopo desta feature:
 
@@ -32,7 +32,7 @@ Escopo desta feature:
 | `CompanyGroup`, `FileAsset` | Não existem. |
 | Storage de arquivos | Não existe nada. |
 | `GET /companies` | Não existe. A tela lê a carteira da sessão (`memberships[].company`). |
-| Tela `/app/companies` | Provisória, com aviso na tela. Lista de links. |
+| Tela `/app/empresas` | Provisória, com aviso na tela. Lista de links. |
 | `CompanySummary` (sessão) | `id`, `tradeName`, `corporateName`, `isActive`. Lido pelo layout da empresa, pela sidebar e pela Equipe. |
 | Seed | BRF e Seara com os campos mínimos. |
 | Escopo do Eng. Responsável | Feito só de vínculos — não há "vê todas" implícito. |
@@ -46,7 +46,7 @@ Escopo desta feature:
 | # | Decisão | Definição |
 | :-- | :--- | :--- |
 | D1 | Lista em **tabela**, não cartões | Lista de comparação, ordenável, para carteiras de centenas. Usa `app-data-table`. Cartões ficam para equipamentos, onde a foto é informação. Regra em [03 §3.2](../produto/03_navegacao_e_telas.md). |
-| D2 | Formulário em **página própria** | `/app/companies/new` e `/app/companies/edit/:companyId`, **um componente** com dois modos. Ambas no Contexto 1, declaradas **antes** de `companies/:companyId` no `app.routes.ts` — senão o layout da empresa as captura. Diálogo foi descartado: cinco seções, upload e buscas automáticas rolam por dentro, se perdem num ESC e não têm URL. |
+| D2 | Formulário em **página própria** | `/app/empresas/nova` e `/app/empresas/:companyId/editar`, **um componente** com dois modos. Ambas no Contexto 1, declaradas **antes** de `companies/:companyId` no `app.routes.ts` — senão o layout da empresa as captura. Diálogo foi descartado: cinco seções, upload e buscas automáticas rolam por dentro, se perdem num ESC e não têm URL. |
 | D3 | Dados da empresa num **diálogo de leitura** na sidebar | Clicar no nome da empresa abre texto formatado, sem input. Consultoria vê também grupo, código interno, observações e **Editar**; cliente não. Regra em [03 §4.0](../produto/03_navegacao_e_telas.md). |
 
 ### Colunas, busca e filtros
@@ -110,17 +110,17 @@ Nenhuma. Se surgir decisão de negócio durante a implementação, ela vai para 
 
 ### 5.1. Empresas — Contexto 1
 
-**Rota:** `/app/companies` · **Guarda:** `roleGuard(CONTEXTO_1)` · **Quem usa:** Josué, Carla, Fernando
+**Rota:** `/app/empresas` · **Guarda:** `roleGuard(CONTEXTO_1)` · **Quem usa:** Josué, Carla, Fernando
 
 - Barra superior: busca (um campo), filtro de status, botão **Nova empresa** (some para o Técnico).
-- `app-data-table` com as colunas do D4. Status como selo. Clicar na linha → `/app/companies/:id/dashboard`.
+- `app-data-table` com as colunas do D4. Status como selo. Clicar na linha → `/app/empresas/:id/painel`.
 - Menu por linha a partir de `actions`: Editar · Desativar / Reativar (com confirmação que diz "a empresa fica em modo leitura").
 - Estado vazio: "Nenhuma empresa na sua carteira" + ação "Cadastrar a primeira empresa" (quando pode). Busca sem resultado tem mensagem própria, distinta da carteira vazia.
 - **Regra de superfície:** coluna que não varia para quem olha sai (o Fernando, só com a BRF, não precisa de filtro de status com uma opção).
 
 ### 5.2. Formulário — novo e editar
 
-**Rotas:** `/app/companies/new` · `/app/companies/edit/:companyId` · **Guarda:** `LEAD_ENGINEER`, `CONSULTANT_ENGINEER`
+**Rotas:** `/app/empresas/nova` · `/app/empresas/:companyId/editar` · **Guarda:** `LEAD_ENGINEER`, `CONSULTANT_ENGINEER`
 
 Seções: Identificação · Endereço · Contato técnico · Agrupamento e metadados · Logo.
 
@@ -226,7 +226,7 @@ Aberto pelo nome da empresa no bloco de contexto da sidebar. Texto formatado, em
 
 Quatro defeitos achados no uso, cada um com teste antes da correção:
 
-- [x] **Menu da empresa sobre o formulário.** O menu reconhecia o Contexto 2 por `/app/companies/:algo`, e lia `new` e `edit` como id de empresa. Desvio explícito em `MenuContextService`.
+- [x] **Menu da empresa sobre o formulário.** O menu reconhecia o Contexto 2 por `/app/empresas/:algo`, e lia `new` e `edit` como id de empresa. Desvio explícito em `MenuContextService`.
 - [x] **A tela inteira subia no fim da rolagem, sidebar junto.** O `<input type="file">` do logo usava `sr-only` (`position: absolute`) sem ancestral posicionado: posicionava-se contra a página e a esticava além da tela, e o `body` passava a rolar. Agora vive dentro de um contêiner `relative`.
 - [x] **Enter salvava o formulário.** Não há mais `ngSubmit` nem botão de envio, e `semEnter` barra o envio implícito — a área de texto segue quebrando linha.
 - [x] **CEP sem indicação de busca, e trocar o CEP só trocava a rua.** A regra "só ocupa campo vazio" valia para o CEP também, e estava errada para ele: **o endereço é do CEP** ([03 §3.2](../produto/03_navegacao_e_telas.md)). Com indicador de busca, e sem consultar de novo quando o CEP não mudou.

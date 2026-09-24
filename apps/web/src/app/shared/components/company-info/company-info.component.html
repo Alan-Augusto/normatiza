@@ -99,7 +99,7 @@
 
       @if (interno.actions.edit) {
         <div class="flex justify-end" data-testid="editar-empresa">
-          <a pButton [routerLink]="['/app/companies/edit', interno.id]">
+          <a pButton [routerLink]="rotas.editarEmpresa(interno.id)">
             <span pButtonLabel>Editar dados</span>
           </a>
         </div>

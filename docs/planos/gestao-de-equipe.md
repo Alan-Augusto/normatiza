@@ -37,10 +37,10 @@ Escopo desta feature:
 | Trocar papel / escopo | `PATCH /memberships/:id` · `DELETE /memberships/:id`. |
 | Desligar usuário | `POST /users/:id/disable`, com `disable-preview` para a sucessão. |
 | Envio de e-mail | Existe, opt-in explícito, ligado a convite e recuperação de senha. |
-| Tela `/app/team` | Existe, com rota, item de menu e 23 testes. |
-| Tela `/app/companies/:id/team` | Existe, com rota, item de menu e 11 testes. |
-| `/app/profile` | Tela real: dados, senha e os próprios vínculos. 12 testes. |
-| `/admin/admins` | Existe — listar, conceder por e-mail exato e revogar. |
+| Tela `/app/equipe` | Existe, com rota, item de menu e 23 testes. |
+| Tela `/app/empresas/:id/equipe` | Existe, com rota, item de menu e 11 testes. |
+| `/app/perfil` | Tela real: dados, senha e os próprios vínculos. 12 testes. |
+| `/admin/administradores` | Existe — listar, conceder por e-mail exato e revogar. |
 | `TeamService` (web) | Em `core/services/`, servindo as duas telas de equipe. |
 | `Supplier` (executor terceiro) | Não existe. `Membership.supplierId` é `String?` solto, sem relação. |
 
@@ -131,7 +131,7 @@ A regra de negócio de D12 está escrita em [01 §5](../produto/01_papeis_e_perm
 
 ### 5.1. Equipe — Contexto 1
 
-**Rota:** `/app/team` · **Guarda:** `roleGuard(CONTEXTO_1)` · **Quem usa:** Josué, Carla, Fernando
+**Rota:** `/app/equipe` · **Guarda:** `roleGuard(CONTEXTO_1)` · **Quem usa:** Josué, Carla, Fernando
 
 Gestão dos usuários **da conta**.
 
@@ -152,7 +152,7 @@ Gestão dos usuários **da conta**.
 
 ### 5.2. Equipe da Empresa — Contexto 2
 
-**Rota:** `/app/companies/:companyId/team` · **Guarda:** `roleGuard(VÊ_A_EMPRESA)` · **Quem usa:** Marcos, Antonio — e a consultoria quando está dentro da empresa
+**Rota:** `/app/empresas/:companyId/equipe` · **Guarda:** `roleGuard(VÊ_A_EMPRESA)` · **Quem usa:** Marcos, Antonio — e a consultoria quando está dentro da empresa
 
 Quem tem acesso **a esta empresa**: consultoria alocada, gente do próprio cliente e terceiros.
 
@@ -167,13 +167,13 @@ Quem tem acesso **a esta empresa**: consultoria alocada, gente do próprio clien
 
 ### 5.3. Meu Perfil
 
-**Rota:** `/app/profile` (já existe, hoje placeholder) · **Quem usa:** todos
+**Rota:** `/app/perfil` (já existe, hoje placeholder) · **Quem usa:** todos
 
 Dados próprios: nome, telefone, cargo, registro profissional (CREA/CFT) quando o papel comporta. **E-mail em leitura**, com nota do porquê. Trocar a própria senha. Ver os próprios vínculos e papéis — é onde a pessoa entende o que ela é no sistema.
 
 ### 5.4. Admins da Plataforma — Contexto 0
 
-**Rota:** `/admin/admins` · **Guarda:** `adminGuard` · **Quem usa:** admin da plataforma
+**Rota:** `/admin/administradores` · **Guarda:** `adminGuard` · **Quem usa:** admin da plataforma
 
 O endpoint já existe. Tabela: Nome · E-mail · Conta de origem · Quem concedeu · Concedido em · Status. Conceder por e-mail; revogar. O botão de revogar a si mesmo não existe — o servidor já recusa, e oferecer o que será recusado é ruído.
 

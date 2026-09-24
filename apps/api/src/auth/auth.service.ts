@@ -12,6 +12,7 @@ import type {
   SessionUser,
   User as UserContract,
 } from '@normatiza/shared';
+import { PAGINAS_DOS_EMAILS } from '@normatiza/shared';
 
 import { AccountSelectionRequiredException } from './account-selection-required.exception';
 import { PasswordService } from './password.service';
@@ -280,7 +281,7 @@ export class AuthService {
       await this.mail.enviarRecuperacaoDeSenha({
         to: user.email,
         nome: user.name,
-        link: `${this.config.get('APP_URL', { infer: true })}/reset-password?token=${encodeURIComponent(token)}`,
+        link: `${this.config.get('APP_URL', { infer: true })}${PAGINAS_DOS_EMAILS.redefinirSenha}?token=${encodeURIComponent(token)}`,
       });
     }
 

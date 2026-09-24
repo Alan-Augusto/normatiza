@@ -15,10 +15,10 @@
     }
 
     <div class="flex flex-wrap justify-end gap-2">
-      <a pButton [outlined]="true" data-testid="abrir-empresa" [routerLink]="['/app/companies', empresa.id, 'dashboard']">
+      <a pButton [outlined]="true" data-testid="abrir-empresa" [routerLink]="rotas.empresa(empresa.id).painel">
         <span pButtonLabel>Abrir a empresa</span>
       </a>
-      <a pButton data-testid="convidar-gestor" [routerLink]="['/app/companies', empresa.id, 'team']">
+      <a pButton data-testid="convidar-gestor" [routerLink]="rotas.empresa(empresa.id).equipe">
         <span pButtonLabel>Convidar o Gestor</span>
       </a>
     </div>
@@ -406,7 +406,7 @@
     <!-- Fixo no rodapé da área de conteúdo: as ações ficam à mão em qualquer etapa. -->
     <footer class="rodape">
       <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-2">
-        <a pButton [text]="true" routerLink="/app/companies">
+        <a pButton [text]="true" [routerLink]="rotas.empresas">
           <span pButtonLabel>Cancelar</span>
         </a>
 

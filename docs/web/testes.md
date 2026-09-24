@@ -58,7 +58,7 @@ it('deve autenticar o usuário com credenciais válidas', async () => {
 
   // Assert
   expect(authService.login).toHaveBeenCalledWith(credentials);
-  expect(router.navigate).toHaveBeenCalledWith(['/app/dashboard']);
+  expect(router.navigate).toHaveBeenCalledWith(['/app/painel']);
 });
 ```
 

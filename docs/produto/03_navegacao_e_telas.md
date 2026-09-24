@@ -119,7 +119,7 @@ Os três primeiros não são escolhidos por ninguém: decorrem de haver ou não 
 
 **Ações da linha:** ver os dados (abre o mesmo diálogo de §4.0, sem entrar na empresa — disponível a todos que veem a lista), editar, desativar e reativar.
 
-**Formulário de Empresa** — página própria, e não diálogo: um formulário desse tamanho num diálogo rola por dentro, se perde num clique fora e não tem endereço. A mesma página serve ao cadastro (`/app/companies/new`) e à edição (`/app/companies/edit/:id`), ambas no Contexto 1.
+**Formulário de Empresa** — página própria, e não diálogo: um formulário desse tamanho num diálogo rola por dentro, se perde num clique fora e não tem endereço. A mesma página serve ao cadastro (`/app/empresas/nova`) e à edição (`/app/empresas/:id/editar`), ambas no Contexto 1.
 
 É dividido em **quatro etapas**, na ordem em que a informação chega: Identificação → Endereço → Contato → Organização interna. No cadastro, só se avança com a etapa em ordem — o erro aparece ali, no campo, e não três telas depois — e só se cadastra na última; volta-se a qualquer etapa já vista. Na edição, qualquer etapa é um clique e salvar vale de qualquer uma; se houver campo inválido, o formulário leva à etapa dele. As ações (cancelar, voltar, avançar, salvar) ficam fixas no rodapé.
 

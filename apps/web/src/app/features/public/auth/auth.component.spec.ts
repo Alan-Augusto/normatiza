@@ -208,7 +208,7 @@ describe('AuthComponent', () => {
         .flush(respostaDeLogin({ session: sessão([vínculo(BRF.id, ['MANAGER'])]) }));
       await fixture.whenStable();
 
-      expect(navegou).toContain(`/app/companies/${BRF.id}/dashboard`);
+      expect(navegou).toContain(`/app/empresas/${BRF.id}/painel`);
     });
 
     it('deve levar a consultoria para o Contexto 1', async () => {
@@ -220,13 +220,13 @@ describe('AuthComponent', () => {
         .flush(respostaDeLogin({ session: sessão([vínculo(BRF.id, ['LEAD_ENGINEER'])]) }));
       await fixture.whenStable();
 
-      expect(navegou).toContain('/app/dashboard');
+      expect(navegou).toContain('/app/painel');
     });
 
     it('deve voltar para onde a pessoa tentava ir antes de ser barrada', async () => {
       // O `returnUrl` é posto pelo authGuard. Ignorá-lo aqui faria a guarda
       // guardar um endereço que ninguém usa.
-      queryParams['returnUrl'] = '/app/companies/brf/equipments/xyz';
+      queryParams['returnUrl'] = '/app/empresas/brf/equipamentos/xyz';
       fixture = TestBed.createComponent(AuthComponent);
       fixture.detectChanges();
 
@@ -236,7 +236,7 @@ describe('AuthComponent', () => {
       http.expectOne(`${API}/auth/login`).flush(respostaDeLogin());
       await fixture.whenStable();
 
-      expect(navegou).toContain('/app/companies/brf/equipments/xyz');
+      expect(navegou).toContain('/app/empresas/brf/equipamentos/xyz');
     });
   });
 

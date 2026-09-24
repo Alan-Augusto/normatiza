@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, type RedirectFunction, Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { accountOwnerGuard } from './core/guards/account-owner.guard';
 import { adminGuard } from './core/guards/admin.guard';
@@ -6,6 +7,16 @@ import { companyAdminGuard } from './core/guards/company-admin.guard';
 import { unsavedChangesGuard } from './features/app/companies/company-form/unsaved-changes.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { CONTEXTO_1, VÊ_A_EMPRESA } from './core/auth/entry-route';
+import { ROTAS } from './core/routing/rotas';
+
+/**
+ * Leva um endereço antigo ao novo **com a query**. O `redirectTo` em texto
+ * descarta os parâmetros que ele mesmo não declara — e o token do convite e da
+ * redefinição de senha mora justamente na query.
+ */
+function paraONovo(destino: string): RedirectFunction {
+  return ({ queryParams }) => inject(Router).createUrlTree([destino], { queryParams });
+}
 
 /**
  * As rotas espelham os contextos de navegação de docs/produto/03 — Navegação e Telas.
@@ -23,36 +34,47 @@ export const routes: Routes = [
         loadComponent: () => import('./features/public/landing/landing.component').then(m => m.LandingComponent)
       },
       {
-        path: 'login',
+        path: 'entrar',
         loadComponent: () => import('./features/public/auth/auth.component').then(m => m.AuthComponent)
       },
       {
         // O token vai na *query*, não no caminho: caminho de URL entra em log de
         // servidor e em `Referer`, e este token define a senha de alguém.
-        path: 'accept-invite',
+        path: 'aceitar-convite',
         loadComponent: () => import('./features/public/accept-invite/accept-invite.component').then(m => m.AcceptInviteComponent)
       },
       {
-        path: 'forgot-password',
+        path: 'esqueci-a-senha',
         loadComponent: () => import('./features/public/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
       },
       {
-        path: 'reset-password',
+        path: 'redefinir-senha',
         loadComponent: () => import('./features/public/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
       },
       {
-        path: 'pricing',
+        path: 'precos',
         loadComponent: () => import('./features/public/pricing/pricing.component').then(m => m.PricingComponent)
       },
       {
-        path: 'presentation',
+        path: 'apresentacao',
         loadComponent: () => import('./features/public/presentation/presentation.component').then(m => m.PresentationComponent)
       },
       {
-        path: 'presentation/print',
+        path: 'apresentacao/imprimir',
         loadComponent: () => import('./features/public/presentation/presentation.component').then(m => m.PresentationComponent),
         data: { isPrint: true }
-      }
+      },
+
+      // Os nomes em inglês de antes das URLs em português. Convites e links de
+      // redefinir senha já saíram por e-mail com eles, e a apresentação circula
+      // entre clientes: um link que já está no mundo não pode morrer.
+      { path: 'login', redirectTo: paraONovo(ROTAS.entrar) },
+      { path: 'accept-invite', redirectTo: paraONovo(ROTAS.aceitarConvite) },
+      { path: 'forgot-password', redirectTo: paraONovo(ROTAS.esqueciASenha) },
+      { path: 'reset-password', redirectTo: paraONovo(ROTAS.redefinirSenha) },
+      { path: 'pricing', redirectTo: paraONovo(ROTAS.precos) },
+      { path: 'presentation', redirectTo: paraONovo(ROTAS.apresentacao) },
+      { path: 'presentation/print', redirectTo: paraONovo(ROTAS.apresentacaoParaImprimir) }
     ]
   },
 
@@ -62,12 +84,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/app/app.layout').then(m => m.AppLayoutComponent),
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: 'painel', pathMatch: 'full' },
       {
         // O Contexto 1 é exclusivo da consultoria (03 §1). O lado cliente nasce
         // dentro do Contexto 2 e nunca sai dele — abrir esta camada para ele
         // seria mostrar à BRF que a mesma consultoria atende a Seara.
-        path: 'dashboard',
+        path: 'painel',
         canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/dashboard/dashboard.component').then(m => m.DashboardComponent),
         data: {
@@ -77,7 +99,7 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'companies',
+        path: 'empresas',
         canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/companies/companies.component').then(m => m.CompaniesComponent),
         data: {
@@ -88,9 +110,9 @@ export const routes: Routes = [
       },
       {
         // Cadastro e edição moram no Contexto 1, e **antes** de
-        // `companies/:companyId`: declarados depois, "new" e "edit" seriam lidos
-        // como um id de empresa e abririam o layout do Contexto 2.
-        path: 'companies/new',
+        // `empresas/:companyId`: declarados depois, "nova" e "editar" seriam
+        // engolidos pelo contexto da empresa e abririam o layout do Contexto 2.
+        path: 'empresas/nova',
         canActivate: [companyAdminGuard],
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () => import('./features/app/companies/company-form/company-form.component').then(m => m.CompanyFormComponent),
@@ -101,7 +123,7 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'companies/edit/:companyId',
+        path: 'empresas/:companyId/editar',
         canActivate: [companyAdminGuard],
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () => import('./features/app/companies/company-form/company-form.component').then(m => m.CompanyFormComponent),
@@ -115,7 +137,7 @@ export const routes: Routes = [
         // Gestão de gente **da conta** — Contexto 1, e só dele. O lado cliente
         // administra a própria empresa pela tela do Contexto 2; esta lista
         // nomeia todas as empresas atendidas.
-        path: 'team',
+        path: 'equipe',
         canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/team/team.component').then(m => m.TeamComponent),
         data: {
@@ -125,7 +147,7 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'catalogs/solutions',
+        path: 'catalogos/solucoes',
         canActivate: [roleGuard(CONTEXTO_1)],
         loadComponent: () => import('./features/app/catalogs/solutions/solutions.component').then(m => m.SolutionsComponent),
         data: {
@@ -139,13 +161,13 @@ export const routes: Routes = [
       {
         // O Contexto 2 é dos dois lados — mas só de quem tem vínculo **nesta**
         // empresa. É o `companyId` da rota que a guarda usa para checar.
-        path: 'companies/:companyId',
+        path: 'empresas/:companyId',
         canActivate: [roleGuard(VÊ_A_EMPRESA)],
         loadComponent: () => import('./features/app/companies/company/company.layout').then(m => m.CompanyLayoutComponent),
         children: [
-          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: '', redirectTo: 'painel', pathMatch: 'full' },
           {
-            path: 'dashboard',
+            path: 'painel',
             loadComponent: () => import('./features/app/companies/company/dashboard/dashboard.component').then(m => m.CompanyDashboardComponent),
             data: {
               label: 'Dashboard da Empresa',
@@ -154,7 +176,7 @@ export const routes: Routes = [
             }
           },
           {
-            path: 'equipments',
+            path: 'equipamentos',
             loadComponent: () => import('./features/app/companies/company/equipments/equipments.component').then(m => m.EquipmentsComponent),
             data: {
               label: 'Equipamentos',
@@ -166,7 +188,7 @@ export const routes: Routes = [
             // A mesma tela para os dois lados: o Gestor administra a equipe da
             // planta dele, e a consultoria vê quem está alocado ali. O que ela
             // não faz é desligar da conta — isso é ato do Contexto 1 (D8).
-            path: 'team',
+            path: 'equipe',
             loadComponent: () => import('./features/app/companies/company/team/company-team.component').then(m => m.CompanyTeamComponent),
             data: {
               label: 'Equipe da Empresa',
@@ -175,7 +197,7 @@ export const routes: Routes = [
             }
           },
           {
-            path: 'action-plan',
+            path: 'plano-de-acao',
             loadComponent: () => import('./features/app/companies/company/action-plan/action-plan.component').then(m => m.CompanyActionPlanComponent),
             data: {
               label: 'Planos de Ação',
@@ -186,12 +208,12 @@ export const routes: Routes = [
 
           // CONTEXTO 3 — EQUIPAMENTO
           {
-            path: 'equipments/:equipmentId',
+            path: 'equipamentos/:equipmentId',
             loadComponent: () => import('./features/app/companies/company/equipments/equipment/equipment.layout').then(m => m.EquipmentLayoutComponent),
             children: [
-              { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+              { path: '', redirectTo: 'painel', pathMatch: 'full' },
               {
-                path: 'dashboard',
+                path: 'painel',
                 loadComponent: () => import('./features/app/companies/company/equipments/equipment/dashboard/dashboard.component').then(m => m.EquipmentDashboardComponent),
                 data: {
                   label: 'Dashboard do Equipamento',
@@ -200,7 +222,7 @@ export const routes: Routes = [
                 }
               },
               {
-                path: 'analysis',
+                path: 'analise',
                 loadComponent: () => import('./features/app/companies/company/equipments/equipment/analysis/analysis.component').then(m => m.EquipmentAnalysisComponent),
                 data: {
                   label: 'Análises de Risco',
@@ -209,7 +231,7 @@ export const routes: Routes = [
                 }
               },
               {
-                path: 'history',
+                path: 'historico',
                 loadComponent: () => import('./features/app/companies/company/equipments/equipment/history/history.component').then(m => m.EquipmentHistoryComponent),
                 data: {
                   label: 'Histórico do Equipamento',
@@ -224,7 +246,7 @@ export const routes: Routes = [
 
       // ÁREA DE EXECUÇÃO — transversal, de qualquer papel operacional
       {
-        path: 'execution',
+        path: 'execucao',
         loadComponent: () => import('./features/app/execution/execution.component').then(m => m.ExecutionComponent),
         data: {
           label: 'Minhas Tarefas',
@@ -238,7 +260,7 @@ export const routes: Routes = [
       // tem perfil, e mostrá-lo dentro do menu da consultoria revelaria a ele um
       // universo que não é dele.
       {
-        path: 'profile',
+        path: 'perfil',
         loadComponent: () => import('./features/app/profile/profile.component').then(m => m.ProfileComponent),
         data: {
           label: 'Meu Perfil',
@@ -249,7 +271,7 @@ export const routes: Routes = [
       {
         // Só o titular da conta. Faturamento é de quem responde pela conta, não
         // de quem tem o papel mais graúdo dentro dela.
-        path: 'billing',
+        path: 'assinatura',
         canActivate: [accountOwnerGuard],
         loadComponent: () => import('./features/app/billing/billing.component').then(m => m.BillingComponent),
         data: {
@@ -257,7 +279,12 @@ export const routes: Routes = [
           icon: 'pi pi-star',
           subtitle: 'Plano contratado, créditos disponíveis e histórico de cobrança da consultoria.'
         }
-      }
+      },
+
+      // Endereço que não existe mais — um favorito de antes das URLs em
+      // português — volta ao topo da área, e não à landing page da raiz. O
+      // topo redireciona ao painel, cuja guarda leva cada papel à própria porta.
+      { path: '**', redirectTo: '' }
     ]
   },
 
@@ -267,9 +294,9 @@ export const routes: Routes = [
     canActivate: [authGuard, adminGuard],
     loadComponent: () => import('./features/admin/admin.layout').then(m => m.AdminLayoutComponent),
     children: [
-      { path: '', redirectTo: 'accounts', pathMatch: 'full' },
+      { path: '', redirectTo: 'contas', pathMatch: 'full' },
       {
-        path: 'accounts',
+        path: 'contas',
         loadComponent: () => import('./features/admin/accounts/accounts.component').then(m => m.AccountsComponent),
         data: {
           label: 'Contas',
@@ -278,7 +305,7 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'purchases',
+        path: 'compras',
         loadComponent: () => import('./features/admin/purchases/purchases.component').then(m => m.PurchasesComponent),
         data: {
           label: 'Compras',
@@ -287,7 +314,7 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'admins',
+        path: 'administradores',
         loadComponent: () => import('./features/admin/admins/admins.component').then(m => m.AdminsComponent),
         data: {
           label: 'Admins da Plataforma',
@@ -303,7 +330,9 @@ export const routes: Routes = [
           icon: 'pi pi-palette',
           subtitle: 'Biblioteca viva de componentes, cores e padrões visuais sincronizados do Normatiza v2.'
         }
-      }
+      },
+
+      { path: '**', redirectTo: '' }
     ]
   },
 

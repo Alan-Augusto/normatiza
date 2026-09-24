@@ -24,6 +24,7 @@ import { ROLE_LABEL } from '@normatiza/shared';
 import { AuthService } from '@core/auth/auth.service';
 import { rotaDaConsultoria } from '@core/auth/entry-route';
 import { CompanyInfoComponent } from '../company-info/company-info.component';
+import { ROTAS } from '../../../core/routing/rotas';
 
 @Component({
   selector: 'app-sidebar',
@@ -40,6 +41,8 @@ export class SidebarComponent {
   private readonly pageMeta = inject(PageMetaService);
   private readonly activeContext = inject(ActiveContextService);
   private readonly auth = inject(AuthService);
+
+  protected readonly rotas = ROTAS;
 
   appTitle = input<string>('Normatiza', { alias: 'appTitle' });
   logoIcon = input<string>('pi pi-box');
@@ -60,15 +63,15 @@ export class SidebarComponent {
    * O topo do contexto em que a pessoa está — o destino do ícone de início.
    *
    * Dentro de `/app` **não pode ser `/app` fixo**: essa rota redireciona para
-   * `/app/dashboard`, guardado pelo Contexto 1, e o lado cliente cairia no laço
-   * `/app → dashboard → recusa → /app`, que trava a aba. `rotaDaConsultoria`
+   * `/app/painel`, guardado pelo Contexto 1, e o lado cliente cairia no laço
+   * `/app → painel → recusa → /app`, que trava a aba. `rotaDaConsultoria`
    * devolve o topo real de cada um.
    */
   protected readonly baseRoute = computed<string>(() => {
-    if (this.currentUrl().startsWith('/admin')) return '/admin';
+    if (this.currentUrl().startsWith(ROTAS.admin.raiz)) return ROTAS.admin.raiz;
 
     const sessão = this.auth.session();
-    return sessão ? rotaDaConsultoria(sessão) : '/app';
+    return sessão ? rotaDaConsultoria(sessão) : ROTAS.app;
   });
 
   /**
@@ -83,7 +86,7 @@ export class SidebarComponent {
     const sessão = this.auth.session();
     if (!sessão?.isPlatformAdmin) return [];
 
-    if (this.baseRoute() !== '/admin') {
+    if (this.baseRoute() !== ROTAS.admin.raiz) {
       return [
         {
           label: 'Plataforma',
@@ -91,7 +94,7 @@ export class SidebarComponent {
             {
               label: 'Acessar Painel Admin',
               icon: 'pi pi-shield',
-              command: () => this.router.navigate(['/admin']),
+              command: () => this.router.navigate([ROTAS.admin.raiz]),
             },
           ],
         },
@@ -129,7 +132,7 @@ export class SidebarComponent {
    * Em que empresa e em que máquina a pessoa está atuando (arquitetura.md §5.3).
    *
    * Mora na **sidebar**, abaixo da busca, e não acima do título da tela: todo
-   * item do menu ao lado já é desta empresa — `/app/companies/:id/...` — e a
+   * item do menu ao lado já é desta empresa — `/app/empresas/:id/...` — e a
    * saída dela também. O rótulo nomeia o menu, não o conteúdo; acima do `<h1>`
    * ele repetia a migalha e empurrava o título para baixo.
    *
@@ -184,7 +187,7 @@ export class SidebarComponent {
         {
           label: 'Configurações',
           icon: 'pi pi-cog',
-          command: () => this.router.navigate(['/app/profile']),
+          command: () => this.router.navigate([ROTAS.perfil]),
         },
       ],
     },
@@ -254,7 +257,7 @@ export class SidebarComponent {
     // A navegação é a mesma nos dois desfechos: a sessão local já foi descartada
     // pelo `AuthService`, e continuar na tela do app seria mostrar dados de
     // alguém que acabou de sair.
-    const irParaOLogin = () => void this.router.navigate(['/login']);
+    const irParaOLogin = () => void this.router.navigate([ROTAS.entrar]);
     this.auth.logout().subscribe({ next: irParaOLogin, error: irParaOLogin });
   }
 

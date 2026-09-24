@@ -13,6 +13,7 @@ import {
 } from '@normatiza/shared';
 
 import { CompaniesService } from '../../../core/services/companies.service';
+import { ROTAS } from '../../../core/routing/rotas';
 
 /**
  * Os dados da empresa em contexto — aberto pelo nome dela na sidebar
@@ -30,6 +31,8 @@ import { CompaniesService } from '../../../core/services/companies.service';
   templateUrl: './company-info.component.html',
 })
 export class CompanyInfoComponent {
+  protected readonly rotas = ROTAS;
+
   private readonly companies = inject(CompaniesService);
 
   readonly companyId = input.required<string>();

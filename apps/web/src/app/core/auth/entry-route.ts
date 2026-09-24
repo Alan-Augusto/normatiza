@@ -1,4 +1,5 @@
 import type { Role, SessionUser } from '@normatiza/shared';
+import { ROTAS } from '../routing/rotas';
 
 /**
  * Onde cada papel cai depois do login ([03 §1](../../../../../docs/produto/03_navegacao_e_telas.md)).
@@ -34,7 +35,7 @@ export function rotaDeEntrada(session: SessionUser): string {
   // quem não tem vínculo ativo em conta nenhuma — o admin que existe só para
   // operar a plataforma, e para quem não há aplicação nenhuma do outro lado.
   const temTrabalhoNaAplicação = session.memberships.some((vínculo) => vínculo.isActive);
-  if (session.isPlatformAdmin && !temTrabalhoNaAplicação) return '/admin';
+  if (session.isPlatformAdmin && !temTrabalhoNaAplicação) return ROTAS.admin.raiz;
 
   return rotaDaConsultoria(session);
 }
@@ -52,17 +53,17 @@ export function rotaDaConsultoria(session: SessionUser): string {
   const tem = (papéis: readonly Role[]) =>
     ativos.filter((vínculo) => vínculo.roles.some((papel) => papéis.includes(papel)));
 
-  if (tem(CONTEXTO_1).length > 0) return '/app/dashboard';
+  if (tem(CONTEXTO_1).length > 0) return ROTAS.painel;
 
   // Todo papel do lado cliente pertence a uma única empresa: não existe nada
   // acima dela para navegar, e mostrar o Contexto 1 revelaria à BRF que a
   // consultoria atende a Seara também.
   const naEmpresa = tem(CONTEXTO_2)[0];
-  if (naEmpresa) return `/app/companies/${naEmpresa.companyId}/dashboard`;
+  if (naEmpresa) return ROTAS.empresa(naEmpresa.companyId).painel;
 
-  if (tem(['EXECUTOR']).length > 0) return '/app/execution';
+  if (tem(['EXECUTOR']).length > 0) return ROTAS.execucao;
 
   // Acontece com quem foi desligado de todas as empresas mas ainda tem login.
   // Precisa de uma tela que exista, não de um dashboard vazio sem explicação.
-  return '/app/profile';
+  return ROTAS.perfil;
 }

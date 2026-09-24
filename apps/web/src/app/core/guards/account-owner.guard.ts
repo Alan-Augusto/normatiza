@@ -3,6 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from '../auth/auth.service';
 import { rotaDeEntrada } from '../auth/entry-route';
+import { ROTAS } from '../routing/rotas';
 
 /**
  * Exige ser o **titular** da conta — quem responde por ela, não quem tem o papel
@@ -20,7 +21,7 @@ export const accountOwnerGuard: CanActivateFn = (_route, state) => {
   const router = inject(Router);
 
   if (!auth.isAuthenticated()) {
-    return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+    return router.createUrlTree([ROTAS.entrar], { queryParams: { returnUrl: state.url } });
   }
 
   if (auth.isAccountOwner()) return true;

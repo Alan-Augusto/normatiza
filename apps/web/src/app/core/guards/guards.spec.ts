@@ -59,7 +59,7 @@ describe('guardas de rota', () => {
     await promessa;
   }
 
-  function rodar(guard: CanActivateFn, url = '/app/dashboard', params: Record<string, string> = {}) {
+  function rodar(guard: CanActivateFn, url = '/app/painel', params: Record<string, string> = {}) {
     const route = { params, data: {} } as unknown as ActivatedRouteSnapshot;
     const state = { url } as RouterStateSnapshot;
     return TestBed.runInInjectionContext(() => guard(route, state));
@@ -74,35 +74,35 @@ describe('guardas de rota', () => {
     it('deve mandar o anônimo para o login', () => {
       const resultado = rodar(authGuard);
       expect(resultado).toBeInstanceOf(UrlTree);
-      expect(router.serializeUrl(resultado as UrlTree)).toContain('/login');
+      expect(router.serializeUrl(resultado as UrlTree)).toContain('/entrar');
     });
 
     it('deve lembrar para onde a pessoa ia, para voltar depois do login', () => {
       // Quem clicou num link de um equipamento específico e foi parar no login
       // precisa cair no equipamento depois de entrar, não num dashboard genérico.
-      const resultado = rodar(authGuard, '/app/companies/brf/equipments/xyz');
+      const resultado = rodar(authGuard, '/app/empresas/brf/equipamentos/xyz');
       const url = router.serializeUrl(resultado as UrlTree);
       expect(url).toContain('returnUrl');
-      expect(decodeURIComponent(url)).toContain('/app/companies/brf/equipments/xyz');
+      expect(decodeURIComponent(url)).toContain('/app/empresas/brf/equipamentos/xyz');
     });
   });
 
   describe('adminGuard', () => {
     it('deve deixar passar o admin da plataforma', async () => {
       await entrarComo([], true);
-      expect(rodar(adminGuard, '/admin/accounts')).toBe(true);
+      expect(rodar(adminGuard, '/admin/contas')).toBe(true);
     });
 
     it('deve deixar passar quem é admin da plataforma e também da própria consultoria', async () => {
       // Um login só para quem é as duas coisas — o caso do dono do produto.
       await entrarComo([vínculo(BRF.id, ['LEAD_ENGINEER'])], true);
-      expect(rodar(adminGuard, '/admin/accounts')).toBe(true);
+      expect(rodar(adminGuard, '/admin/contas')).toBe(true);
     });
 
     it('deve barrar o Engenheiro Responsável que não é admin da plataforma', async () => {
       // Ser dono da consultoria não é ser dono da plataforma.
       await entrarComo([vínculo(BRF.id, ['LEAD_ENGINEER'])]);
-      expect(rodar(adminGuard, '/admin/accounts')).not.toBe(true);
+      expect(rodar(adminGuard, '/admin/contas')).not.toBe(true);
     });
 
     it('não deve devolver um destino que outra guarda recusaria', async () => {
@@ -110,15 +110,15 @@ describe('guardas de rota', () => {
       // para `/app` o joga no ciclo do Contexto 1.
       await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
 
-      const destino = rodar(adminGuard, '/admin/accounts');
+      const destino = rodar(adminGuard, '/admin/contas');
       const url = router.serializeUrl(destino as UrlTree);
 
       expect(url).not.toBe('/app');
-      expect(url).toBe(`/app/companies/${BRF.id}/dashboard`);
+      expect(url).toBe(`/app/empresas/${BRF.id}/painel`);
     });
 
     it('deve barrar o anônimo', () => {
-      expect(rodar(adminGuard, '/admin/accounts')).not.toBe(true);
+      expect(rodar(adminGuard, '/admin/contas')).not.toBe(true);
     });
   });
 
@@ -137,33 +137,33 @@ describe('guardas de rota', () => {
 
     it('deve deixar passar o titular da conta', async () => {
       await entrarComoDono(true);
-      expect(rodar(accountOwnerGuard, '/app/billing')).toBe(true);
+      expect(rodar(accountOwnerGuard, '/app/assinatura')).toBe(true);
     });
 
     it('deve barrar quem trabalha na conta mas não a titulariza', async () => {
       // Faturamento é de quem responde pela conta. Ter papel graúdo não é o
       // mesmo que pagar a fatura.
       await entrarComoDono(false);
-      expect(rodar(accountOwnerGuard, '/app/billing')).not.toBe(true);
+      expect(rodar(accountOwnerGuard, '/app/assinatura')).not.toBe(true);
     });
 
     it('deve barrar o lado cliente', async () => {
       await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
-      expect(rodar(accountOwnerGuard, '/app/billing')).not.toBe(true);
+      expect(rodar(accountOwnerGuard, '/app/assinatura')).not.toBe(true);
     });
 
     it('deve mandar o recusado para a porta de entrada dele, e não para /app', async () => {
       await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
 
-      const destino = rodar(accountOwnerGuard, '/app/billing');
+      const destino = rodar(accountOwnerGuard, '/app/assinatura');
       expect(router.serializeUrl(destino as UrlTree)).toBe(
-        `/app/companies/${BRF.id}/dashboard`,
+        `/app/empresas/${BRF.id}/painel`,
       );
     });
 
     it('deve mandar o anônimo para o login', () => {
-      const destino = rodar(accountOwnerGuard, '/app/billing');
-      expect(router.serializeUrl(destino as UrlTree)).toContain('/login');
+      const destino = rodar(accountOwnerGuard, '/app/assinatura');
+      expect(router.serializeUrl(destino as UrlTree)).toContain('/entrar');
     });
   });
 
@@ -182,8 +182,8 @@ describe('guardas de rota', () => {
       // O Gestor da BRF não vira Gestor da Seara por a rota mudar de parâmetro.
       await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
 
-      expect(rodar(roleGuard(['MANAGER']), '/app/companies/x', { companyId: BRF.id })).toBe(true);
-      expect(rodar(roleGuard(['MANAGER']), '/app/companies/y', { companyId: SEARA.id })).not.toBe(
+      expect(rodar(roleGuard(['MANAGER']), '/app/empresas/x', { companyId: BRF.id })).toBe(true);
+      expect(rodar(roleGuard(['MANAGER']), '/app/empresas/y', { companyId: SEARA.id })).not.toBe(
         true,
       );
     });
@@ -191,7 +191,7 @@ describe('guardas de rota', () => {
     /**
      * O destino da recusa não pode ser uma rota que a mesma guarda recusaria.
      *
-     * `/app` redireciona para `/app/dashboard`, que é guardado pelo Contexto 1.
+     * `/app` redireciona para `/app/painel`, que é guardado pelo Contexto 1.
      * Mandar para lá quem acabou de ser recusado pelo Contexto 1 fecha um ciclo
      * — `/app` → `dashboard` → recusa → `/app` — e o roteador não tem freio
      * para isso: o laço é síncrono e trava a aba do navegador.
@@ -199,20 +199,20 @@ describe('guardas de rota', () => {
     it('não deve devolver um destino que ela mesma recusaria', async () => {
       await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
 
-      const destino = rodar(roleGuard(CONTEXTO_1), '/app/dashboard');
+      const destino = rodar(roleGuard(CONTEXTO_1), '/app/painel');
       const url = router.serializeUrl(destino as UrlTree);
 
       expect(url).not.toBe('/app');
-      expect(url).not.toBe('/app/dashboard');
+      expect(url).not.toBe('/app/painel');
     });
 
     it('deve mandar o recusado para a porta de entrada dele', async () => {
       await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
 
-      const destino = rodar(roleGuard(CONTEXTO_1), '/app/dashboard');
+      const destino = rodar(roleGuard(CONTEXTO_1), '/app/painel');
 
       expect(router.serializeUrl(destino as UrlTree)).toBe(
-        `/app/companies/${BRF.id}/dashboard`,
+        `/app/empresas/${BRF.id}/painel`,
       );
     });
 
@@ -221,16 +221,16 @@ describe('guardas de rota', () => {
       // seria o laço de novo. O perfil não é guardado por papel.
       await entrarComo([]);
 
-      const destino = rodar(roleGuard(CONTEXTO_1), '/app/dashboard');
+      const destino = rodar(roleGuard(CONTEXTO_1), '/app/painel');
 
-      expect(router.serializeUrl(destino as UrlTree)).toBe('/app/profile');
+      expect(router.serializeUrl(destino as UrlTree)).toBe('/app/perfil');
     });
 
     it('deve mandar o anônimo para o login, e não para uma tela de acesso negado', async () => {
       // Quem não entrou não tem "acesso negado" — tem login pendente.
       const resultado = rodar(roleGuard(['MANAGER']));
       expect(resultado).toBeInstanceOf(UrlTree);
-      expect(router.serializeUrl(resultado as UrlTree)).toContain('/login');
+      expect(router.serializeUrl(resultado as UrlTree)).toContain('/entrar');
     });
   });
 });

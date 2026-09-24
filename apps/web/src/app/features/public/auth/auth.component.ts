@@ -11,6 +11,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { aparaEmail } from '../../../core/forms/email';
 import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { rotaDeEntrada } from '../../../core/auth/entry-route';
+import { ROTAS } from '../../../core/routing/rotas';
 
 const FALHA_GENÉRICA = 'Não foi possível entrar agora. Tente de novo em instantes.';
 
@@ -22,6 +23,8 @@ const FALHA_GENÉRICA = 'Não foi possível entrar agora. Tente de novo em insta
   styleUrl: './auth.component.css',
 })
 export class AuthComponent {
+  protected readonly rotas = ROTAS;
+
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);

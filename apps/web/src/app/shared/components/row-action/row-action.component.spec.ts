@@ -42,10 +42,10 @@ describe('RowActionComponent', () => {
   });
 
   it('deve virar link quando a ação é ir para outra tela', () => {
-    const raiz = montar({ icon: 'lucidePencil', label: 'Editar', link: ['/app/companies/edit', 'c-1'] });
+    const raiz = montar({ icon: 'lucidePencil', label: 'Editar', link: '/app/empresas/c-1/editar' });
 
     const link = raiz.querySelector('a')!;
-    expect(link.getAttribute('href')).toBe('/app/companies/edit/c-1');
+    expect(link.getAttribute('href')).toBe('/app/empresas/c-1/editar');
     expect(link.getAttribute('aria-label')).toBe('Editar');
     expect(raiz.querySelector('button')).toBeNull();
   });

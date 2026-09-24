@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from '../auth/auth.service';
+import { ROTAS } from '../routing/rotas';
 
 /**
  * Exige sessão.
@@ -19,5 +20,5 @@ export const authGuard: CanActivateFn = (_route, state) => {
 
   // Quem clicou no link de um equipamento específico precisa cair nele depois
   // de entrar, não num dashboard genérico.
-  return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+  return router.createUrlTree([ROTAS.entrar], { queryParams: { returnUrl: state.url } });
 };

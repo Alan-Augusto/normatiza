@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
 
 import { MAQUINAS_PROVISORIAS } from './maquinas-provisorias';
+import { ROTAS } from '../../../../../core/routing/rotas';
 
 /**
  * Inventário da planta — Contexto 2.
@@ -29,7 +30,7 @@ export class EquipmentsComponent {
   readonly maquinas = MAQUINAS_PROVISORIAS;
 
   /**
-   * O `companyId` vem do pai — `equipments` é filha de `companies/:companyId`,
+   * O `companyId` vem do pai — `equipamentos` é filha de `empresas/:companyId`,
    * e `ActivatedRoute.paramMap` só enxerga os parâmetros do próprio nível.
    */
   readonly companyId = toSignal(
@@ -37,7 +38,7 @@ export class EquipmentsComponent {
     { initialValue: this.route.parent?.snapshot.paramMap.get('companyId') ?? '' },
   );
 
-  rotaDoEquipamento(equipmentId: string): string[] {
-    return ['/app/companies', this.companyId(), 'equipments', equipmentId, 'dashboard'];
+  rotaDoEquipamento(equipmentId: string): string {
+    return ROTAS.empresa(this.companyId()).equipamento(equipmentId).painel;
   }
 }

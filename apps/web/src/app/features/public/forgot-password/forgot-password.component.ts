@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AccountRecoveryService } from '../../../core/auth/account-recovery.service';
 import { aparaEmail } from '../../../core/forms/email';
 import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
+import { ROTAS } from '../../../core/routing/rotas';
 
 @Component({
   selector: 'app-forgot-password',
@@ -13,6 +14,8 @@ import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
   templateUrl: './forgot-password.component.html',
 })
 export class ForgotPasswordComponent {
+  protected readonly rotas = ROTAS;
+
   private readonly recovery = inject(AccountRecoveryService);
   private readonly fb = inject(NonNullableFormBuilder);
 

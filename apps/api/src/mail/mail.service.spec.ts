@@ -59,7 +59,7 @@ describe('MailService', () => {
         nome: 'Marcos',
         convidadoPor: 'Josué',
         conta: 'Normatiza',
-        link: 'http://localhost:8080/accept-invite?token=abc',
+        link: 'http://localhost:8080/aceitar-convite?token=abc',
       });
 
       expect(provedorFalso.emails.send).not.toHaveBeenCalled();
@@ -92,7 +92,7 @@ describe('MailService', () => {
         nome: 'Alan',
         convidadoPor: 'Josué',
         conta: 'Normatiza',
-        link: 'http://localhost:8080/accept-invite?token=abc',
+        link: 'http://localhost:8080/aceitar-convite?token=abc',
       });
 
       expect(enviados).toHaveLength(1);
@@ -186,7 +186,7 @@ describe('MailService', () => {
         nome: 'Alan',
         convidadoPor: 'Josué',
         conta: 'Normatiza',
-        link: 'http://localhost:8080/accept-invite?token=segredo-abc',
+        link: 'http://localhost:8080/aceitar-convite?token=segredo-abc',
       });
 
     function comEnvioReal() {
@@ -198,7 +198,7 @@ describe('MailService', () => {
       await enviarConvite(mail);
 
       const payload = provedorFalso.emails.send.mock.calls[0][0] as unknown as { html: string };
-      expect(payload.html).toContain('accept-invite?token=segredo-abc');
+      expect(payload.html).toContain('aceitar-convite?token=segredo-abc');
     });
 
     it('deve dizer quem convidou e para qual consultoria', async () => {

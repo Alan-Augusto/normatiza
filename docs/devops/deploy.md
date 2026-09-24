@@ -52,14 +52,17 @@ Daí saem três consequências, todas boas:
 ### O roteamento é por prefixo, e é frágil de propósito
 
 `apps/web/nginx.conf` manda para a API tudo que começar com `auth`, `users`,
-`companies`, `memberships`, `invitations` ou `platform`. O resto vai para o
+`companies`, `company-groups`, `memberships`, `invitations` ou `platform`. O resto vai para o
 `index.html` e quem resolve é o Angular Router.
 
 > [!WARNING]
 > **Prefixo novo na API precisa entrar no `nginx.conf` — e ser conferido contra
 > `apps/web/src/app/app.routes.ts`.** Um `@Controller('admin')` sequestraria o
 > painel administrativo inteiro; um `@Controller('login')`, a tela de login.
-> Hoje não há colisão, e é uma verificação manual, não automática.
+> Hoje não há colisão — as telas têm URL em português e a API, em inglês
+> ([arquitetura §3](../web/arquitetura.md#urls-em-português)) —, e é uma
+> verificação manual, não automática. Esquecer o prefixo aqui não quebra nada no
+> ambiente local: em produção, a chamada recebe o `index.html` em vez de JSON.
 
 ## O servidor de hoje
 
@@ -167,7 +170,7 @@ docker compose exec api pnpm --filter api admin:create \
   --email voce@exemplo.com --criar --nome "Seu Nome" --senha "uma senha forte"
 ```
 
-Da segunda em diante o caminho é a tela `/admin/admins`.
+Da segunda em diante o caminho é a tela `/admin/administradores`.
 
 > [!WARNING]
 > **O comando não redefine senha.** Em `create-platform-admin.ts`, o

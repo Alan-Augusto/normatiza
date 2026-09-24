@@ -34,6 +34,7 @@ import {
   LinhaDaTabela,
 } from '../../../shared/components/data-table/data-table.directives';
 import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
+import { ROTAS } from '../../../core/routing/rotas';
 
 /**
  * Empresas — Contexto 1 (docs/produto/03 §3.2).
@@ -75,6 +76,8 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
   styleUrl: './companies.component.css',
 })
 export class CompaniesComponent implements OnInit {
+  protected readonly rotas = ROTAS;
+
   private readonly companies = inject(CompaniesService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
@@ -187,7 +190,7 @@ export class CompaniesComponent implements OnInit {
     const alvo = evento.target as HTMLElement | null;
     if (alvo?.closest('a, button, input, [role="button"]')) return;
     if (window.getSelection()?.toString()) return;
-    this.router.navigate(['/app/companies', empresa.id, 'dashboard']);
+    this.router.navigateByUrl(ROTAS.empresa(empresa.id).painel);
   }
 
   cnpj(documento: string): string {

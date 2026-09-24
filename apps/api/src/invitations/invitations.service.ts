@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Invitation, User } from '@prisma/client';
-import type { CreateInvitationRequest, InvitationSummary } from '@normatiza/shared';
+import { PAGINAS_DOS_EMAILS, type CreateInvitationRequest, type InvitationSummary } from '@normatiza/shared';
 
 import { AuditAction, AuditService } from '../audit/audit.service';
 import { CompanyWriteGuard } from '../companies/company-write-guard.service';
@@ -208,7 +208,7 @@ export class InvitationsService {
       nome: convidado.name,
       convidadoPor: quemConvidou?.name ?? 'A equipe',
       conta: conta?.name ?? 'Normatiza',
-      link: `${base}/accept-invite?token=${encodeURIComponent(token)}`,
+      link: `${base}${PAGINAS_DOS_EMAILS.aceitarConvite}?token=${encodeURIComponent(token)}`,
     });
   }
 

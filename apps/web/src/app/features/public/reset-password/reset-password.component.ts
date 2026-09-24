@@ -7,6 +7,7 @@ import { map } from 'rxjs';
 import { AccountRecoveryService } from '../../../core/auth/account-recovery.service';
 import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { senhasIguais, SENHA_MÍNIMA } from '../nova-senha';
+import { ROTAS } from '../../../core/routing/rotas';
 
 @Component({
   selector: 'app-reset-password',
@@ -15,6 +16,8 @@ import { senhasIguais, SENHA_MÍNIMA } from '../nova-senha';
   templateUrl: './reset-password.component.html',
 })
 export class ResetPasswordComponent {
+  protected readonly rotas = ROTAS;
+
   private readonly recovery = inject(AccountRecoveryService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -52,7 +55,7 @@ export class ResetPasswordComponent {
       next: () => {
         // Redefinir a senha encerra todas as sessões ativas, inclusive a de quem
         // roubou o acesso. Por isso o caminho daqui é o login, e não o app.
-        void this.router.navigateByUrl('/login');
+        void this.router.navigateByUrl(ROTAS.entrar);
       },
       error: (erro: unknown) => {
         this.enviando.set(false);

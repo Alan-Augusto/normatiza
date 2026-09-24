@@ -39,11 +39,11 @@ describe('CompanyFormComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
-          { path: 'app/companies', component: Destino },
-          { path: 'app/companies/new', component: CompanyFormComponent },
-          { path: 'app/companies/edit/:companyId', component: CompanyFormComponent },
-          { path: 'app/companies/:companyId/dashboard', component: Destino },
-          { path: 'app/companies/:companyId/team', component: Destino },
+          { path: 'app/empresas', component: Destino },
+          { path: 'app/empresas/nova', component: CompanyFormComponent },
+          { path: 'app/empresas/:companyId/editar', component: CompanyFormComponent },
+          { path: 'app/empresas/:companyId/painel', component: Destino },
+          { path: 'app/empresas/:companyId/equipe', component: Destino },
         ]),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -102,13 +102,13 @@ describe('CompanyFormComponent', () => {
 
   async function novo() {
     harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/app/companies/new', CompanyFormComponent);
+    await harness.navigateByUrl('/app/empresas/nova', CompanyFormComponent);
     grupos(gruposDaConta);
   }
 
   async function editarBrf(detalhe = detalheDaBrf()) {
     harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl(`/app/companies/edit/${BRF.id}`, CompanyFormComponent);
+    await harness.navigateByUrl(`/app/empresas/${BRF.id}/editar`, CompanyFormComponent);
     grupos(gruposDaConta);
     http.expectOne(`${API}/companies/${BRF.id}`).flush(detalhe);
     harness.detectChanges();
@@ -427,8 +427,8 @@ describe('CompanyFormComponent', () => {
       harness.detectChanges();
 
       expect(el('[data-testid="sucesso"]')?.textContent).toContain('JBS');
-      expect(el('[data-testid="abrir-empresa"]')?.getAttribute('href')).toBe('/app/companies/c-jbs/dashboard');
-      expect(el('[data-testid="convidar-gestor"]')?.getAttribute('href')).toBe('/app/companies/c-jbs/team');
+      expect(el('[data-testid="abrir-empresa"]')?.getAttribute('href')).toBe('/app/empresas/c-jbs/painel');
+      expect(el('[data-testid="convidar-gestor"]')?.getAttribute('href')).toBe('/app/empresas/c-jbs/equipe');
     });
 
     it('deve voltar à identificação e pôr no campo CNPJ a recusa por CNPJ repetido', async () => {
@@ -511,7 +511,7 @@ describe('CompanyFormComponent', () => {
       http.expectOne(`${API}/auth/refresh`).flush(respostaDeLogin());
       await harness.fixture.whenStable();
 
-      expect(TestBed.inject(Router).url).toBe('/app/companies');
+      expect(TestBed.inject(Router).url).toBe('/app/empresas');
     });
 
     it('deve levar à etapa do primeiro campo inválido ao tentar salvar', async () => {

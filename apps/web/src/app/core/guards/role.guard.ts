@@ -5,6 +5,7 @@ import type { Role } from '@normatiza/shared';
 
 import { AuthService } from '../auth/auth.service';
 import { rotaDeEntrada } from '../auth/entry-route';
+import { ROTAS } from '../routing/rotas';
 
 /**
  * Exige um dos papéis informados. Quando a rota traz `companyId`, exige o papel
@@ -13,8 +14,8 @@ import { rotaDeEntrada } from '../auth/entry-route';
  *
  * O destino da recusa é a **porta de entrada da própria pessoa**, e não um
  * `/app` fixo. Não é preferência de UX: `/app` redireciona para
- * `/app/dashboard`, que esta mesma guarda protege — recusar alguém e mandá-lo
- * para lá fecha o ciclo `/app → dashboard → recusa → /app`. O roteador não tem
+ * `/app/painel`, que esta mesma guarda protege — recusar alguém e mandá-lo
+ * para lá fecha o ciclo `/app → painel → recusa → /app`. O roteador não tem
  * freio para isso, e o laço é síncrono: trava a aba do navegador.
  *
  * `rotaDeEntrada` é segura por construção, porque só devolve destinos cujas
@@ -27,7 +28,7 @@ export function roleGuard(roles: readonly Role[]): CanActivateFn {
 
     // Quem não entrou não tem "acesso negado" — tem login pendente.
     if (!auth.isAuthenticated()) {
-      return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+      return router.createUrlTree([ROTAS.entrar], { queryParams: { returnUrl: state.url } });
     }
 
     const companyId = route.params['companyId'] as string | undefined;

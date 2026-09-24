@@ -103,7 +103,7 @@
       <div class="revela" [class.aberto]="contextBackLink() !== undefined">
         <div>
           <a
-            [routerLink]="contextBackLink()?.route ?? '/app'"
+            [routerLink]="contextBackLink()?.route ?? rotas.app"
             [attr.aria-hidden]="contextBackLink() ? null : 'true'"
             [attr.tabindex]="contextBackLink() ? null : -1"
             [pTooltip]="isCollapsed() ? (contextBackLink()?.label ?? '') : ''"
@@ -132,8 +132,8 @@
             exact:
               item.route === '' ||
               item.route === '/' ||
-              item.route === '/app' ||
-              item.route === '/admin',
+              item.route === rotas.app ||
+              item.route === rotas.admin.raiz,
           }"
           [pTooltip]="isCollapsed() ? item.label : ''"
           tooltipPosition="right"

@@ -220,7 +220,7 @@ ação de linha passa por
 [`shared/components/row-action`](../../apps/web/src/app/shared/components/row-action/row-action.component.ts):
 
 ```html
-<app-row-action data-testid="acao-editar" icon="lucidePencil" label="Editar" [link]="['/app/companies/edit', id]" />
+<app-row-action data-testid="acao-editar" icon="lucidePencil" label="Editar" [link]="rotas.editarEmpresa(id)" />
 <app-row-action data-testid="acao-desativar" icon="lucidePower" label="Desativar" severity="danger" (acionar)="desativando.set(linha)" />
 ```
 

@@ -39,16 +39,44 @@ export class ExemploComponent {}
 
 ## 3. Estrutura de Pastas do App (`apps/web/src/app`)
 
-A pasta de features **espelha a hierarquia do domínio**, que é a mesma dos contextos de navegação definidos em [docs/produto/03 — Navegação e Telas](../produto/03_navegacao_e_telas.md) e a mesma da URL: uma consultoria tem empresas, uma empresa tem equipamentos, um equipamento tem pontos de risco. A pasta aninha do mesmo jeito.
+A pasta de features **espelha a hierarquia do domínio**, que é a mesma dos contextos de navegação definidos em [docs/produto/03 — Navegação e Telas](../produto/03_navegacao_e_telas.md) e a mesma da URL — traduzida: a pasta é `companies`, a URL é `empresas` (ver [URLs em português](#urls-em-português)). Uma consultoria tem empresas, uma empresa tem equipamentos, um equipamento tem pontos de risco. A pasta aninha do mesmo jeito.
 
 **A regra é uma só, aplicada em todos os níveis:** a *lista* de uma coleção fica na raiz da pasta dela; o *contexto de um item* fica numa subpasta no singular.
 
 | Nível | Rota | Arquivo |
 | :--- | :--- | :--- |
-| Lista de empresas | `/app/companies` | `app/companies/companies.component.ts` |
-| Contexto de uma empresa | `/app/companies/:companyId` | `app/companies/company/` |
-| Lista de equipamentos | `/app/companies/:companyId/equipments` | `app/companies/company/equipments/equipments.component.ts` |
-| Contexto de um equipamento | `.../equipments/:equipmentId` | `app/companies/company/equipments/equipment/` |
+| Lista de empresas | `/app/empresas` | `app/companies/companies.component.ts` |
+| Contexto de uma empresa | `/app/empresas/:companyId` | `app/companies/company/` |
+| Lista de equipamentos | `/app/empresas/:companyId/equipamentos` | `app/companies/company/equipments/equipments.component.ts` |
+| Contexto de um equipamento | `.../equipamentos/:equipmentId` | `app/companies/company/equipments/equipment/` |
+
+### URLs em português
+
+A URL é a parte do código que o usuário lê — na barra do navegador, no link do
+e-mail, no favorito. Por isso ela é **em português**, e todo o resto continua em
+inglês: pastas, componentes, parâmetros de rota (`:companyId`) e a API
+(`/companies`, `/auth`).
+
+1. **Palavras inteiras, sem acento, em kebab-case:** `plano-de-acao`,
+   `esqueci-a-senha`, `catalogos/solucoes`. Termos que já são do vocabulário do
+   usuário ficam como estão: `app`, `admin`, `design-system`.
+2. **Entidade, depois ação:** `/app/empresas/nova`, `/app/empresas/:id/editar`.
+3. **Nenhum caminho escrito à mão.** Todo endereço sai de
+   [`core/routing/rotas.ts`](../../apps/web/src/app/core/routing/rotas.ts) —
+   `ROTAS.empresa(id).painel`, `ROTAS.editarEmpresa(id)`. Link, `navigate`,
+   guarda e menu pedem o endereço lá; o template recebe `protected readonly
+   rotas = ROTAS`. O `rotas.spec.ts` confere que cada endereço de `ROTAS` abre
+   uma tela declarada em `app.routes.ts`. Rota nova entra nos dois arquivos.
+4. **As páginas que os e-mails abrem** (aceitar convite, redefinir senha) moram
+   em `PAGINAS_DOS_EMAILS`, no `@normatiza/shared`: quem escreve o link é a API,
+   e quem abre a página é a web.
+5. **Endereço que saiu para o mundo não morre.** Os nomes em inglês de antes
+   (`/login`, `/accept-invite`, `/reset-password`, `/presentation`…)
+   redirecionam para os novos **com a query** — é nela que vai o token. Dentro de
+   `/app` e `/admin`, endereço desconhecido volta ao topo da área, não à landing.
+6. **Português na tela, inglês na API: é isso que evita colisão** no nginx, que
+   separa tela de API pelo prefixo no mesmo domínio
+   ([deploy](../devops/deploy.md)).
 
 ```
 src/app/
@@ -185,7 +213,7 @@ Nos Contextos 2 e 3, o usuário precisa saber permanentemente **em qual empresa 
 
 Quem **resolve** o identificador é o **layout do contexto** (`company.layout.ts`, `equipment.layout.ts`), a partir dos parâmetros da rota; o nome sai da sessão, não de um `GET` — `auth.companyInScope()`. Quem o **exibe** é a sidebar, logo abaixo da busca.
 
-**Por que na sidebar, e não acima do título da tela.** O rótulo nomeia o **menu**, não o conteúdo: todo item ao lado dele já é daquela empresa (`/app/companies/:id/…`), e a saída dela — "Voltar para Empresas" — mora ali do lado. Acima do `<h1>` ele repetia a migalha, que diz a mesma coisa e ainda é clicável, e empurrava o título da tela para baixo por informação que não é da tela.
+**Por que na sidebar, e não acima do título da tela.** O rótulo nomeia o **menu**, não o conteúdo: todo item ao lado dele já é daquela empresa (`/app/empresas/:id/…`), e a saída dela — "Voltar para Empresas" — mora ali do lado. Acima do `<h1>` ele repetia a migalha, que diz a mesma coisa e ainda é clicável, e empurrava o título da tela para baixo por informação que não é da tela.
 
 Empresa e equipamento vão em **duas linhas**, e não numa frase só: em 15rem de sidebar, *"BRF · Prensa excêntrica 60t"* trunca no meio do nome da máquina. Colapsada, a sidebar **não** mostra o contexto: é texto sem ícone, e sem largura para o texto não há o que exibir — o bloco fecha inteiro em vez de deixar um vão.
 

@@ -49,6 +49,7 @@ import {
   CnpjLookupResult,
   CnpjLookupService,
 } from '../../../../core/services/external/cnpj-lookup.service';
+import { ROTAS } from '../../../../core/routing/rotas';
 
 /** O mesmo teto do servidor — conferido aqui para a pessoa não esperar um upload ser recusado. */
 const LOGO_MAX_BYTES = 2 * 1024 * 1024;
@@ -124,8 +125,8 @@ const ETAPAS: readonly Etapa[] = [
 ];
 
 /**
- * O formulário de empresa — um componente, dois modos: `/app/companies/new` e
- * `/app/companies/edit/:companyId` (D2). Página, e não diálogo: são cinco
+ * O formulário de empresa — um componente, dois modos: `/app/empresas/nova` e
+ * `/app/empresas/:companyId/editar` (D2). Página, e não diálogo: são cinco
  * seções, upload e buscas automáticas, e um formulário desse tamanho num
  * diálogo rola por dentro e se perde num clique fora.
  *
@@ -165,6 +166,8 @@ const ETAPAS: readonly Etapa[] = [
   styleUrl: './company-form.component.css',
 })
 export class CompanyFormComponent implements OnInit {
+  protected readonly rotas = ROTAS;
+
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -555,7 +558,7 @@ export class CompanyFormComponent implements OnInit {
           this.salvando.set(false);
           this.form.markAsPristine();
           if (id) {
-            void this.router.navigateByUrl('/app/companies');
+            void this.router.navigateByUrl(ROTAS.empresas);
           } else {
             this.criada.set(empresa);
           }

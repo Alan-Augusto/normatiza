@@ -7,6 +7,7 @@ import { map } from 'rxjs';
 import { AccountRecoveryService } from '../../../core/auth/account-recovery.service';
 import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { SENHA_MÍNIMA, senhasIguais } from '../nova-senha';
+import { ROTAS } from '../../../core/routing/rotas';
 
 /**
  * O convite é a única porta de entrada do sistema, e o convidado **não preenche
@@ -20,6 +21,8 @@ import { SENHA_MÍNIMA, senhasIguais } from '../nova-senha';
   templateUrl: './accept-invite.component.html',
 })
 export class AcceptInviteComponent {
+  protected readonly rotas = ROTAS;
+
   private readonly recovery = inject(AccountRecoveryService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -53,7 +56,7 @@ export class AcceptInviteComponent {
     this.enviando.set(true);
 
     this.recovery.acceptInvitation(this.token(), this.form.getRawValue().password).subscribe({
-      next: () => void this.router.navigateByUrl('/login'),
+      next: () => void this.router.navigateByUrl(ROTAS.entrar),
       error: (erro: unknown) => {
         this.enviando.set(false);
         // O servidor distingue "convite já usado" de "senha curta demais". A
