@@ -70,11 +70,7 @@ inglês: pastas, componentes, parâmetros de rota (`:companyId`) e a API
 4. **As páginas que os e-mails abrem** (aceitar convite, redefinir senha) moram
    em `PAGINAS_DOS_EMAILS`, no `@normatiza/shared`: quem escreve o link é a API,
    e quem abre a página é a web.
-5. **Endereço que saiu para o mundo não morre.** Os nomes em inglês de antes
-   (`/login`, `/accept-invite`, `/reset-password`, `/presentation`…)
-   redirecionam para os novos **com a query** — é nela que vai o token. Dentro de
-   `/app` e `/admin`, endereço desconhecido volta ao topo da área, não à landing.
-6. **Português na tela, inglês na API: é isso que evita colisão** no nginx, que
+5. **Português na tela, inglês na API: é isso que evita colisão** no nginx, que
    separa tela de API pelo prefixo no mesmo domínio
    ([deploy](../devops/deploy.md)).
 

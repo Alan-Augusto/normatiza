@@ -1,5 +1,4 @@
-import { inject } from '@angular/core';
-import { Router, type RedirectFunction, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { accountOwnerGuard } from './core/guards/account-owner.guard';
 import { adminGuard } from './core/guards/admin.guard';
@@ -7,16 +6,7 @@ import { companyAdminGuard } from './core/guards/company-admin.guard';
 import { unsavedChangesGuard } from './features/app/companies/company-form/unsaved-changes.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { CONTEXTO_1, VÊ_A_EMPRESA } from './core/auth/entry-route';
-import { ROTAS } from './core/routing/rotas';
 
-/**
- * Leva um endereço antigo ao novo **com a query**. O `redirectTo` em texto
- * descarta os parâmetros que ele mesmo não declara — e o token do convite e da
- * redefinição de senha mora justamente na query.
- */
-function paraONovo(destino: string): RedirectFunction {
-  return ({ queryParams }) => inject(Router).createUrlTree([destino], { queryParams });
-}
 
 /**
  * As rotas espelham os contextos de navegação de docs/produto/03 — Navegação e Telas.
@@ -63,18 +53,7 @@ export const routes: Routes = [
         path: 'apresentacao/imprimir',
         loadComponent: () => import('./features/public/presentation/presentation.component').then(m => m.PresentationComponent),
         data: { isPrint: true }
-      },
-
-      // Os nomes em inglês de antes das URLs em português. Convites e links de
-      // redefinir senha já saíram por e-mail com eles, e a apresentação circula
-      // entre clientes: um link que já está no mundo não pode morrer.
-      { path: 'login', redirectTo: paraONovo(ROTAS.entrar) },
-      { path: 'accept-invite', redirectTo: paraONovo(ROTAS.aceitarConvite) },
-      { path: 'forgot-password', redirectTo: paraONovo(ROTAS.esqueciASenha) },
-      { path: 'reset-password', redirectTo: paraONovo(ROTAS.redefinirSenha) },
-      { path: 'pricing', redirectTo: paraONovo(ROTAS.precos) },
-      { path: 'presentation', redirectTo: paraONovo(ROTAS.apresentacao) },
-      { path: 'presentation/print', redirectTo: paraONovo(ROTAS.apresentacaoParaImprimir) }
+      }
     ]
   },
 
@@ -279,12 +258,7 @@ export const routes: Routes = [
           icon: 'pi pi-star',
           subtitle: 'Plano contratado, créditos disponíveis e histórico de cobrança da consultoria.'
         }
-      },
-
-      // Endereço que não existe mais — um favorito de antes das URLs em
-      // português — volta ao topo da área, e não à landing page da raiz. O
-      // topo redireciona ao painel, cuja guarda leva cada papel à própria porta.
-      { path: '**', redirectTo: '' }
+      }
     ]
   },
 
@@ -330,9 +304,7 @@ export const routes: Routes = [
           icon: 'pi pi-palette',
           subtitle: 'Biblioteca viva de componentes, cores e padrões visuais sincronizados do Normatiza v2.'
         }
-      },
-
-      { path: '**', redirectTo: '' }
+      }
     ]
   },
 

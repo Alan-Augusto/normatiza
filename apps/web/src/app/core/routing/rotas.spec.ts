@@ -1,6 +1,5 @@
-import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, type Route, type Routes, type UrlTree } from '@angular/router';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { type Route, type Routes } from '@angular/router';
+import { describe, expect, it } from 'vitest';
 import { routes } from '../../app.routes';
 import { ROTAS } from './rotas';
 
@@ -59,27 +58,7 @@ function todosOsEndereços(): string[] {
   ];
 }
 
-function rotaDe(caminho: string): Route {
-  const publica = routes.find((r) => r.path === '')!.children!;
-  const rota = [...publica, ...routes].find((r) => r.path === caminho);
-  if (!rota) throw new Error(`Sem rota "${caminho}"`);
-  return rota;
-}
-
-function redirecionar(caminho: string, queryParams: Record<string, string> = {}): string {
-  const redirectTo = rotaDe(caminho).redirectTo;
-  const destino = TestBed.runInInjectionContext(() =>
-    typeof redirectTo === 'function' ? redirectTo({ queryParams } as never) : redirectTo,
-  );
-  const router = TestBed.inject(Router);
-  return typeof destino === 'string' ? destino : router.serializeUrl(destino as UrlTree);
-}
-
 describe('ROTAS', () => {
-  beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
-  });
-
   it('deve apontar cada endereço para uma tela que existe', () => {
     const quebrados = todosOsEndereços().filter((url) => !abreUmaTela(url));
     expect(quebrados).toEqual([]);
@@ -103,36 +82,5 @@ describe('ROTAS', () => {
     expect(edicao).toBeGreaterThanOrEqual(0);
     expect(cadastro).toBeLessThan(contexto);
     expect(edicao).toBeLessThan(contexto);
-  });
-
-  describe('endereços antigos', () => {
-    // Convites e links de redefinir senha já saíram por e-mail com os nomes em
-    // inglês — e o token vai na query. Perder a query seria perder o convite.
-    it('deve levar o convite antigo ao novo, com o token', () => {
-      expect(redirecionar('accept-invite', { token: 'abc' })).toBe('/aceitar-convite?token=abc');
-    });
-
-    it('deve levar o link antigo de redefinir senha ao novo, com o token', () => {
-      expect(redirecionar('reset-password', { token: 'abc' })).toBe('/redefinir-senha?token=abc');
-    });
-
-    it('deve levar login, esqueci a senha, preços e apresentação aos nomes novos', () => {
-      expect(redirecionar('login', { returnUrl: '/app/painel' })).toBe(
-        `/entrar?returnUrl=${encodeURIComponent('/app/painel')}`,
-      );
-      expect(redirecionar('forgot-password')).toBe('/esqueci-a-senha');
-      expect(redirecionar('pricing')).toBe('/precos');
-      expect(redirecionar('presentation')).toBe('/apresentacao');
-      expect(redirecionar('presentation/print')).toBe('/apresentacao/imprimir');
-    });
-
-    it('deve levar quem tinha salvo um endereço antigo de dentro do sistema à entrada da área', () => {
-      // Sem isso, `/app/companies` cairia no `**` da raiz — a landing page, para
-      // quem já está logado.
-      for (const area of ['app', 'admin']) {
-        const filhos = routes.find((r) => r.path === area)!.children!;
-        expect(filhos.at(-1)).toMatchObject({ path: '**', redirectTo: '' });
-      }
-    });
   });
 });
