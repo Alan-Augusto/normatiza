@@ -1,5 +1,10 @@
 import type { Prisma } from '@prisma/client';
-import { deriveCompanyStatus, type CompanyStatus, type CompanySummary } from '@normatiza/shared';
+import {
+  deriveCompanyStatus,
+  type CompanyManagerRef,
+  type CompanyStatus,
+  type CompanySummary,
+} from '@normatiza/shared';
 
 /**
  * O que o banco precisa trazer para o status de uma empresa ser derivado.
@@ -20,7 +25,7 @@ export const COM_GESTORES = {
           phone: true,
           jobTitle: true,
           status: true,
-          invitation: { select: { status: true, expiresAt: true } },
+          invitation: { select: { id: true, status: true, expiresAt: true } },
         },
       },
     },
@@ -45,12 +50,33 @@ export function statusDaEmpresa(
   );
 }
 
-/** Os Gestores que contam — desligado não é Gestor de ninguém. */
+/**
+ * Os Gestores que contam. Desligado não é Gestor de ninguém; e convidado cujo
+ * convite foi cancelado também não — cancelar é desistir daquela pessoa, e
+ * seguir nomeando-a anunciaria um convite que não existe.
+ */
 export function gestoresDaEmpresa(company: Pick<EmpresaComGestores, 'memberships'>) {
   return company.memberships
     .map((v) => v.user)
     .filter((u) => u.status !== 'DISABLED')
+    .filter((u) => u.status !== 'INVITED' || u.invitation?.status === 'PENDING')
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+type Gestor = ReturnType<typeof gestoresDaEmpresa>[number];
+
+/** Um Gestor como a lista o nomeia — com o convite, quando ainda não aceitou. */
+export function refDoGestor(gestor: Gestor, agora: Date = new Date()): CompanyManagerRef {
+  const pendente = gestor.status !== 'ACTIVE';
+  const convite = gestor.invitation;
+  return {
+    id: gestor.id,
+    name: gestor.name,
+    pending: pendente,
+    ...(pendente && convite?.status === 'PENDING'
+      ? { invitation: { id: convite.id, expired: convite.expiresAt <= agora } }
+      : {}),
+  };
 }
 
 export function resumoDaEmpresa(

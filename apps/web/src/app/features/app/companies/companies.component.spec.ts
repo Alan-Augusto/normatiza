@@ -239,12 +239,103 @@ describe('CompaniesComponent', () => {
     it('deve reativar sem cerimônia — reativar não tira nada de ninguém', async () => {
       await comoJosué();
       await abrir('/app/empresas?status=INACTIVE', [
-        linhaDeEmpresa({ status: 'INACTIVE', actions: { edit: false, deactivate: false, reactivate: true } }),
+        linhaDeEmpresa({ status: 'INACTIVE', actions: { edit: false, deactivate: false, reactivate: true, inviteManager: false } }),
       ]);
 
       el('[data-testid="acao-reativar"] button')!.click();
       http.expectOne(`${API}/companies/${BRF.id}/reactivate`).flush(null);
       http.expectOne((r) => r.url === `${API}/companies`).flush([]);
+    });
+  });
+
+  describe('o Gestor, a partir da lista', () => {
+    const seara = (over: Partial<CompanyListItem> = {}) => ({ ...CARTEIRA[1], ...over });
+    const expirado = { id: 'u-helena', name: 'Helena', pending: true, invitation: { id: 'inv-1', expired: true } };
+
+    function digitarNoConvite(testid: string, valor: string) {
+      const entrada = document.querySelector<HTMLInputElement>(`[data-testid="${testid}"]`)!;
+      entrada.value = valor;
+      entrada.dispatchEvent(new Event('input'));
+      harness.detectChanges();
+    }
+
+    it('deve oferecer convidar o Gestor em empresa em implantação', async () => {
+      await comoJosué();
+      await abrir('/app/empresas', [seara()]);
+
+      expect(el('[data-testid="acao-convidar-gestor"]')).not.toBeNull();
+    });
+
+    it('não deve oferecer convidar Gestor a quem não pode conceder o papel', async () => {
+      await comoCarla();
+      await abrir('/app/empresas', [seara({ actions: { ...NADA, edit: true } })]);
+
+      expect(el('[data-testid="acao-convidar-gestor"]')).toBeNull();
+    });
+
+    it('não deve oferecer convidar Gestor quando a empresa já tem um', async () => {
+      await comoJosué();
+      await abrir('/app/empresas', [linhaDeEmpresa()]);
+
+      expect(el('[data-testid="acao-convidar-gestor"]')).toBeNull();
+    });
+
+    it('deve convidar ali mesmo, só com nome e e-mail — o papel e a empresa já estão decididos', async () => {
+      await comoJosué();
+      await abrir('/app/empresas', [seara()]);
+
+      el('[data-testid="acao-convidar-gestor"] button')!.click();
+      harness.detectChanges();
+
+      expect(document.querySelector('[data-testid="papel-unico"]')?.textContent).toContain('Gestor');
+      expect(document.querySelector('[data-testid="empresa-oferecida"]')).toBeNull();
+
+      digitarNoConvite('convite-nome', 'Helena Souza');
+      digitarNoConvite('convite-email', 'helena@seara.com');
+      (document.querySelector('[data-testid="enviar-convite"]') as HTMLElement).click();
+
+      const req = http.expectOne(`${API}/invitations`);
+      expect(req.request.body).toMatchObject({
+        name: 'Helena Souza',
+        email: 'helena@seara.com',
+        roles: ['MANAGER'],
+        companyIds: [SEARA.id],
+      });
+      req.flush({ id: 'inv-2', email: 'helena@seara.com' });
+
+      // A lista volta com o Gestor convidado e a empresa aguardando.
+      http.expectOne((r) => r.url === `${API}/companies`).flush([]);
+      harness.detectChanges();
+      expect(el('[data-testid="aviso"]')?.textContent).toContain('helena@seara.com');
+    });
+
+    it('deve dizer que o convite venceu, e oferecer reenviar', async () => {
+      await comoJosué();
+      await abrir('/app/empresas', [seara({ managers: [expirado] })]);
+
+      expect(el('[data-testid="gestor-expirado"]')).not.toBeNull();
+      expect(el('[data-testid="gestor-pendente"]')).toBeNull();
+
+      el('[data-testid="acao-reenviar-convite"] button')!.click();
+      http.expectOne(`${API}/invitations/inv-1/resend`).flush(null);
+      http.expectOne((r) => r.url === `${API}/companies`).flush([]);
+      harness.detectChanges();
+
+      expect(el('[data-testid="aviso"]')?.textContent).toContain('Helena');
+    });
+
+    it('deve oferecer reenviar também o convite que ainda vale — o e-mail pode não ter chegado', async () => {
+      await comoJosué();
+      await abrir('/app/empresas', [
+        seara({
+          status: 'AWAITING_MANAGER',
+          managers: [{ ...expirado, invitation: { id: 'inv-1', expired: false } }],
+        }),
+      ]);
+
+      expect(el('[data-testid="acao-reenviar-convite"]')).not.toBeNull();
+      // Já há Gestor a caminho: um segundo convite seria dúvida, não ajuda.
+      expect(el('[data-testid="acao-convidar-gestor"]')).toBeNull();
     });
   });
 

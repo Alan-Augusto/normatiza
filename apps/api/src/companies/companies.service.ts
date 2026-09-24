@@ -10,6 +10,7 @@ import {
   COMPANY_ADMIN_ROLES,
   ROLE_ORDER,
   ROLE_SIDE,
+  canInvite,
   isValidCnpj,
   normalizeForSearch,
   onlyDigits,
@@ -30,7 +31,7 @@ import { PermissionService, SessionScope } from '../authorization/permission.ser
 import { PrismaService } from '../prisma/prisma.service';
 import { FilesService } from '../storage/files.service';
 import { responsáveisTécnicos } from '../team/team.service';
-import { COM_GESTORES, gestoresDaEmpresa, statusDaEmpresa } from './company-status';
+import { COM_GESTORES, gestoresDaEmpresa, refDoGestor, statusDaEmpresa } from './company-status';
 import { CompanyWriteGuard } from './company-write-guard.service';
 
 /** O que a lista, o detalhe e o formulário precisam trazer de uma empresa. */
@@ -100,11 +101,7 @@ export class CompaniesService {
         state: empresa.state,
         logoUrl: empresa.logo ? ((await this.files.readUrl(empresa.logo)) ?? undefined) : undefined,
         status,
-        managers: gestoresDaEmpresa(empresa).map((g) => ({
-          id: g.id,
-          name: g.name,
-          pending: g.status !== 'ACTIVE',
-        })),
+        managers: gestoresDaEmpresa(empresa).map((g) => refDoGestor(g, agora)),
         ...métricasDaEmpresa(),
         actions: this.açõesSobre(actor, empresa.id, status),
       })),
@@ -339,7 +336,12 @@ export class CompaniesService {
   private açõesSobre(actor: SessionScope, companyId: string, status: CompanyStatus): CompanyActions {
     const administra = this.administra(actor, companyId);
     const inativa = status === 'INACTIVE';
-    return { edit: administra && !inativa, deactivate: administra && !inativa, reactivate: administra && inativa };
+    return {
+      edit: administra && !inativa,
+      deactivate: administra && !inativa,
+      reactivate: administra && inativa,
+      inviteManager: !inativa && canInvite(this.permissions.effectiveRoles(actor, companyId), 'MANAGER'),
+    };
   }
 
   /**
@@ -510,14 +512,17 @@ export class CompaniesService {
       externalCode: empresa.externalCode ?? undefined,
       notes: empresa.notes ?? undefined,
       managers: gestoresDaEmpresa(empresa).map((g) => ({
-        id: g.id,
-        name: g.name,
-        pending: g.status !== 'ACTIVE',
+        ...refDoGestor(g),
         email: g.email,
         phone: g.phone ?? undefined,
         jobTitle: g.jobTitle ?? undefined,
       })),
-      actions: { edit: administra && !inativa, deactivate: administra && !inativa, reactivate: administra && inativa },
+      actions: {
+        edit: administra && !inativa,
+        deactivate: administra && !inativa,
+        reactivate: administra && inativa,
+        inviteManager: !inativa && canInvite(papéis, 'MANAGER'),
+      },
     };
   }
 }

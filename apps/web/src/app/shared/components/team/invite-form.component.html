@@ -173,12 +173,21 @@
       A pessoa recebe um e-mail e define a própria senha. O convite vale por 7 dias.
     </p>
 
-    <p-button
+    <!--
+      O texto ao lado encolhe e quebra; o botão, nunca. `pButton` com ícone e
+      rótulo, como os botões das telas que usam este formulário: a mesma
+      estrutura dá a mesma altura (docs/web/design_system.md §6).
+    -->
+    <button
+      pButton
       data-testid="enviar-convite"
       type="submit"
-      label="Enviar convite"
+      class="shrink-0 whitespace-nowrap"
       [disabled]="!podeEnviar()"
       [loading]="enviando()"
-    />
+    >
+      <ng-icon pButtonIcon name="lucideSend" />
+      <span pButtonLabel>Enviar convite</span>
+    </button>
   </div>
 </form>

@@ -18,13 +18,17 @@ import {
   COMPANY_STATUS_ORDER,
   formatCnpj,
   type CompanyListItem,
+  type CompanyManagerRef,
   type CompanyListQuery,
   type CompanyStatus,
+  type InvitationSummary,
+  type Role,
 } from '@normatiza/shared';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { CompaniesService } from '../../../core/services/companies.service';
+import { TeamService } from '../../../core/services/team.service';
 import { CompanyInfoComponent } from '../../../shared/components/company-info/company-info.component';
 import { CompanyLogoComponent } from '../../../shared/components/company-logo/company-logo.component';
 import { DataTable } from '../../../shared/components/data-table/data-table.component';
@@ -34,6 +38,7 @@ import {
   LinhaDaTabela,
 } from '../../../shared/components/data-table/data-table.directives';
 import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
+import { InviteFormComponent } from '../../../shared/components/team/invite-form.component';
 import { ROTAS } from '../../../core/routing/rotas';
 
 /**
@@ -54,6 +59,7 @@ import { ROTAS } from '../../../core/routing/rotas';
     CompanyLogoComponent,
     RowActionComponent,
     CompanyInfoComponent,
+    InviteFormComponent,
     DatePipe,
     DecimalPipe,
     FormsModule,
@@ -79,6 +85,7 @@ export class CompaniesComponent implements OnInit {
   protected readonly rotas = ROTAS;
 
   private readonly companies = inject(CompaniesService);
+  private readonly team = inject(TeamService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -87,6 +94,7 @@ export class CompaniesComponent implements OnInit {
   readonly empresas = signal<CompanyListItem[]>([]);
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
+  readonly aviso = signal<string | null>(null);
 
   readonly filtros = signal<CompanyListQuery>({});
   /** O texto no campo — separado do filtro aplicado, que espera a pessoa parar de digitar. */
@@ -113,6 +121,10 @@ export class CompaniesComponent implements OnInit {
       (v) => v.isActive && v.roles.some((papel) => COMPANY_ADMIN_ROLES.includes(papel)),
     );
   });
+
+  /** A empresa cujo Gestor está sendo convidado — o diálogo de convite. */
+  readonly convidandoGestor = signal<CompanyListItem | null>(null);
+  readonly papelDoGestor: readonly Role[] = ['MANAGER'];
 
   /** A prévia aberta pelo olho — o mesmo diálogo que o nome da empresa abre na sidebar. */
   readonly vendo = signal<CompanyListItem | null>(null);
@@ -199,6 +211,41 @@ export class CompaniesComponent implements OnInit {
 
   rotuloDoStatus(status: CompanyStatus): string {
     return COMPANY_STATUS_LABEL[status];
+  }
+
+  // ── O Gestor, a partir da lista (docs/produto/03 §3.2) ───────────────────
+
+  /**
+   * Em implantação não há Gestor a caminho — nem convidado, ou o convite
+   * venceu. Com um convite ainda valendo, um segundo seria dúvida, não ajuda:
+   * o que se oferece ali é reenviar.
+   */
+  podeConvidarGestor(empresa: CompanyListItem): boolean {
+    return empresa.actions.inviteManager && empresa.status === 'IMPLANTATION';
+  }
+
+  /** O Gestor convidado cujo convite se pode reenviar — vencido ou não: o e-mail pode não ter chegado. */
+  conviteParaReenviar(empresa: CompanyListItem): CompanyManagerRef | undefined {
+    if (!empresa.actions.inviteManager) return undefined;
+    return empresa.managers.find((gestor) => gestor.invitation);
+  }
+
+  aoConvidarGestor(convite: InvitationSummary): void {
+    this.convidandoGestor.set(null);
+    this.aviso.set(`Convite de Gestor enviado para ${convite.email}.`);
+    this.carregar();
+  }
+
+  reenviarConvite(gestor: CompanyManagerRef): void {
+    if (!gestor.invitation) return;
+    this.aviso.set(null);
+    this.team.resendInvitation(gestor.invitation.id).subscribe({
+      next: () => {
+        this.aviso.set(`Convite reenviado para ${gestor.name}, com um link novo válido por 7 dias.`);
+        this.carregar();
+      },
+      error: (erro) => this.erro.set(mensagemDoServidor(erro, 'Não foi possível reenviar o convite.')),
+    });
   }
 
   confirmarDesativar(): void {

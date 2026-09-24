@@ -92,7 +92,7 @@ describe('CompanyInfoComponent', () => {
   });
 
   it('não deve oferecer Editar à consultoria sem alçada — o Técnico', () => {
-    abrir(detalheDaBrf({ actions: { edit: false, deactivate: false, reactivate: false } }));
+    abrir(detalheDaBrf({ actions: { edit: false, deactivate: false, reactivate: false, inviteManager: false } }));
 
     expect(el('[data-testid="editar-empresa"]')).toBeNull();
   });

@@ -211,6 +211,49 @@ describe('Convites (e2e)', () => {
     });
   });
 
+  describe('um e-mail, uma pessoa na conta', () => {
+    it('deve recusar o e-mail de quem já está na equipe, dizendo quem é', async () => {
+      // Sem isto o índice único estourava como erro 500, e a tela dizia só
+      // "não foi possível enviar o convite" — sem motivo e sem saída.
+      const josué = await escopoDe(ctx.prisma, elenco.josué.id);
+
+      await expect(
+        invitations.create(josué, {
+          name: 'Outro Marcos',
+          email: `  ${elenco.marcos.email.toUpperCase()} `,
+          roles: ['MANAGER'],
+          companyIds: [elenco.seara.id],
+        }),
+      ).rejects.toMatchObject({
+        status: 409,
+        response: expect.objectContaining({
+          field: 'email',
+          message: expect.stringContaining('Marcos'),
+        }),
+      });
+    });
+
+    it('não deve criar vínculo nem convite quando o e-mail é recusado', async () => {
+      const josué = await escopoDe(ctx.prisma, elenco.josué.id);
+      const antes = await ctx.prisma.invitation.count();
+
+      await expect(
+        invitations.create(josué, {
+          name: 'Outro Marcos',
+          email: elenco.marcos.email,
+          roles: ['MANAGER'],
+          companyIds: [elenco.seara.id],
+        }),
+      ).rejects.toThrow();
+
+      expect(await ctx.prisma.invitation.count()).toBe(antes);
+      const naSeara = await ctx.prisma.membership.findFirst({
+        where: { userId: elenco.marcos.id, companyId: elenco.seara.id },
+      });
+      expect(naSeara).toBeNull();
+    });
+  });
+
   describe('aceitar o convite', () => {
     async function convidar(email = 'tecnico@normatiza.com') {
       const josué = await escopoDe(ctx.prisma, elenco.josué.id);

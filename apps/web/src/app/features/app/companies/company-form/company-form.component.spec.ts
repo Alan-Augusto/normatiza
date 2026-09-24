@@ -426,9 +426,12 @@ describe('CompanyFormComponent', () => {
       await harness.fixture.whenStable();
       harness.detectChanges();
 
+      // A opção de convidar o contato vem marcada: o convite sai logo depois.
+      http.expectOne(`${API}/invitations`).flush({ id: 'inv-1', email: 'otavio@jbs.com' });
+      harness.detectChanges();
+
       expect(el('[data-testid="sucesso"]')?.textContent).toContain('JBS');
       expect(el('[data-testid="abrir-empresa"]')?.getAttribute('href')).toBe('/app/empresas/c-jbs/painel');
-      expect(el('[data-testid="convidar-gestor"]')?.getAttribute('href')).toBe('/app/empresas/c-jbs/equipe');
     });
 
     it('deve voltar à identificação e pôr no campo CNPJ a recusa por CNPJ repetido', async () => {
@@ -481,6 +484,164 @@ describe('CompanyFormComponent', () => {
       expect(logo.request.method).toBe('PUT');
       logo.flush({ logoUrl: 'data:image/png;base64,AA==' });
       http.expectOne(`${API}/auth/refresh`).flush(respostaDeLogin());
+      http.expectOne(`${API}/invitations`).flush({ id: 'inv-1', email: 'otavio@jbs.com' });
+    });
+  });
+
+  describe('o Gestor no cadastro', () => {
+    const JBS = () => detalheDaBrf({ id: 'c-jbs', tradeName: 'JBS', status: 'IMPLANTATION', managers: [] });
+    const texto = () => el('[data-testid="sucesso"]')?.textContent ?? '';
+
+    /** Salva a empresa e responde o cadastro e a recarga da sessão. */
+    async function cadastrar() {
+      salvar();
+      http.expectOne(`${API}/companies`).flush(JBS());
+      http.expectOne(`${API}/auth/refresh`).flush(respostaDeLogin());
+      await harness.fixture.whenStable();
+      harness.detectChanges();
+    }
+
+    async function comoCarla() {
+      const auth = TestBed.inject(AuthService);
+      const login = firstValueFrom(auth.login({ email: 'carla@email.com', password: 'certa' }));
+      http
+        .expectOne(`${API}/auth/login`)
+        .flush(respostaDeLogin({ session: sessão([vínculo(BRF.id, ['CONSULTANT_ENGINEER'])]) }));
+      await login;
+    }
+
+    function desmarcarConvite() {
+      (el('[data-testid="convidar-contato"] input') as HTMLInputElement).click();
+      harness.detectChanges();
+    }
+
+    /** O convite é outro formulário, com os próprios nomes de campo. */
+    function digitarNoConvite(testid: string, valor: string) {
+      const entrada = el(`[data-testid="${testid}"]`) as HTMLInputElement;
+      entrada.value = valor;
+      entrada.dispatchEvent(new Event('input'));
+      harness.detectChanges();
+    }
+
+    it('deve oferecer, no contato, convidá-lo como Gestor — já marcado, porque é o caso comum', async () => {
+      await novo();
+      preencherIdentificação();
+      avançar();
+      preencherEndereço();
+      avançar();
+
+      const opção = el('[data-testid="convidar-contato"] input') as HTMLInputElement;
+      expect(opção.checked).toBe(true);
+      expect(el('[data-testid="etapa-atual"]')?.textContent).toContain('aprova');
+    });
+
+    it('não deve oferecer à Engenheira da Consultoria — ela cadastra, mas não concede Gestor', async () => {
+      await comoCarla();
+      await novo();
+      preencherIdentificação();
+      avançar();
+      preencherEndereço();
+      avançar();
+
+      expect(el('[data-testid="convidar-contato"]')).toBeNull();
+    });
+
+    it('não deve oferecer na edição — ali o contato já não é pergunta de cadastro', async () => {
+      await editarBrf();
+      clicar('passo-contato');
+
+      expect(el('[data-testid="convidar-contato"]')).toBeNull();
+    });
+
+    it('deve convidar o contato como Gestor depois de a empresa existir, e dizer para quem foi', async () => {
+      await novo();
+      preencherIdentificação();
+      avançar();
+      preencherEndereço();
+      avançar();
+      preencherContato();
+      digitar('contato-cargo', 'Gerente de SST');
+      avançar();
+
+      await cadastrar();
+
+      const convite = http.expectOne(`${API}/invitations`);
+      expect(convite.request.body).toEqual({
+        name: 'Otávio Lima',
+        email: 'otavio@jbs.com',
+        roles: ['MANAGER'],
+        companyIds: ['c-jbs'],
+        jobTitle: 'Gerente de SST',
+      });
+      convite.flush({ id: 'inv-1', email: 'otavio@jbs.com' });
+      harness.detectChanges();
+
+      expect(texto()).toContain('otavio@jbs.com');
+      expect(texto()).toContain('aguardando Gestor');
+      expect(el('[data-testid="convite-agora"]')).toBeNull();
+    });
+
+    it('deve manter a empresa e dizer o motivo quando o convite é recusado — e deixar corrigir ali', async () => {
+      await novo();
+      preencherTudo();
+
+      await cadastrar();
+      http
+        .expectOne(`${API}/invitations`)
+        .flush(
+          { statusCode: 409, field: 'email', message: 'Esse e-mail já pertence a Marcos, que está na equipe. Use outro e-mail.' },
+          { status: 409, statusText: 'Conflict' },
+        );
+      harness.detectChanges();
+
+      expect(texto()).toContain('JBS cadastrada');
+      expect(el('[data-testid="convite-recusado"]')?.textContent).toContain('já pertence a Marcos');
+      // O convite volta preenchido com o contato: corrigir é trocar um campo.
+      expect((el('[data-testid="convite-nome"]') as HTMLInputElement).value).toBe('Otávio Lima');
+      expect((el('[data-testid="convite-email"]') as HTMLInputElement).value).toBe('otavio@jbs.com');
+    });
+
+    it('deve oferecer convidar o Gestor na tela final quando a opção foi desmarcada', async () => {
+      await novo();
+      preencherIdentificação();
+      avançar();
+      preencherEndereço();
+      avançar();
+      preencherContato();
+      desmarcarConvite();
+      avançar();
+
+      await cadastrar();
+      http.expectNone(`${API}/invitations`);
+
+      expect(el('[data-testid="convite-agora"]')).not.toBeNull();
+      // Sem o contato: a opção desmarcada disse que o Gestor é outra pessoa.
+      expect((el('[data-testid="convite-nome"]') as HTMLInputElement).value).toBe('');
+
+      clicar('agora-nao');
+      expect(el('[data-testid="convite-agora"]')).toBeNull();
+      expect(el('[data-testid="abrir-empresa"]')).not.toBeNull();
+    });
+
+    it('deve confirmar o convite feito na tela final', async () => {
+      await novo();
+      preencherIdentificação();
+      avançar();
+      preencherEndereço();
+      avançar();
+      preencherContato();
+      desmarcarConvite();
+      avançar();
+      await cadastrar();
+
+      digitarNoConvite('convite-nome', 'Helena Souza');
+      digitarNoConvite('convite-email', 'helena@jbs.com');
+      clicar('enviar-convite');
+      http.expectOne(`${API}/invitations`).flush({ id: 'inv-2', email: 'helena@jbs.com' });
+      harness.detectChanges();
+
+      expect(texto()).toContain('helena@jbs.com');
+      expect(el('[data-testid="convite-agora"]')).toBeNull();
     });
   });
 

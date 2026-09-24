@@ -2,6 +2,7 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
+  FormControl,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   ValidationErrors,
@@ -11,6 +12,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
+  lucideArrowLeft,
+  lucideArrowRight,
   lucideBuilding2,
   lucideCheck,
   lucideFolderLock,
@@ -19,7 +22,8 @@ import {
   lucideUserRound,
 } from '@ng-icons/lucide';
 import { AutoComplete, type AutoCompleteCompleteEvent } from 'primeng/autocomplete';
-import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
+import { Button, ButtonDirective, ButtonIcon, ButtonLabel } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
@@ -29,6 +33,7 @@ import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
 import {
   BRAZIL_STATES,
+  canInvite,
   formatCep,
   formatCnpj,
   isValidCep,
@@ -38,18 +43,36 @@ import {
   type CompanyDetail,
   type CompanyManagerContact,
   type CompanyUpsertRequest,
+  type Role,
 } from '@normatiza/shared';
 
 import { AuthService } from '../../../../core/auth/auth.service';
 import { aparaEmail } from '../../../../core/forms/email';
 import { mensagemDoServidor } from '../../../../core/http/mensagem-de-erro';
 import { CompaniesService } from '../../../../core/services/companies.service';
+import { TeamService } from '../../../../core/services/team.service';
 import { CepLookupService } from '../../../../core/services/external/cep-lookup.service';
 import {
   CnpjLookupResult,
   CnpjLookupService,
 } from '../../../../core/services/external/cnpj-lookup.service';
 import { ROTAS } from '../../../../core/routing/rotas';
+import {
+  InviteFormComponent,
+  type ConviteInicial,
+} from '../../../../shared/components/team/invite-form.component';
+
+/**
+ * O convite do Gestor depois do cadastro — um passo à parte, que nunca desfaz
+ * a empresa: ela é salva primeiro, e o convite pode falhar sozinho.
+ */
+type ConviteDoGestor =
+  | { estado: 'enviando'; email: string }
+  | { estado: 'enviado'; email: string }
+  | { estado: 'recusado'; mensagem: string; inicial: ConviteInicial }
+  | { estado: 'dispensado' };
+
+const SÓ_GESTOR: readonly Role[] = ['MANAGER'];
 
 /** O mesmo teto do servidor — conferido aqui para a pessoa não esperar um upload ser recusado. */
 const LOGO_MAX_BYTES = 2 * 1024 * 1024;
@@ -146,7 +169,10 @@ const ETAPAS: readonly Etapa[] = [
     Step,
     Button,
     ButtonDirective,
+    ButtonIcon,
     ButtonLabel,
+    Checkbox,
+    InviteFormComponent,
     InputText,
     Message,
     Select,
@@ -154,6 +180,8 @@ const ETAPAS: readonly Etapa[] = [
   ],
   providers: [
     provideIcons({
+      lucideArrowLeft,
+      lucideArrowRight,
       lucideBuilding2,
       lucideMapPin,
       lucideUserRound,
@@ -175,6 +203,7 @@ export class CompanyFormComponent implements OnInit {
   private readonly cnpjLookup = inject(CnpjLookupService);
   private readonly cepLookup = inject(CepLookupService);
   private readonly auth = inject(AuthService);
+  private readonly team = inject(TeamService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly form = this.fb.group({
@@ -197,6 +226,43 @@ export class CompanyFormComponent implements OnInit {
     grupo: this.fb.control(''),
     codigo: this.fb.control(''),
     observacoes: this.fb.control(''),
+  });
+
+  /**
+   * "Convidar este contato como Gestor" — fora do grupo de propósito: não é
+   * dado da empresa, não vai no corpo do cadastro e não conta como alteração
+   * não salva.
+   *
+   * **Marcada por padrão**: na maioria das empresas o contato é o Gestor, e
+   * pedir os mesmos dados de novo, noutra tela, era burocracia que ninguém
+   * descobria sozinho (docs/produto/03 §3.2).
+   */
+  readonly convidarContato = new FormControl(true, { nonNullable: true });
+
+  /**
+   * Só o Engenheiro Responsável concede Gestor; a Engenheira da Consultoria
+   * cadastra a empresa, mas não escolhe quem aprova o orçamento dela. O
+   * titular da conta sempre pode. O servidor decide igual, e revalida.
+   */
+  readonly podeConvidarGestor = computed(() => {
+    if (this.auth.isAccountOwner()) return true;
+    const papéis = (this.auth.session()?.memberships ?? []).filter((v) => v.isActive).flatMap((v) => v.roles);
+    return canInvite(papéis, 'MANAGER');
+  });
+
+  readonly papelDoGestor = SÓ_GESTOR;
+
+  /**
+   * Decidido **ao salvar**, e não recalculado depois: a sessão é recarregada
+   * logo após o cadastro, e a oferta não pode sumir no meio da tela final.
+   */
+  readonly ofereceConviteDoGestor = signal(false);
+  readonly conviteDoGestor = signal<ConviteDoGestor | null>(null);
+
+  /** A tela final ainda convida: a opção veio desmarcada, ou o convite do contato foi recusado. */
+  readonly convidaNaTelaFinal = computed(() => {
+    const convite = this.conviteDoGestor();
+    return this.ofereceConviteDoGestor() && (convite === null || convite.estado === 'recusado');
   });
 
   readonly ufs = BRAZIL_STATES.map((uf) => ({ label: uf, value: uf }));
@@ -543,6 +609,9 @@ export class CompanyFormComponent implements OnInit {
     this.erro.set(null);
 
     const id = this.companyId();
+    const oferece = !id && this.podeConvidarGestor();
+    this.ofereceConviteDoGestor.set(oferece);
+    const convidarOContato = oferece && this.convidarContato.value;
     const pedido = id ? this.companies.update(id, this.corpo()) : this.companies.create(this.corpo());
 
     pedido
@@ -561,6 +630,7 @@ export class CompanyFormComponent implements OnInit {
             void this.router.navigateByUrl(ROTAS.empresas);
           } else {
             this.criada.set(empresa);
+            if (convidarOContato) this.convidarOContatoComoGestor(empresa);
           }
         },
         error: (erro) => {
@@ -568,6 +638,50 @@ export class CompanyFormComponent implements OnInit {
           this.recusado(erro);
         },
       });
+  }
+
+  /**
+   * O contato vira convite de Gestor com o que já foi digitado. Recusado — um
+   * e-mail que já é de alguém da equipe, por exemplo —, o motivo aparece na
+   * tela final com o convite preenchido, para corrigir ali mesmo.
+   */
+  private convidarOContatoComoGestor(empresa: CompanyDetail): void {
+    const { contact } = this.corpo();
+    const telefone = contact.phone ?? contact.mobile;
+    const inicial: ConviteInicial = {
+      nome: contact.name,
+      email: contact.email,
+      cargo: contact.role,
+      telefone,
+    };
+
+    this.conviteDoGestor.set({ estado: 'enviando', email: contact.email });
+    this.team
+      .invite({
+        name: contact.name,
+        email: contact.email,
+        roles: ['MANAGER'],
+        companyIds: [empresa.id],
+        ...(contact.role ? { jobTitle: contact.role } : {}),
+        ...(telefone ? { phone: telefone } : {}),
+      })
+      .subscribe({
+        next: (convite) => this.conviteDoGestor.set({ estado: 'enviado', email: convite.email }),
+        error: (falha: unknown) =>
+          this.conviteDoGestor.set({
+            estado: 'recusado',
+            mensagem: mensagemDoServidor(falha, 'Não foi possível enviar o convite.'),
+            inicial,
+          }),
+      });
+  }
+
+  aoConvidarNaTelaFinal(email: string): void {
+    this.conviteDoGestor.set({ estado: 'enviado', email });
+  }
+
+  agoraNao(): void {
+    this.conviteDoGestor.set({ estado: 'dispensado' });
   }
 
   /** Falha do logo não desfaz o cadastro: a empresa existe, e o logo se envia de novo. */

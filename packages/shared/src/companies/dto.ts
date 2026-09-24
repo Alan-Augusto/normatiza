@@ -48,6 +48,12 @@ export interface CompanyActions {
   edit: boolean;
   deactivate: boolean;
   reactivate: boolean;
+  /**
+   * Convidar Gestor — e reenviar o convite dele. É o que leva a empresa a
+   * *ativa*, e só o Engenheiro Responsável concede o papel: a Engenheira da
+   * Consultoria cadastra a empresa, mas não escolhe quem aprova o orçamento.
+   */
+  inviteManager: boolean;
 }
 
 /**
@@ -72,6 +78,11 @@ export interface CompanyManagerRef {
   name: string;
   /** Ainda não aceitou o convite. */
   pending: boolean;
+  /**
+   * O convite em aberto de quem ainda não aceitou — o que "reenviar" precisa.
+   * `expired` separa "ainda não abriu o e-mail" de "o link já não vale".
+   */
+  invitation?: { id: string; expired: boolean };
 }
 
 /** Uma linha de `GET /companies`. */

@@ -89,7 +89,7 @@ describe('InviteFormComponent', () => {
 
       digitar(fixture, '[data-testid="convite-nome"]', 'Paulo');
       digitar(fixture, '[data-testid="convite-email"]', 'paulo@ipe.com');
-      el('[data-testid="enviar-convite"] button')!.click();
+      el('[data-testid="enviar-convite"]')!.click();
       fixture.detectChanges();
 
       const req = http.expectOne(`${API}/invitations`);

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Invitation, User } from '@prisma/client';
 import { PAGINAS_DOS_EMAILS, type CreateInvitationRequest, type InvitationSummary } from '@normatiza/shared';
@@ -59,6 +59,7 @@ export class InvitationsService {
 
     const token = randomBytes(32).toString('base64url');
     const email = dto.email.trim().toLowerCase();
+    await this.assertEmailLivre(inviter.accountId, email);
 
     const { user, invitation } = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -115,6 +116,26 @@ export class InvitationsService {
     await this.avisaPorEmail(inviter, user, token);
 
     return { invitation: paraContrato(invitation, user), token };
+  }
+
+  /**
+   * Um e-mail, uma pessoa na conta (docs/produto/03 §3.3). Recusado **com o
+   * nome** de quem já o tem: sem isto o índice único estourava como erro 500, e
+   * a tela dizia só "não foi possível enviar o convite" — sem motivo e sem
+   * saída. O nome não vaza nada: a pessoa é da mesma conta de quem convida.
+   */
+  private async assertEmailLivre(accountId: string, email: string): Promise<void> {
+    const dono = await this.prisma.user.findFirst({
+      where: { accountId, email },
+      select: { name: true },
+    });
+    if (!dono) return;
+
+    throw new ConflictException({
+      statusCode: 409,
+      field: 'email',
+      message: `Esse e-mail já pertence a ${dono.name}, que está na equipe. Use outro e-mail.`,
+    });
   }
 
   /** Aceitar é definir a senha. O token é de uso único. */

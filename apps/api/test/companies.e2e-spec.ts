@@ -339,6 +339,55 @@ describe('Cadastro de empresas (e2e)', () => {
     });
   });
 
+  describe('o Gestor, a partir da lista', () => {
+    const linhaDe = async (userId: string, companyId: string) => {
+      const lista = await companies.list(await escopo(userId), { status: 'ALL' });
+      return lista.find((e) => e.id === companyId)!;
+    };
+
+    it('deve oferecer convidar o Gestor a quem pode conceder o papel', async () => {
+      expect((await linhaDe(elenco.josué.id, elenco.seara.id)).actions.inviteManager).toBe(true);
+    });
+
+    it('não deve oferecer à Carla — ela cadastra empresa, mas não concede Gestor', async () => {
+      expect((await linhaDe(elenco.carla.id, elenco.seara.id)).actions.inviteManager).toBe(false);
+    });
+
+    it('não deve oferecer convite em empresa inativa', async () => {
+      await companies.deactivate(await escopo(elenco.josué.id), elenco.seara.id);
+
+      expect((await linhaDe(elenco.josué.id, elenco.seara.id)).actions.inviteManager).toBe(false);
+    });
+
+    it('deve trazer o convite de quem ainda não aceitou, para poder reenviar', async () => {
+      const gestor = await gestorConvidado(elenco.seara.id, new Date(Date.now() + 86_400_000));
+      const convite = await ctx.prisma.invitation.findFirstOrThrow({ where: { userId: gestor.id } });
+
+      const seara = await linhaDe(elenco.josué.id, elenco.seara.id);
+
+      expect(seara.managers).toEqual([
+        { id: gestor.id, name: 'Gestor Convidado', pending: true, invitation: { id: convite.id, expired: false } },
+      ]);
+    });
+
+    it('deve dizer que o convite venceu, em vez de chamá-lo de pendente sem mais', async () => {
+      await gestorConvidado(elenco.seara.id, new Date(Date.now() - 1000));
+
+      const [gestor] = (await linhaDe(elenco.josué.id, elenco.seara.id)).managers;
+
+      expect(gestor.invitation?.expired).toBe(true);
+    });
+
+    it('não deve nomear como Gestor quem teve o convite cancelado', async () => {
+      // Cancelar é desistir daquela pessoa: seguir mostrando "convite pendente"
+      // seria anunciar um convite que não existe, sem ação que o resolva.
+      const gestor = await gestorConvidado(elenco.seara.id, new Date(Date.now() + 86_400_000));
+      await ctx.prisma.invitation.updateMany({ where: { userId: gestor.id }, data: { status: 'REVOKED' } });
+
+      expect((await linhaDe(elenco.josué.id, elenco.seara.id)).managers).toEqual([]);
+    });
+  });
+
   // ───────────────────────────────────────────────────────────────────────────
   // 2.6 — Duas projeções de detalhe
   // ───────────────────────────────────────────────────────────────────────────
@@ -521,7 +570,7 @@ describe('Cadastro de empresas (e2e)', () => {
     it('deve oferecer reativar, e não editar nem desativar', async () => {
       const brf = (await companies.get(await escopo(elenco.josué.id), elenco.brf.id)) as CompanyDetail;
 
-      expect(brf.actions).toEqual({ edit: false, deactivate: false, reactivate: true });
+      expect(brf.actions).toEqual({ edit: false, deactivate: false, reactivate: true, inviteManager: false });
     });
   });
 

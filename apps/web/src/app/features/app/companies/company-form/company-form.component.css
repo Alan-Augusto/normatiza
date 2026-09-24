@@ -179,3 +179,24 @@
 .botao-arquivo:hover {
   background: var(--p-content-hover-background);
 }
+
+/* ── Convite do contato como Gestor ─────────────────────────────────────── */
+
+/*
+ * Separada dos campos por uma borda: não é dado do contato, é uma decisão
+ * sobre ele — e a pessoa precisa lê-la como tal antes de cadastrar.
+ */
+.convite-do-contato {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius-lg);
+  cursor: pointer;
+}
+
+.convite-do-contato > label {
+  cursor: pointer;
+}

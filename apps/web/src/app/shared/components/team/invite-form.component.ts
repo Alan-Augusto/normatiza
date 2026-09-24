@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   FormsModule,
@@ -6,7 +6,9 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Button } from 'primeng/button';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideSend } from '@ng-icons/lucide';
+import { ButtonDirective, ButtonIcon, ButtonLabel } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { InputText } from 'primeng/inputtext';
 import { RadioButton } from 'primeng/radiobutton';
@@ -16,6 +18,7 @@ import {
   isCompanyScopedRole,
   type CompanySummary,
   type ExecutorType,
+  type InvitationSummary,
   type Role,
 } from '@normatiza/shared';
 
@@ -24,8 +27,16 @@ import { mensagemDoServidor } from '../../../core/http/mensagem-de-erro';
 import { TeamService } from '../../../core/services/team.service';
 import { RolePickerComponent } from './role-picker.component';
 
+export interface ConviteInicial {
+  nome?: string;
+  email?: string;
+  cargo?: string;
+  telefone?: string;
+}
+
 /**
- * O formulário de convite — o mesmo nas duas telas de equipe.
+ * O formulário de convite — o mesmo nas duas telas de equipe, e no convite do
+ * Gestor feito da lista e do cadastro de empresas.
  *
  * A diferença entre elas não é o formulário, é o **escopo**: no Contexto 2 já
  * se sabe de qual empresa se está falando, e perguntar seria oferecer ao Gestor
@@ -48,12 +59,16 @@ import { RolePickerComponent } from './role-picker.component';
   imports: [
     FormsModule,
     ReactiveFormsModule,
-    Button,
+    ButtonDirective,
+    ButtonIcon,
+    ButtonLabel,
+    NgIconComponent,
     Checkbox,
     InputText,
     RadioButton,
     RolePickerComponent,
   ],
+  providers: [provideIcons({ lucideSend })],
   templateUrl: './invite-form.component.html',
 })
 export class InviteFormComponent {
@@ -69,7 +84,14 @@ export class InviteFormComponent {
   /** Contexto 2: a empresa da rota, sem pergunta nenhuma. */
   readonly fixedCompanyId = input<string>();
 
-  readonly created = output<void>();
+  /**
+   * O que já se sabe de quem será convidado — o contato da empresa, quando o
+   * convite dele foi recusado e volta para ser corrigido. Corrigir é trocar um
+   * campo, não redigitar a pessoa inteira.
+   */
+  readonly inicial = input<ConviteInicial>();
+
+  readonly created = output<InvitationSummary>();
 
   readonly enviando = signal(false);
   readonly erro = signal<string | null>(null);
@@ -102,6 +124,19 @@ export class InviteFormComponent {
   readonly empresasEscolhidas = computed(() => this.valores().empresas ?? []);
 
   constructor() {
+    effect(() => {
+      const dados = this.inicial();
+      if (!dados) return;
+      untracked(() =>
+        this.form.patchValue({
+          nome: dados.nome ?? '',
+          email: dados.email ?? '',
+          cargo: dados.cargo ?? '',
+          telefone: dados.telefone ?? '',
+        }),
+      );
+    });
+
     /**
      * Um papel só não é escolha, mas continua sendo **valor**: sem isto o
      * formulário do Antonio nasceria inválido por um campo que ele não tem como
@@ -195,9 +230,9 @@ export class InviteFormComponent {
         ...(telefone.trim() ? { phone: telefone.trim() } : {}),
       })
       .subscribe({
-        next: () => {
+        next: (convite) => {
           this.enviando.set(false);
-          this.created.emit();
+          this.created.emit(convite);
         },
         error: (falha: unknown) => {
           this.enviando.set(false);

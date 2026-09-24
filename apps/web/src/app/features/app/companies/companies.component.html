@@ -48,6 +48,9 @@
     }
   </div>
 
+  @if (aviso()) {
+    <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
+  }
   @if (erro()) {
     <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
   }
@@ -101,7 +104,9 @@
           @for (gestor of empresa.managers; track gestor.id) {
             <div>
               {{ gestor.name }}
-              @if (gestor.pending) {
+              @if (gestor.invitation?.expired) {
+                <span data-testid="gestor-expirado" class="text-xs text-warning">· convite expirado</span>
+              } @else if (gestor.pending) {
                 <span data-testid="gestor-pendente" class="text-xs text-muted-color">· convite pendente</span>
               }
             </div>
@@ -131,6 +136,22 @@
         <td>
             <div class="flex justify-end gap-0.5">
               <app-row-action data-testid="acao-ver" icon="lucideEye" label="Ver dados da empresa" (acionar)="vendo.set(empresa)" />
+              @if (podeConvidarGestor(empresa)) {
+                <app-row-action
+                  data-testid="acao-convidar-gestor"
+                  icon="lucideUserPlus"
+                  label="Convidar o Gestor"
+                  (acionar)="convidandoGestor.set(empresa)"
+                />
+              }
+              @if (conviteParaReenviar(empresa); as gestor) {
+                <app-row-action
+                  data-testid="acao-reenviar-convite"
+                  icon="lucideSend"
+                  [label]="'Reenviar convite a ' + gestor.name"
+                  (acionar)="reenviarConvite(gestor)"
+                />
+              }
               @if (empresa.actions.edit) {
                 <app-row-action
                   data-testid="acao-editar"
@@ -194,6 +215,29 @@
         />
       </div>
     </div>
+  </p-dialog>
+}
+
+@if (convidandoGestor(); as empresa) {
+  <!--
+    O convite do Gestor sem sair da lista. Papel e empresa já estão decididos:
+    sobra o que é pergunta de verdade — quem é a pessoa.
+  -->
+  <p-dialog
+    [header]="'Convidar o Gestor da ' + empresa.tradeName"
+    [visible]="true"
+    (visibleChange)="convidandoGestor.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '40rem' }"
+    [breakpoints]="{ '640px': '95vw' }"
+  >
+    <app-invite-form
+      [roles]="papelDoGestor"
+      [fixedCompanyId]="empresa.id"
+      (created)="aoConvidarGestor($event)"
+    />
   </p-dialog>
 }
 

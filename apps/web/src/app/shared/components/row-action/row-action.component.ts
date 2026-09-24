@@ -11,6 +11,7 @@ import {
   lucideShieldOff,
   lucideUserCog,
   lucideUserMinus,
+  lucideUserPlus,
   lucideUserX,
 } from '@ng-icons/lucide';
 import { ButtonDirective } from 'primeng/button';
@@ -32,6 +33,7 @@ const ICONES = {
   lucideUserCog,
   lucideUserX,
   lucideUserMinus,
+  lucideUserPlus,
   lucideShieldOff,
 };
 

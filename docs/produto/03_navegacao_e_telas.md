@@ -117,7 +117,12 @@ Lista das empresas atendidas. Clicar em uma **muda o contexto** para o Contexto 
 
 Os três primeiros não são escolhidos por ninguém: decorrem de haver ou não Gestor. Só *inativa* é um ato — e é o único que o formulário oferece. Regras em [01 §4 e §5](./01_papeis_e_permissoes.md).
 
-**Ações da linha:** ver os dados (abre o mesmo diálogo de §4.0, sem entrar na empresa — disponível a todos que veem a lista), editar, desativar e reativar.
+**Ações da linha:** ver os dados (abre o mesmo diálogo de §4.0, sem entrar na empresa — disponível a todos que veem a lista), editar, desativar e reativar. E as duas que levam a empresa a *ativa*, para quem pode conceder o papel de Gestor:
+
+- **Convidar o Gestor** — em empresa *em implantação*. Abre o convite ali mesmo, com o papel e a empresa já decididos: sobra nome e e-mail.
+- **Reenviar convite** — quando há Gestor convidado que ainda não aceitou. Gera um link novo, invalida o anterior e renova a validade; serve também ao convite que expirou.
+
+Na coluna Gestor, quem ainda não aceitou aparece com **convite pendente** — ou **convite expirado**, quando passou do prazo sem aceite. A empresa não esconde quem foi chamado.
 
 **Formulário de Empresa** — página própria, e não diálogo: um formulário desse tamanho num diálogo rola por dentro, se perde num clique fora e não tem endereço. A mesma página serve ao cadastro (`/app/empresas/nova`) e à edição (`/app/empresas/:id/editar`), ambas no Contexto 1.
 
@@ -126,7 +131,7 @@ Os três primeiros não são escolhidos por ninguém: decorrem de haver ou não 
 **Enter não salva.** Com vinte campos, um Enter esbarrado no meio do caminho mandaria um cadastro pela metade ou salvaria uma edição ainda em revisão. Salvar é sempre um clique.
 
 - *Identificação:* Razão Social, Nome Fantasia, CNPJ, Inscrição Estadual, Logo
-- *Contato técnico:* Responsável, Cargo, E-mail, Telefone, Celular — pessoa livre, que não precisa ter login. Quando a empresa já tem Gestor, a seção oferece **usar os dados do Gestor**
+- *Contato técnico:* Responsável, Cargo, E-mail, Telefone, Celular — pessoa livre, que não precisa ter login. Quando a empresa já tem Gestor, a seção oferece **usar os dados do Gestor**. No cadastro, a seção oferece o caminho inverso: **convidar este contato como Gestor** (ver *Gestor*, abaixo)
 - *Endereço:* CEP (busca automática), Logradouro, Número, Complemento, Bairro, Cidade, UF
 - *Agrupamento:* **Grupo empresarial** (ex.: "Grupo BRF") — agrupa empresas do mesmo cliente **apenas para consolidar relatórios do lado consultoria**. Não concede acesso: pertencer ao mesmo grupo não faz a BRF enxergar a Seara. O grupo é escolhido ou **criado ali mesmo**, digitando o nome; a lista oferecida contém só os grupos com empresa na carteira de quem cadastra, e um nome que já exista fora dela é reaproveitado sem ser revelado
 - *Metadados:* Código interno / ERP, Observações
@@ -139,7 +144,14 @@ Os três primeiros não são escolhidos por ninguém: decorrem de haver ou não 
 - **A busca por CNPJ só ocupa campo vazio.** O cadastro na Receita envelhece, e o que a pessoa digitou costuma estar mais certo.
 - **O endereço é do CEP.** Trocar o CEP troca logradouro, bairro, cidade e UF — inclusive esvaziando o que o CEP novo não informa (CEP de cidade pequena não traz rua), porque a rua do CEP antigo não pertence ao novo. Número e complemento o CEP não sabe: ficam com quem digitou. Sair do campo sem mudar o CEP não consulta de novo.
 
-**Gestor:** o cadastro não exige Gestor. O convite dele é feito pela Equipe da Empresa (§4.5) ou oferecido logo após salvar, e a empresa segue a tabela de status acima.
+**Gestor:** o cadastro não exige Gestor, mas o **contato não é o Gestor** — o contato é um dado do laudo, sem login; o Gestor é quem entra no sistema e aprova orçamento. Na maioria das empresas os dois são a mesma pessoa, e pedir os mesmos dados duas vezes, em duas telas, era burocracia que ninguém descobria sozinho. Por isso:
+
+1. **No passo Contato do cadastro**, a opção *"Convidar este contato como Gestor"* — **marcada por padrão**, porque é o caso comum. Ao salvar, o convite sai com o nome, o e-mail, o cargo e o telefone do contato. Só aparece para quem pode conceder o papel de Gestor (Engenheiro Responsável); o Engenheiro da Consultoria cadastra, mas não convida Gestor.
+2. **A tela final diz o que aconteceu.** Convite enviado: para quem, e que a empresa fica *aguardando Gestor* até ele aceitar. Convite recusado — um e-mail que já pertence a alguém da equipe, por exemplo: o motivo, e o convite de novo, preenchido, para corrigir e reenviar. **A empresa não se perde por causa do convite:** ela é salva primeiro, e o convite é um passo à parte.
+3. **Opção desmarcada**, a tela final oferece convidar o Gestor ali mesmo, sem sair dela — ou **"Agora não"**, para quem ainda não sabe quem será.
+4. **Depois**, pela lista (*Convidar o Gestor*, *Reenviar convite*, acima) ou pela Equipe da Empresa (§4.5).
+
+A empresa segue a tabela de status acima.
 
 ### 3.3. Equipe
 Gestão dos usuários da conta.
@@ -155,6 +167,8 @@ Gestão dos usuários da conta.
 - *Envio:* e-mail de convite com link de definição de senha
 
 **Ações:** reenviar convite, editar escopo, redefinir senha, **desligar usuário** (§3.4).
+
+**Um e-mail, uma pessoa na conta.** Convidar um e-mail que já pertence a alguém da equipe é recusado com o nome de quem o tem — e não com erro genérico: duas contas para a mesma pessoa partiriam o histórico dela em dois.
 
 ### 3.4. Desligamento com Sucessão
 

@@ -290,7 +290,7 @@ describe('CompanyTeamComponent', () => {
       clicarNo(fixture, '[data-testid="convidar"] button');
       preencher('novo@brf.com', 'Novo');
       escolher(fixture, 'convite-papel', 'Executor');
-      clicarNo(fixture, '[data-testid="enviar-convite"] button');
+      clicarNo(fixture, '[data-testid="enviar-convite"]');
 
       const req = http.expectOne(`${API}/invitations`);
       expect(req.request.body.companyIds).toEqual([BRF.id]);

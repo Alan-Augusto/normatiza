@@ -9,8 +9,8 @@ import { BRF, SEARA } from '../../auth/testing/sessao';
 
 /** As empresas do elenco como a carteira as devolve. */
 
-export const TUDO: CompanyActions = { edit: true, deactivate: true, reactivate: false };
-export const NADA: CompanyActions = { edit: false, deactivate: false, reactivate: false };
+export const TUDO: CompanyActions = { edit: true, deactivate: true, reactivate: false, inviteManager: true };
+export const NADA: CompanyActions = { edit: false, deactivate: false, reactivate: false, inviteManager: false };
 
 export function linhaDeEmpresa(over: Partial<CompanyListItem> = {}): CompanyListItem {
   return {
