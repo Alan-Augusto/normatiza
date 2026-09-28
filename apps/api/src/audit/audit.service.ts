@@ -33,6 +33,17 @@ export const AuditAction = {
   COMPANY_DEACTIVATED: 'company.deactivated',
   COMPANY_REACTIVATED: 'company.reactivated',
   COMPANY_LOGO_CHANGED: 'company.logo_changed',
+  EQUIPMENT_CREATED: 'equipment.created',
+  EQUIPMENT_UPDATED: 'equipment.updated',
+  EQUIPMENT_DEACTIVATED: 'equipment.deactivated',
+  EQUIPMENT_REACTIVATED: 'equipment.reactivated',
+  EQUIPMENT_DELETED: 'equipment.deleted',
+  EQUIPMENT_PHOTO_CHANGED: 'equipment.photo_changed',
+  SECTOR_CREATED: 'sector.created',
+  SECTOR_UPDATED: 'sector.updated',
+  SECTOR_MERGED: 'sector.merged',
+  SECTOR_DELETED: 'sector.deleted',
+  MACHINE_TYPE_CREATED: 'machine_type.created',
 } as const;
 
 export type AuditActionValue = (typeof AuditAction)[keyof typeof AuditAction];

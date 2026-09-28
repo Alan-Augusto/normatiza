@@ -1,6 +1,8 @@
 import { BadRequestException, PayloadTooLargeException } from '@nestjs/common';
 
-import { FilesService, LOGO_MAX_BYTES } from './files.service';
+import { sharp } from './sharp';
+
+import { EQUIPMENT_PHOTO_MAX_BYTES, FilesService, LOGO_MAX_BYTES } from './files.service';
 import { StorageDriver } from './storage.driver';
 
 /** Um storage que só lembra o que recebeu: aqui se testa a decisão, não a rede. */
@@ -16,6 +18,10 @@ class StorageFalso implements StorageDriver {
     this.validades.push(ttlSeconds);
     return this.gravados.has(key) ? `https://storage.test/${key}?ttl=${ttlSeconds}` : null;
   }
+
+  async delete(key: string): Promise<void> {
+    this.gravados.delete(key);
+  }
 }
 
 /** Só o pedaço do Prisma que o serviço toca. */
@@ -28,6 +34,10 @@ function prismaFalso() {
         const linha = { id: `file-${linhas.length + 1}`, ...data };
         linhas.push(linha);
         return linha;
+      }),
+      delete: jest.fn(async ({ where }: { where: { id: string } }) => {
+        const i = linhas.findIndex((l) => l.id === where.id);
+        return linhas.splice(i, 1)[0];
       }),
     },
   };
@@ -110,5 +120,83 @@ describe('FilesService — logo da empresa', () => {
     const url = await files.readUrl({ storageKey: 'accounts/x/companies/y/logo/perdido' });
 
     expect(url).toBeNull();
+  });
+});
+
+describe('FilesService — foto do equipamento', () => {
+  let storage: StorageFalso;
+  let prisma: ReturnType<typeof prismaFalso>;
+  let files: FilesService;
+
+  const alvo = { accountId: 'conta-normatiza', companyId: 'brf', equipmentId: 'eq-1', actorUserId: 'fernando' };
+
+  /** Uma foto de verdade, do tamanho de uma câmera de celular — não só a assinatura. */
+  const foto = (largura = 4000, altura = 3000) =>
+    sharp({ create: { width: largura, height: altura, channels: 3, background: '#3a6' } }).jpeg().toBuffer();
+
+  beforeEach(() => {
+    storage = new StorageFalso();
+    prisma = prismaFalso();
+    files = new FilesService(prisma as never, storage);
+  });
+
+  it('deve guardar o original intacto e uma miniatura para as listas', async () => {
+    const bytes = await foto();
+
+    const arquivo = await files.uploadEquipmentPhoto({ ...alvo, bytes });
+
+    // O original é o que entra no laudo: não é recomprimido.
+    expect(storage.gravados.get(arquivo.storageKey)?.bytes.equals(bytes)).toBe(true);
+    const miniatura = storage.gravados.get(arquivo.thumbnailKey as string)!;
+    expect(miniatura.contentType).toBe('image/webp');
+    const { width, height } = await sharp(miniatura.bytes).metadata();
+    expect(Math.max(width!, height!)).toBe(480);
+    expect(miniatura.bytes.length).toBeLessThan(bytes.length);
+  });
+
+  it('não deve ampliar uma foto que já é menor que a miniatura', async () => {
+    const arquivo = await files.uploadEquipmentPhoto({ ...alvo, bytes: await foto(300, 200) });
+
+    const { width } = await sharp(storage.gravados.get(arquivo.thumbnailKey as string)!.bytes).metadata();
+    expect(width).toBe(300);
+  });
+
+  it('deve guardar a foto sob a conta, a empresa e o equipamento, ligada a ele', async () => {
+    const arquivo = await files.uploadEquipmentPhoto({ ...alvo, bytes: await foto() });
+
+    expect(arquivo.storageKey).toMatch(/^accounts\/conta-normatiza\/companies\/brf\/equipments\/eq-1\//);
+    expect(arquivo).toMatchObject({ equipmentId: 'eq-1', companyId: 'brf', category: 'EQUIPMENT_MAIN_PHOTO' });
+  });
+
+  it('deve recusar o que tem assinatura de imagem mas não é imagem, sem gravar nada', async () => {
+    await expect(files.uploadEquipmentPhoto({ ...alvo, bytes: PNG })).rejects.toThrow(BadRequestException);
+    expect(storage.gravados.size).toBe(0);
+    expect(prisma.linhas).toHaveLength(0);
+  });
+
+  it('deve recusar foto acima do limite', async () => {
+    const grande = Buffer.concat([await foto(10, 10), Buffer.alloc(EQUIPMENT_PHOTO_MAX_BYTES)]);
+
+    await expect(files.uploadEquipmentPhoto({ ...alvo, bytes: grande })).rejects.toThrow(
+      PayloadTooLargeException,
+    );
+  });
+
+  it('deve ler a miniatura quando pedida, e o original quando não há miniatura', async () => {
+    const arquivo = await files.uploadEquipmentPhoto({ ...alvo, bytes: await foto() });
+
+    expect(await files.readThumbnailUrl(arquivo)).toContain(arquivo.thumbnailKey as string);
+    expect(await files.readThumbnailUrl({ storageKey: arquivo.storageKey, thumbnailKey: null })).toContain(
+      arquivo.storageKey,
+    );
+  });
+
+  it('deve apagar o registro e os bytes — original e miniatura — de um arquivo trocado', async () => {
+    const arquivo = await files.uploadEquipmentPhoto({ ...alvo, bytes: await foto() });
+
+    await files.remove(arquivo);
+
+    expect(storage.gravados.size).toBe(0);
+    expect(prisma.linhas).toHaveLength(0);
   });
 });

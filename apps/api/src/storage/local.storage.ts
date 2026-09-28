@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 
 import { StorageDriver } from './storage.driver';
@@ -44,6 +44,12 @@ export class LocalStorage extends StorageDriver {
     } catch {
       return null;
     }
+  }
+
+  async delete(key: string): Promise<void> {
+    const caminho = this.caminhoDe(key);
+    await Promise.all([rm(caminho, { force: true }), rm(`${caminho}.type`, { force: true })]);
+    this.tipos.delete(key);
   }
 
   /** A chave nunca escapa da pasta: `../` numa chave seria escrita arbitrária em disco. */

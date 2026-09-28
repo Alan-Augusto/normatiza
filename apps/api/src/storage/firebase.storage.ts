@@ -95,6 +95,10 @@ export class FirebaseStorage extends StorageDriver {
     return url;
   }
 
+  async delete(key: string): Promise<void> {
+    await this.bucket().file(key).delete({ ignoreNotFound: true });
+  }
+
   private bucket() {
     return getStorage(this.app).bucket(this.credenciais.bucket);
   }

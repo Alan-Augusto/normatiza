@@ -95,12 +95,13 @@ model Account {
   ownerUserId String? @unique
   owner       User?   @relation("AccountOwner", fields: [ownerUserId], references: [id])
 
-  users       User[]         @relation("AccountUsers")
-  companies   Company[]
-  groups      CompanyGroup[]
-  files       FileAsset[]
-  memberships Membership[]
-  invitations Invitation[]
+  users        User[]         @relation("AccountUsers")
+  companies    Company[]
+  groups       CompanyGroup[]
+  files        FileAsset[]
+  memberships  Membership[]
+  invitations  Invitation[]
+  machineTypes MachineType[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -285,9 +286,16 @@ model Company {
   deactivatedAt       DateTime?
   deactivatedByUserId String?
 
+  /// O último número de equipamento dado nesta empresa — o próximo é `+1`.
+  /// Incrementado na mesma transação que cria o equipamento, e nunca
+  /// decrementado: um código excluído não volta a existir (docs/produto/03 §4.2).
+  equipmentSequence Int @default(0)
+
   memberships Membership[]
   files       FileAsset[]        @relation("CompanyFiles")
   slugAliases CompanySlugAlias[]
+  sectors     Sector[]
+  equipments  Equipment[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -501,6 +509,9 @@ model FileAsset {
   companyId String?
   company   Company? @relation("CompanyFiles", fields: [companyId], references: [id])
 
+  equipmentId String?
+  equipment   Equipment? @relation("EquipmentFiles", fields: [equipmentId], references: [id], onDelete: SetNull)
+
   title       String?
   description String?
   /// Para que o arquivo existe: `COMPANY_LOGO`, e as categorias que vierem com
@@ -521,7 +532,8 @@ model FileAsset {
   capturedAt       DateTime?
   capturedByUserId String?
 
-  logoOf Company? @relation("CompanyLogo")
+  logoOf      Company?   @relation("CompanyLogo")
+  mainPhotoOf Equipment? @relation("EquipmentMainPhoto")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -529,5 +541,103 @@ model FileAsset {
 
   @@index([accountId])
   @@index([companyId])
+  @@index([equipmentId])
   @@map("file_assets")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inventário da planta
+// Regras: docs/produto/03_navegacao_e_telas.md §4.2 e §4.3, 04_modelo_de_dados.md §2, §3 e §7
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Organização física da planta. O nome é comparado sem acento, caixa nem
+/// espaço sobrando (`normalizedName`): criar "usinagem " onde já existe
+/// "Usinagem" devolve o existente — o defeito que o legado acumulou.
+model Sector {
+  id        String  @id @default(cuid())
+  accountId String
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  name              String
+  normalizedName    String
+  description       String?
+  responsibleUserId String?
+
+  equipments Equipment[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([companyId, normalizedName])
+  @@index([accountId])
+  @@map("sectors")
+}
+
+/// Catálogo de tipos de máquina. `accountId` nulo = global, semeado pela
+/// plataforma; preenchido = acrescentado por aquela consultoria. Quem consulta
+/// sempre une os dois conjuntos.
+model MachineType {
+  id        String   @id @default(cuid())
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id])
+
+  name           String
+  normalizedName String
+
+  equipments Equipment[]
+
+  createdAt       DateTime @default(now())
+  createdByUserId String?
+
+  @@unique([accountId, normalizedName])
+  @@map("machine_types")
+}
+
+/// O ativo — o eixo do sistema (docs/produto/00 §2.2). Só a identidade da
+/// máquina mora aqui; o que se mede na vistoria é da ficha técnica da análise.
+model Equipment {
+  id        String  @id @default(cuid())
+  accountId String
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  /// `EQ-0001`: sequencial por empresa, imutável, nunca reaproveitado. É a
+  /// chave da URL e da API (`/companies/:companyId/equipments/:code`).
+  code String
+
+  name             String
+  machineTypeId    String?
+  machineType      MachineType? @relation(fields: [machineTypeId], references: [id])
+  model            String?
+  manufacturerName String?
+  serialNumber     String?
+  manufactureYear  Int?
+  /// A TAG do cliente. Opcional, mas única na empresa quando preenchida — o
+  /// Postgres trata nulos como distintos, então o índice não barra os vazios.
+  tag              String?
+  patrimonyCode    String?
+
+  sectorId String?
+  sector   Sector? @relation(fields: [sectorId], references: [id])
+
+  mainPhotoFileId String?     @unique
+  mainPhoto       FileAsset?  @relation("EquipmentMainPhoto", fields: [mainPhotoFileId], references: [id])
+  files           FileAsset[] @relation("EquipmentFiles")
+
+  /// Preenchido = fora do inventário, em modo leitura. Só a desativação é
+  /// gravada; conformidade, pior HRN e pontos nascem das análises.
+  deactivatedAt       DateTime?
+  deactivatedByUserId String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([companyId, code])
+  @@unique([companyId, tag])
+  @@index([accountId])
+  @@index([sectorId])
+  @@map("equipments")
 }

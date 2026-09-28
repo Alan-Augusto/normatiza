@@ -92,6 +92,8 @@ export class CompaniesService {
       .filter((e) => !query.q || corresponde(e.empresa, query.q))
       .sort((a, b) => a.empresa.tradeName.localeCompare(b.empresa.tradeName, 'pt-BR'));
 
+    const contagens = await this.equipamentosAtivos(actor.accountId, linhas.map((l) => l.empresa.id));
+
     // Assinadas só as que sobraram do filtro. Assinar é conta local com a
     // chave do serviço, e não uma ida ao bucket — cabe numa lista.
     return Promise.all(
@@ -106,7 +108,7 @@ export class CompaniesService {
         logoUrl: empresa.logo ? ((await this.files.readUrl(empresa.logo)) ?? undefined) : undefined,
         status,
         managers: gestoresDaEmpresa(empresa).map((g) => refDoGestor(g, agora)),
-        ...métricasDaEmpresa(),
+        ...métricasDaEmpresa(contagens.get(empresa.id) ?? 0),
         actions: this.açõesSobre(actor, empresa.id, status),
       })),
     );
@@ -358,6 +360,17 @@ export class CompaniesService {
       .filter((id) => this.permissions.effectiveRoles(actor, id).some((p) => ROLE_SIDE[p] === 'CONSULTANCY'));
   }
 
+  /** O inventário em operação de cada empresa: desativado não conta. */
+  private async equipamentosAtivos(accountId: string, companyIds: string[]): Promise<Map<string, number>> {
+    if (companyIds.length === 0) return new Map();
+    const grupos = await this.prisma.equipment.groupBy({
+      by: ['companyId'],
+      where: { accountId, companyId: { in: companyIds }, deactivatedAt: null },
+      _count: { _all: true },
+    });
+    return new Map(grupos.map((g) => [g.companyId, g._count._all]));
+  }
+
   private administra(actor: SessionScope, companyId: string): boolean {
     return this.permissions.effectiveRoles(actor, companyId).some((p) => COMPANY_ADMIN_ROLES.includes(p));
   }
@@ -560,12 +573,12 @@ export class CompaniesService {
 // ── Funções puras ────────────────────────────────────────────────────────────
 
 /**
- * Os números da operação. **O único ponto a trocar** quando equipamentos e
- * análises existirem (D5): até lá, zero equipamento é verdade, e adequação sem
- * análise não tem medida — por isso ela não vem.
+ * Os números da operação. Equipamentos já são de verdade; pontos em aberto,
+ * adequação e última análise chegam com as análises (D5) — até lá, zero ponto
+ * é verdade, e adequação sem análise não tem medida, por isso ela não vem.
  */
-function métricasDaEmpresa(): CompanyMetrics {
-  return { equipmentsCount: 0, openPointsCount: 0 };
+function métricasDaEmpresa(equipamentosAtivos: number): CompanyMetrics {
+  return { equipmentsCount: equipamentosAtivos, openPointsCount: 0 };
 }
 
 /**

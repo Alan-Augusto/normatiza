@@ -40,7 +40,7 @@ Trocar as três máquinas inventadas (`maquinas-provisorias.ts`) pelo inventári
 | D5 | **Setor por nome normalizado** | `Sector.normalizedName` único na empresa. Criar um nome que já existe **devolve o existente**, sem erro: é o que torna a criação dentro do formulário segura. Mesclar move os equipamentos e apaga o setor de origem. Excluir só setor vazio. |
 | D6 | **Tipo de máquina é catálogo** | `MachineType` com `accountId` opcional: nulo = global (semeado), preenchido = da consultoria. Criar um nome existente, global ou da conta, devolve o existente. **Só a consultoria cria**; o lado cliente escolhe ou deixa vazio. Regra em 03 §4.2. |
 | D7 | **Desativar e excluir** | `deactivatedAt` / `deactivatedByUserId`, como a empresa. A lista padrão traz só os ativos; `?status=ALL` traz todos. Desativado é modo leitura. Excluir só sem análise: enquanto não houver análise no sistema, todo equipamento é excluível, e a checagem nasce com a análise. |
-| D8 | **Foto principal com miniatura no servidor** | `sharp` na API. No envio: tipo lido dos bytes (PNG/JPG/WebP), original preservado, miniatura WebP de 480 px no maior lado em `thumbnailKey`. A lista devolve a URL da miniatura, e o detalhe devolve as duas. Limite de 10 MB. Compressão no celular antes do envio fica para o app de campo. |
+| D8 | **Foto principal com miniatura no servidor; a antiga se preserva** | `sharp` na API. No envio: tipo lido dos bytes (PNG/JPG/WebP), original preservado, miniatura WebP de 480 px no maior lado em `thumbnailKey`. A lista devolve a URL da miniatura, e o detalhe devolve as duas. Limite de 10 MB. Compressão no celular antes do envio fica para o app de campo. |
 | D9 | **Rotas do painel** | `empresas/:companySlug/equipamentos` (lista), `…/equipamentos/novo`, `…/equipamentos/:equipmentCode/editar` (Contexto 2, declaradas antes do Contexto 3) e `…/equipamentos/:equipmentCode` (Contexto 3). `…/setores` entra no menu do Contexto 2. |
 | D10 | **API sob `/companies/:companyId/…`** | `equipments` e `sectors` moram sob a empresa. Não precisam de prefixo novo no nginx, e o escopo é o da empresa. Só o catálogo é raiz, `/machine-types`, e ganha prefixo no `nginx.conf`. |
 | D11 | **A lista reusa o padrão das empresas** | Busca e filtro no servidor (`q`, `sectorId`, `status`), estado na URL, `app-data-table`, `actions` por linha, "—" nas colunas de análise. Alternar entre tabela e cartões fica na URL (`?vista=cartoes`). |
@@ -49,24 +49,24 @@ Trocar as três máquinas inventadas (`maquinas-provisorias.ts`) pelo inventári
 ## 4. Passos
 
 ### Fase 0 — Arquivos
-- [ ] `sharp` na API e na imagem Docker (Alpine, prebuilt `linuxmusl`).
-- [ ] `FilesService.uploadEquipmentPhoto`: tipo pelos bytes, original com miniatura, `FileAsset.equipmentId`, `category: 'EQUIPMENT_MAIN_PHOTO'`.
-- [ ] Trocar a foto apaga o `FileAsset` anterior. Corrige, de passagem, o logo que deixava o registro antigo para trás.
+- [x] `sharp` na API (binário pré-compilado; a imagem é Debian slim). Carregado por `storage/sharp.ts`, porque a API compila sem `esModuleInterop`.
+- [x] `FilesService.uploadEquipmentPhoto`: tipo pelos bytes, decodificação como prova, original intacto, miniatura WebP de 480 px, `FileAsset.equipmentId`, `category: 'EQUIPMENT_MAIN_PHOTO'`. Os drivers ganham `delete`.
+- [x] Trocar a foto **preserva** a anterior, como o logo: o laudo emitido aponta para o arquivo da época. Os bytes e o registro só saem com a exclusão de um equipamento que nunca teve análise (`FilesService.remove`).
 
 ### Fase 1 — Catálogo de tipos de máquina
-- [ ] Prisma `MachineType` + seed dos tipos globais (lista inicial a partir dos tipos mais comuns do legado).
-- [ ] `GET /machine-types?q=` (global ∪ conta, sem acento nem caixa) e `POST /machine-types` (só consultoria, devolve o existente).
-- [ ] Prefixo `machine-types` no `nginx.conf` e conferência contra as rotas do Angular.
+- [x] Prisma `MachineType` + 45 tipos globais semeados **na migração** (existem em todo ambiente), com índice parcial que impede global repetido.
+- [x] `GET /machine-types?q=` (global ∪ conta, sem acento nem caixa) e `POST /machine-types` (só consultoria, devolve o existente).
+- [x] Prefixo `machine-types` no `nginx.conf` e conferência contra as rotas do Angular.
 
 ### Fase 2 — Setores
-- [ ] Prisma `Sector` (`normalizedName` único na empresa).
-- [ ] `GET/POST /companies/:companyId/sectors`, `PATCH …/:sectorId`, `POST …/:sectorId/merge`, `DELETE …/:sectorId`, com a alçada de D1 e a empresa inativa em modo leitura.
+- [x] Prisma `Sector` (`normalizedName` único na empresa).
+- [x] `GET/POST /companies/:companyId/sectors`, `PATCH …/:sectorId`, `POST …/:sectorId/merge`, `DELETE …/:sectorId`, com a alçada de D1 e a empresa inativa em modo leitura.
 
 ### Fase 3 — Equipamentos na API
-- [ ] Prisma `Equipment`, `Company.equipmentSequence`, `FileAsset.equipmentId`.
-- [ ] Lista com filtros e `actions` por linha, detalhe, criar, editar, desativar, reativar, excluir, foto, e a consulta de duplicados (D4).
-- [ ] `métricasDaEmpresa()` conta os equipamentos ativos de verdade.
-- [ ] Contratos em `@normatiza/shared`.
+- [x] Prisma `Equipment`, `Company.equipmentSequence`, `FileAsset.equipmentId`.
+- [x] Lista com filtros e `actions` por linha, detalhe, criar, editar, desativar, reativar, excluir, foto, e a consulta de duplicados (D4).
+- [x] `métricasDaEmpresa()` conta os equipamentos ativos de verdade.
+- [x] Contratos em `@normatiza/shared`.
 
 ### Fase 4 — Painel
 - [ ] Setores: tela do Contexto 2 e item no menu.

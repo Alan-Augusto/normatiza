@@ -16,6 +16,10 @@ allowBuilds:
   # Aceleradores nativos do build do Angular. Mesma história: o install
   # aborta sem eles autorizados.
   '@parcel/watcher': true
+  # Miniatura das fotos de equipamento (API). O script só confere o binário
+  # pré-compilado da plataforma; sem ele, uma instalação quebrada só apareceria
+  # no primeiro upload.
+  sharp: true
   msgpackr-extract: true
   # Dependências do firebase-admin (storage da API). Negados de propósito: o
   # script do @firebase/util gera configuração para navegador, e o do protobufjs

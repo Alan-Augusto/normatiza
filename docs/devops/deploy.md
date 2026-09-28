@@ -52,7 +52,7 @@ Daí saem três consequências, todas boas:
 ### O roteamento é por prefixo, e é frágil de propósito
 
 `apps/web/nginx.conf` manda para a API tudo que começar com `auth`, `users`,
-`companies`, `company-groups`, `memberships`, `invitations` ou `platform`. O resto vai para o
+`companies`, `company-groups`, `memberships`, `invitations`, `platform` ou `machine-types`. O resto vai para o
 `index.html` e quem resolve é o Angular Router.
 
 > [!WARNING]

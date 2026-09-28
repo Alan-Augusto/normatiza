@@ -14,4 +14,7 @@ export abstract class StorageDriver {
    * arquivo sumido é defeito a registrar, não motivo para derrubar a tela.
    */
   abstract signedUrl(key: string, ttlSeconds: number): Promise<string | null>;
+
+  /** Apaga os bytes. Chave que não existe não é erro: o que se queria era que ela não existisse. */
+  abstract delete(key: string): Promise<void>;
 }

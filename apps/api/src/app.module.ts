@@ -9,6 +9,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { CompaniesModule } from './companies/companies.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { validate } from './config/env.validation';
 import { InvitationsModule } from './invitations/invitations.module';
 import { MailModule } from './mail/mail.module';
@@ -42,6 +43,7 @@ import { TeamModule } from './team/team.module';
     PlatformModule,
     TeamModule,
     CompaniesModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
