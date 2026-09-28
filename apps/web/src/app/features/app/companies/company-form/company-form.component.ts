@@ -29,7 +29,7 @@ import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { Step, StepList, Stepper } from 'primeng/stepper';
 import { Textarea } from 'primeng/textarea';
-import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { Observable, TimeoutError, catchError, map, of, switchMap, timeout } from 'rxjs';
 
 import {
   BRAZIL_STATES,
@@ -74,6 +74,15 @@ type ConviteDoGestor =
   | { estado: 'dispensado' };
 
 const SÓ_GESTOR: readonly Role[] = ['MANAGER'];
+
+/**
+ * Quanto cada etapa do salvar espera o servidor. Um pedido que se perde no
+ * caminho — uma conexão morta entre o navegador e o servidor — não falha nem
+ * responde: sem limite, o botão girava para sempre e a saída era o F5, que
+ * apagava o formulário. O cadastro leva menos de um segundo; 20 segundos já é
+ * sinal de que não vem mais.
+ */
+const LIMITE_DE_ESPERA_MS = 20_000;
 
 /** O mesmo teto do servidor — conferido aqui para a pessoa não esperar um upload ser recusado. */
 const LOGO_MAX_BYTES = 2 * 1024 * 1024;
@@ -643,11 +652,19 @@ export class CompanyFormComponent implements OnInit {
 
     pedido
       .pipe(
+        timeout(LIMITE_DE_ESPERA_MS),
         switchMap((empresa) => this.aplicarLogo(empresa)),
         // A sessão carrega a carteira: sem recarregá-la, a empresa nova não
         // passaria na guarda do Contexto 2, e um nome editado seguiria velho na
-        // sidebar.
-        switchMap((empresa) => this.auth.refresh().pipe(map(() => empresa))),
+        // sidebar. A empresa já está salva a esta altura: uma sessão que não
+        // renovou não desfaz o cadastro — o próximo F5 a traz atualizada.
+        switchMap((empresa) =>
+          this.auth.refresh().pipe(
+            timeout(LIMITE_DE_ESPERA_MS),
+            map(() => empresa),
+            catchError(() => of(empresa)),
+          ),
+        ),
       )
       .subscribe({
         next: (empresa) => {
@@ -662,6 +679,13 @@ export class CompanyFormComponent implements OnInit {
         },
         error: (erro) => {
           this.salvando.set(false);
+          if (erro instanceof TimeoutError) {
+            this.erro.set(
+              `O servidor não respondeu em ${LIMITE_DE_ESPERA_MS / 1000} segundos. O que você preencheu ` +
+                'continua aqui: tente de novo. Se a empresa já aparecer na lista, o cadastro tinha chegado.',
+            );
+            return;
+          }
           this.recusado(erro);
         },
       });
@@ -723,6 +747,7 @@ export class CompanyFormComponent implements OnInit {
     if (!operação) return of(empresa);
 
     return operação.pipe(
+      timeout(LIMITE_DE_ESPERA_MS),
       map(() => empresa),
       catchError((erro) => {
         this.avisoDoLogo.set(

@@ -271,6 +271,21 @@ no runner certo.
 > **público**, revise isso antes: um PR vindo de um fork rodando no seu homelab
 > é o cenário que essa guarda existe para impedir.
 
+## Quando uma tela fica carregando
+
+O log do nginx registra, por requisição, o tempo total (`rt`), o tempo da API (`urt`), o IP de quem pediu e o CF-Ray da Cloudflare:
+
+```sh
+cd /opt/normatiza && docker compose logs web --since 1h | grep -v "GET /assets"
+```
+
+- **A requisição não aparece:** ela não chegou ao servidor. Morreu entre o navegador e a Cloudflare, ou no túnel. Confira `sudo journalctl -u cloudflared --since "1 hour ago"`. Se o túnel estiver limpo, a suspeita é a conexão do navegador (HTTP/3).
+- **Aparece com `rt` alto e `urt` baixo:** o tempo foi gasto na rede, antes ou depois do nginx.
+- **`urt` alto:** a API demorou. Veja `docker compose logs api`.
+- **Status 499:** o navegador desistiu antes da resposta.
+
+O painel desiste sozinho do salvar da empresa em 20 segundos, e o que foi preenchido continua no formulário. Um "não respondeu" na tela é o sinal para abrir este log.
+
 ## O ciclo do dia a dia
 
 Push na `main` e pronto:

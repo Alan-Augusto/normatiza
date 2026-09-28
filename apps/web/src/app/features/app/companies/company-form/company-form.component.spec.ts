@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
@@ -432,6 +433,37 @@ describe('CompanyFormComponent', () => {
 
       expect(el('[data-testid="sucesso"]')?.textContent).toContain('JBS');
       expect(el('[data-testid="abrir-empresa"]')?.getAttribute('href')).toBe('/app/empresas/jbs/painel');
+    });
+
+    it('deve desistir de esperar em 20 segundos, sem perder o que foi preenchido', async () => {
+      // O pedido que some no caminho — conexão morta entre o navegador e o
+      // servidor — deixava o botão girando para sempre, e a saída era o F5, que
+      // apagava o formulário inteiro.
+      await novo();
+      preencherTudo();
+      vi.useFakeTimers();
+      try {
+        salvar();
+        const perdido = http.expectOne(`${API}/companies`);
+
+        vi.advanceTimersByTime(19_000);
+        harness.detectChanges();
+        expect(el('[data-testid="erro"]')).toBeNull();
+
+        vi.advanceTimersByTime(1_000);
+        harness.detectChanges();
+        expect(perdido.cancelled).toBe(true);
+        expect(el('[data-testid="erro"]')?.textContent).toContain('não respondeu');
+        clicar('passo-identificacao');
+        expect(campo('fantasia').value).toBe('JBS');
+
+        // Tentar de novo é um clique, com os mesmos dados.
+        clicar('passo-organizacao');
+        salvar();
+        expect(http.expectOne(`${API}/companies`).request.body).toMatchObject({ tradeName: 'JBS' });
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('deve voltar à identificação e pôr no campo CNPJ a recusa por CNPJ repetido', async () => {
