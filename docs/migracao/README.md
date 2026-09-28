@@ -235,6 +235,7 @@ No legado, o `Customer` é ao mesmo tempo o login de leitura e o cadastro da ind
 | Legado | v2 | Transformação |
 | :--- | :--- | :--- |
 | `name` | `name` | Sem espaços nas pontas |
+| — | `normalizedName` | `normalizeForSearch(name)`, o mesmo do cadastro: é por ele que os duplicados se juntam |
 | `customerId` | `companyId` | A `Company` que veio desse `Customer` |
 | — | `description`, `responsibleUserId` | Nascem vazios |
 
@@ -264,7 +265,7 @@ Quando duas linhas são juntadas, **a identidade vem da análise mais recente**.
 | Legado | v2 | Transformação |
 | :--- | :--- | :--- |
 | `equipmentName` | `name` | Vazio → "Máquina sem nome", e entra no relatório |
-| `equipmentType` | `machineType` | Texto livre, como no legado |
+| `equipmentType` | `machineTypeId` | Texto livre no legado, catálogo na v2: cada texto distinto (normalizado) vira um `MachineType` da conta, salvo o que casar com um tipo global. A lista de-para sai no relatório, para a consultoria fundir sinônimos ("Esteira", "Esteira transportadora") |
 | `equipmentModel` | `model` | — |
 | `manufacturer` | `manufacturerName` | — |
 | `serialNumber` | `serialNumber` | — |
@@ -288,7 +289,7 @@ Quando duas linhas são juntadas, **a identidade vem da análise mais recente**.
 | `cycleTime`, `driveTime`, `emergencyTime` | `production.cycleTimeSec`, `.activationTimeSec`, `.emergencyStopTimeSec` | Texto livre; mesmo tratamento das dimensões |
 | `commandPositions` | `operation.controlStations` | Texto no legado, número na v2 |
 | `totalOperators` | `operation.exposedOperators` | — |
-| `machineUsage` | `operation.purpose` | **Não é regime de turnos:** é para que a máquina serve ("Esteira transportadora", "Bombeamento de água", "Incubar ovos de aves"), conforme a base real. A `TechnicalSheet` não tem esse campo ainda; ver §5.5 |
+| `machineUsage` | `operation.purpose` | **Não é regime de turnos:** é para que a máquina serve ("Esteira transportadora", "Bombeamento de água", "Incubar ovos de aves"), conforme a base real |
 | `processDescription` | `operation.processDescription` | — |
 | `operatorInterventions` | `operation.commonInterventions` | — |
 | `otherInfo` | `operation.otherInfo` | — |
@@ -337,8 +338,6 @@ Laudos emitidos e documentos citam esses códigos. A análise migrada guarda o c
   - **Altura, largura, profundidade e peso.** Quase sempre vêm como número e unidade, com a caixa e o espaço variando: "120 Cm", "787mm", "1000 Kg", "4000Kg". Lê-se o número, com vírgula ou ponto decimal, e a unidade `mm`, `cm` ou `m` (convertida para mm) ou `kg` e `t` (convertida para kg). Número sem unidade não é convertido.
   - **Capacidade.** Mistura potência ("0,55 kW", "0,55KW") com capacidade produtiva ("10 t/h", "115200 ovos", "MIN 5,9 CX/MIN MAX 13CX/MIN", "50878 KCAL/H"). Unidade `kW` vai para `production.powerKw`; `CV` e `HP` são convertidos para kW. Todo o resto vai inteiro, como texto, para `production.capacity`, que já é texto na v2.
   - **Tempos de ciclo, acionamento e parada de emergência.** Quase nunca são preenchidos (o valor mais comum de ciclo aparece 8 vezes em 28.743), e o conteúdo é heterogêneo: "Imediato", "Contínuo", "10 a 15 rpm", "adhgdaha", "000000000000000000000000". Converte-se só número com unidade de tempo explícita ("15 segundos", "1,4 SEGUNDOS", "1s", "20 min"). "Imediato" e "Instantâneo" **não** viram zero: não são medição.
-- **`operation.purpose` (utilização).** O campo precisa entrar na `TechnicalSheet` ([04 §4](../produto/04_modelo_de_dados.md)) e na Etapa 1 da análise ([03 §5.2](../produto/03_navegacao_e_telas.md)). Hoje o legado o preenche, e a v2 não tem onde guardá-lo.
-- **`machineType` como catálogo.** Hoje é texto livre, na v2 como no legado. Se virar catálogo (o `AnalysisTemplate` é indexado por tipo de máquina), a migração precisa de uma tabela de-para dos textos existentes.
 - **Situação do equipamento.** `complianceStatus`, `worstCurrentHrn`, `openPointsCount` e `lastAnalysisAt` são calculados a partir das análises migradas, e não copiados. Sem plano de ação retroativo (05 §6), o equipamento migrado com risco acima do aceitável fica *não conforme*, sem tarefas.
 
 ---

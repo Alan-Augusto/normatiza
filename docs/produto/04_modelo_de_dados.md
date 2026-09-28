@@ -5,7 +5,7 @@ Entidades, relacionamentos e contratos que suportam o ciclo de adequação. As i
 **Convenções gerais:**
 - Toda entidade de negócio carrega `accountId`. É o limite absoluto de isolamento, aplicado no servidor, nunca só na interface.
 - Toda entidade carrega `createdAt`, `updatedAt` e `createdByUserId`. Omitidos abaixo por brevidade quando não são relevantes à regra.
-- Nada é apagado fisicamente. Desativação usa `isActive` ou `disabledAt`.
+- Nada é apagado fisicamente. Desativação usa `isActive` ou `disabledAt`. **A exceção é o que nunca produziu prova:** o equipamento sem análise e o setor sem equipamento podem ser excluídos — o cadastro feito errado não tem histórico a preservar (03 §4.2 e §4.3).
 - Campos monetários em centavos (inteiro), nunca ponto flutuante.
 
 ---
@@ -160,6 +160,7 @@ interface Sector {
   accountId: string;
   companyId: string;
   name: string;                  // "Usinagem", "Caldeiraria"
+  normalizedName: string;        // único na empresa: sem acento, caixa nem espaço sobrando
   description?: string;
   responsibleUserId?: string;
 }
@@ -184,7 +185,7 @@ interface Equipment {
 
   // Identidade — do ativo, não da vistoria
   name: string;                  // "Prensa Hidráulica 100 Toneladas"
-  machineType?: string;          // "Prensa hidráulica"
+  machineTypeId?: string;        // do catálogo (§7) — global ou da consultoria
   model?: string;
   manufacturerName?: string;
   serialNumber?: string;
@@ -193,6 +194,8 @@ interface Equipment {
   patrimonyCode?: string;        // número de patrimônio do cliente
   mainPhotoFileId?: string;
 
+  // A foto principal é um FileAsset com `thumbnailKey`: a lista em cards lê só a miniatura.
+
   // Estado derivado, recalculado — nunca editado à mão
   worstCurrentHrn?: number;
   complianceStatus: 'NOT_ASSESSED' | 'NON_COMPLIANT' | 'IN_ADEQUACY' | 'COMPLIANT';
@@ -200,7 +203,8 @@ interface Equipment {
   lastAnalysisAt?: Date;
   nextReviewAt?: Date;
 
-  isActive: boolean;
+  deactivatedAt?: Date;          // preenchido = fora do inventário, em modo leitura
+  deactivatedByUserId?: string;
 }
 ```
 
@@ -245,7 +249,7 @@ interface TechnicalSheet {
   // Cópia da identidade do equipamento, gravada ao concluir. Enquanto a análise
   // é rascunho, a identidade lida é a do Equipment.
   identity?: {
-    name: string; machineType?: string; model?: string; manufacturerName?: string;
+    name: string; machineTypeName?: string; model?: string; manufacturerName?: string;
     serialNumber?: string; manufactureYear?: number; tag?: string; patrimonyCode?: string;
     sectorName?: string;
   };
@@ -264,6 +268,7 @@ interface TechnicalSheet {
 
   operation?: {
     controlStations?: number; exposedOperators?: number; shiftRegime?: string;
+    purpose?: string;              // "utilização": para que a máquina serve
     processDescription?: string; commonInterventions?: string; otherInfo?: string;
   };
 
@@ -551,12 +556,13 @@ interface Standard {                 // item da NR-12 e correlatas
   isActive: boolean;
 }
 
+interface MachineType       { id: string; name: string; normalizedName: string; accountId?: string; }
 interface HazardOrigin      { id: string; name: string; accountId?: string; }
 interface HazardConsequence { id: string; name: string; accountId?: string; }
 interface ProtectionType    { id: string; name: string; accountId?: string; }
 ```
 
-> `accountId` **opcional** nos catálogos de perigo: quando nulo, o registro é global; quando preenchido, é uma extensão privada daquela consultoria ("Meus Cadastros"). Consultas devem sempre unir os dois conjuntos.
+> `accountId` **opcional** nos catálogos de tipo de máquina e de perigo: quando nulo, o registro é global; quando preenchido, é uma extensão privada daquela consultoria ("Meus Cadastros"). Consultas devem sempre unir os dois conjuntos.
 
 ### Tabelas HRN — versionadas
 
@@ -626,7 +632,7 @@ interface SolutionTemplate {          // textos padrão de solução reaproveit�
 interface AnalysisTemplate {          // modelo de checklist por tipo de máquina
   id: string;
   accountId: string;
-  machineType: string;
+  machineTypeId: string;             // o tipo do catálogo (§7)
   presetRiskPoints?: Partial<RiskPoint>[];
 }
 ```

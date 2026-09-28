@@ -247,7 +247,11 @@ Visão executiva da situação de segurança da planta.
 ### 4.2. Equipamentos
 Inventário da planta. Clicar em um equipamento **muda o contexto** para o Contexto 3.
 
-**Tela:** busca, filtro por setor, por status de conformidade e por faixa de risco. Visualização em tabela ou cards com foto. Colunas: Foto, Código, Nome, TAG, Setor, Pior HRN atual, Status, Pontos em aberto, Última análise.
+**Tela:** busca, filtro por setor, por status de conformidade e por faixa de risco. Visualização em tabela ou cards com foto — os cards carregam a **miniatura** da foto, gerada no envio, nunca o original. Colunas: Foto, Código, Nome, TAG, Setor, Pior HRN atual, Status, Pontos em aberto, Última análise.
+
+As colunas de análise mostram **"—"** enquanto a máquina não tem análise, pela mesma regra da lista de empresas (§3.2): "0 pontos" é verdade, "pior HRN 0" seria invenção. Os filtros por conformidade e por faixa de risco entram junto com as análises — filtrar uma coluna que é "—" em todas as linhas devolveria tudo ou nada.
+
+**Quem cadastra:** a consultoria (Engenheiro Responsável, Engenheiro da Consultoria, Técnico) e o lado cliente que opera a planta (Gestor, Engenheiro do Cliente), cada um nas empresas do seu escopo ([01 §7](./01_papeis_e_permissoes.md)). O Diretor vê o inventário e não edita; o Executor não vê o inventário. Empresa inativa é modo leitura também aqui.
 
 **O código do equipamento.** Todo equipamento recebe, ao ser cadastrado, um código curto e sequencial **por empresa**: `EQ-0001`, `EQ-0002`… É o que identifica a máquina na URL (`/app/empresas/brf-toledo/equipamentos/eq-0042`), na lista e, adiante, na etiqueta. O nome não serve para isso, porque a planta tem dezenas de "Esteira transportadora" iguais. A TAG também não, porque é opcional e é do cliente. O código não é editável e não é reaproveitado: um equipamento desativado mantém o seu, e o próximo cadastro segue a sequência.
 
@@ -255,8 +259,14 @@ Inventário da planta. Clicar em um equipamento **muda o contexto** para o Conte
 - Nome do equipamento, Tipo de máquina, Modelo, Fabricante
 - Número de série, Ano de fabricação
 - TAG de identificação, Número de patrimônio
-- Setor (seleção)
+- Setor — escolhido da lista, ou **criado ali mesmo**, digitando o nome (§4.3)
 - Foto principal
+
+**Obrigatório é só o nome.** O resto se completa na análise, e um cadastro que exige o que ninguém tem em mãos no chão da fábrica não é feito.
+
+**Tipo de máquina** vem de um catálogo (prensa, esteira transportadora, injetora…) com sugestão enquanto se digita, e não de texto livre — é o tipo que vai escolher o modelo de checklist da análise ([04 §7](./04_modelo_de_dados.md)), e "Prensa" e "prensa hidraulica " como dois tipos quebrariam isso. O catálogo é o global da plataforma mais os tipos que a consultoria acrescentou. **A consultoria cria um tipo novo ali mesmo**, digitando; o lado cliente escolhe da lista ou deixa em branco, para a consultoria classificar — o catálogo é da consultoria, e o que um cliente digitasse apareceria para todos os outros.
+
+**Tirar do inventário é desativar, não apagar.** O equipamento desativado sai da lista padrão (um filtro o traz de volta), fica em modo leitura e mantém o histórico, o código e as análises; reativar o devolve como estava. **Excluir de verdade só existe para o equipamento que nunca teve análise** — o cadastro feito errado ou em duplicidade —, porque aí não há prova nenhuma a preservar. O código de um excluído também não é reaproveitado.
 
 **O que identifica a máquina mora no equipamento; o que se mede na vistoria mora na análise.** Nome, tipo, modelo, fabricante, série, ano, TAG, patrimônio e setor são do ativo: não mudam de uma vistoria para outra, e o painel do equipamento os mostra sem depender de análise alguma. Dimensões, tempos, operação, fontes de energia e gestão de segurança são da ficha técnica da análise (§5.2), porque são a fotografia daquela vistoria.
 
@@ -264,7 +274,13 @@ Inventário da planta. Clicar em um equipamento **muda o contexto** para o Conte
 
 ### 4.3. Setores
 Organização física da planta — galpões, linhas de produção, áreas.
-Tabela simples. Formulário: Nome, Descrição, Responsável pelo setor.
+Tabela simples: Nome, Descrição, Responsável, Equipamentos. Formulário: Nome, Descrição, Responsável pelo setor.
+
+**Nasce onde é preciso.** O setor é criado na própria tela ou **no formulário do equipamento**, digitando o nome. A comparação ignora acento, maiúscula e espaço sobrando: "Usinagem", "usinagem " e "Usinágem" são o mesmo setor, e digitar um nome que já existe escolhe o existente em vez de criar um segundo. É o defeito que o sistema legado acumulou, com setores repetidos que nunca podiam ser corrigidos.
+
+**Corrige-se depois.** Renomear, e **mesclar** dois setores num só — os equipamentos do que sai passam para o que fica. Excluir só o setor sem equipamento.
+
+**Quem mexe:** quem cadastra equipamento nesta empresa (§4.2).
 
 ### 4.4. Plano de Ação Consolidado
 Visão de **todos os pontos de todos os equipamentos** da empresa em um só lugar. É a tela de trabalho principal do Engenheiro do Cliente e do Gestor.
@@ -352,7 +368,7 @@ Radiografia da máquina.
 - *Fabricante:* CNPJ, CREA, Endereço, Cidade, CEP
 - *Características físicas:* Altura, Largura, Profundidade, Peso
 - *Produtividade e tempos:* Capacidade produtiva, Potência, Tempo de ciclo, Tempo de acionamento, Tempo de parada de emergência
-- *Operação:* Postos de comando, Total de operadores expostos, Regime de uso (turnos). Textos longos: Descrição do processo, Intervenções comuns do operador, Outras informações
+- *Operação:* Utilização (para que a máquina serve — "Transporte de ração", "Incubação de ovos"), Postos de comando, Total de operadores expostos, Regime de uso (turnos). Textos longos: Descrição do processo, Intervenções comuns do operador, Outras informações
 - *Fontes de energia:* Elétrica · Pneumática · Hidráulica · Mecânica · Radioativa
 - *Gestão de segurança* — seis perguntas de Sim/Não, com o texto dos requisitos da NR-12, idêntico ao do sistema legado para que as respostas migradas signifiquem o mesmo:
   1. As manutenções preventivas com potencial de causar acidentes do trabalho são objeto de planejamento e gerenciamento efetuado por profissional legalmente habilitado?
