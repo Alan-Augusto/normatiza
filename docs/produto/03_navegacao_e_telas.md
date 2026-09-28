@@ -255,7 +255,7 @@ As colunas de análise mostram **"—"** enquanto a máquina não tem análise, 
 
 **O código do equipamento.** Todo equipamento recebe, ao ser cadastrado, um código curto e sequencial **por empresa**: `EQ-0001`, `EQ-0002`… É o que identifica a máquina na URL (`/app/empresas/brf-toledo/equipamentos/eq-0042`), na lista e, adiante, na etiqueta. O nome não serve para isso, porque a planta tem dezenas de "Esteira transportadora" iguais. A TAG também não, porque é opcional e é do cliente. O código não é editável e não é reaproveitado: um equipamento desativado mantém o seu, e o próximo cadastro segue a sequência.
 
-**Formulário de cadastro inicial** — *a ficha técnica densa é preenchida durante a análise; aqui é só criar o registro*:
+**Formulário de cadastro inicial** — *a ficha técnica densa é preenchida durante a análise; aqui é só criar o registro*. Em página própria e **em três etapas**, como o cadastro de empresa — Identificação, Na planta, Foto —, na ordem em que a pessoa tem a informação diante da máquina: a plaqueta, o lugar, e por fim a foto, com o celular na mão. Avançar confere a etapa; no cadastro, salvar fica na última; na edição, em qualquer uma:
 - Nome do equipamento, Tipo de máquina, Modelo, Fabricante
 - Número de série, Ano de fabricação
 - TAG de identificação, Número de patrimônio

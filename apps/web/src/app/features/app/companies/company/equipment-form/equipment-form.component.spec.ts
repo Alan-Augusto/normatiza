@@ -92,10 +92,20 @@ describe('EquipmentFormComponent', () => {
     if (sair) entrada.dispatchEvent(new Event('blur'));
     harness.detectChanges();
   }
-  function salvar() {
-    (el('[data-testid="salvar"] button') ?? el('[data-testid="salvar"]'))!.click();
+  function clicar(testid: string) {
+    const alvo = el(`[data-testid="${testid}"] button`) ?? el(`[data-testid="${testid}"]`);
+    if (!alvo) throw new Error(`"${testid}" não está na tela.`);
+    alvo.click();
     harness.detectChanges();
   }
+  const salvar = () => clicar('salvar');
+  const avançar = () => clicar('avancar');
+  /** Da identificação até a foto, a etapa em que o cadastro novo salva. */
+  const atéOFim = () => {
+    avançar();
+    avançar();
+  };
+  const etapaAtual = () => el('[data-testid="etapa-atual"]')?.getAttribute('data-etapa');
   const url = () => TestBed.inject(Router).url;
   const assentar = async () => {
     await harness.fixture.whenStable();
@@ -108,6 +118,7 @@ describe('EquipmentFormComponent', () => {
       await abrir();
 
       digitar('nome', 'Prensa excêntrica 60t');
+      atéOFim();
       salvar();
 
       const req = http.expectOne(EQUIPAMENTOS);
@@ -119,13 +130,42 @@ describe('EquipmentFormComponent', () => {
       expect(url()).toBe(`/app/empresas/${BRF.slug}/equipamentos?cadastrado=eq-0001`);
     });
 
-    it('não deve salvar sem nome, e dizer isso no campo', async () => {
+    it('não deve passar da identificação sem nome, e dizer isso no campo', async () => {
       await comoFernando();
       await abrir();
 
-      salvar();
+      avançar();
 
+      expect(etapaAtual()).toBe('identificacao');
       expect(el('[data-testid="erro-nome"]')?.textContent).toContain('nome');
+      http.expectNone(EQUIPAMENTOS);
+    });
+
+    it('deve oferecer o cadastro só na última etapa, e voltar sem perder o que foi digitado', async () => {
+      await comoFernando();
+      await abrir();
+
+      expect(el('[data-testid="salvar"]')).toBeNull();
+      digitar('nome', 'Prensa');
+      avançar();
+      expect(etapaAtual()).toBe('planta');
+      avançar();
+      expect(etapaAtual()).toBe('foto');
+      expect(el('[data-testid="salvar"]')).not.toBeNull();
+
+      clicar('voltar');
+      clicar('voltar');
+      expect(campo('nome').value).toBe('Prensa');
+    });
+
+    it('não deve salvar com Enter no meio do caminho', async () => {
+      await comoFernando();
+      await abrir();
+      digitar('nome', 'Prensa');
+
+      campo('nome').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      harness.detectChanges();
+
       http.expectNone(EQUIPAMENTOS);
     });
 
@@ -134,8 +174,10 @@ describe('EquipmentFormComponent', () => {
       await abrir();
 
       digitar('nome', 'Torno');
+      avançar();
       digitar('setor', ' USINAGEM ');
       expect(el('[data-testid="ajuda-setor"]')?.textContent).not.toContain('novo');
+      avançar();
       salvar();
 
       http.expectNone((r) => r.method === 'POST' && r.url === SETORES_URL);
@@ -149,8 +191,10 @@ describe('EquipmentFormComponent', () => {
       await abrir();
 
       digitar('nome', 'Torno');
+      avançar();
       digitar('setor', 'Caldeiraria');
       expect(el('[data-testid="ajuda-setor"]')?.textContent).toContain('Setor novo');
+      avançar();
       salvar();
 
       const novo = http.expectOne((r) => r.method === 'POST' && r.url === SETORES_URL);
@@ -167,6 +211,7 @@ describe('EquipmentFormComponent', () => {
 
       digitar('nome', 'Tombador 2');
       digitar('tipo', 'Tombador de caixas');
+      atéOFim();
       salvar();
 
       const tipo = http.expectOne((r) => r.method === 'POST' && r.url === `${API}/machine-types`);
@@ -182,18 +227,21 @@ describe('EquipmentFormComponent', () => {
       digitar('nome', 'Tombador 2');
       digitar('tipo', 'Tombador de caixas');
       expect(el('[data-testid="ajuda-tipo"]')?.textContent).toContain('consultoria');
+      atéOFim();
       salvar();
 
       http.expectNone((r) => r.method === 'POST' && r.url === `${API}/machine-types`);
       expect(http.expectOne(EQUIPAMENTOS).request.body.machineTypeId).toBeNull();
     });
 
-    it('deve mostrar no campo da TAG a recusa por TAG repetida', async () => {
+    it('deve voltar à etapa da TAG e mostrar no campo a recusa por TAG repetida', async () => {
       await comoFernando();
       await abrir();
 
       digitar('nome', 'Prensa 2');
+      avançar();
       digitar('tag', 'PR-01');
+      avançar();
       salvar();
       http.expectOne(EQUIPAMENTOS).flush(
         { statusCode: 409, field: 'tag', message: 'A TAG PR-01 já é de "Prensa 1" (EQ-0001), nesta empresa.' },
@@ -201,6 +249,7 @@ describe('EquipmentFormComponent', () => {
       );
       harness.detectChanges();
 
+      expect(etapaAtual()).toBe('planta');
       expect(el('[data-testid="erro-tag"]')?.textContent).toContain('Prensa 1');
     });
 
@@ -216,6 +265,7 @@ describe('EquipmentFormComponent', () => {
 
       expect(el('[data-testid="aviso-serie"]')?.textContent).toContain('EQ-0007');
       digitar('nome', 'Esteira 2');
+      atéOFim();
       salvar();
       http.expectOne(EQUIPAMENTOS).flush(detalheDeEquipamento());
     });
@@ -225,6 +275,7 @@ describe('EquipmentFormComponent', () => {
       await abrir();
 
       digitar('nome', 'Prensa');
+      atéOFim();
       const entrada = el('[data-testid="foto-arquivo"]') as HTMLInputElement;
       const arquivo = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], 'prensa.jpg', { type: 'image/jpeg' });
       Object.defineProperty(entrada, 'files', { value: [arquivo] });
@@ -242,6 +293,7 @@ describe('EquipmentFormComponent', () => {
       await comoFernando();
       await abrir();
       digitar('nome', 'Prensa');
+      atéOFim();
       vi.useFakeTimers();
       try {
         salvar();
@@ -252,6 +304,7 @@ describe('EquipmentFormComponent', () => {
 
         expect(perdido.cancelled).toBe(true);
         expect(el('[data-testid="erro"]')?.textContent).toContain('não respondeu');
+        clicar('passo-identificacao');
         expect(campo('nome').value).toBe('Prensa');
       } finally {
         vi.useRealTimers();
@@ -260,7 +313,7 @@ describe('EquipmentFormComponent', () => {
   });
 
   describe('editar', () => {
-    it('deve abrir preenchido e voltar ao painel da máquina ao salvar', async () => {
+    it('deve abrir preenchido, com qualquer etapa a um clique, e voltar ao painel ao salvar', async () => {
       await comoFernando();
       harness = await RouterTestingHarness.create();
       await harness.navigateByUrl(`/app/empresas/${BRF.slug}/equipamentos/eq-0001/editar`, EquipmentFormComponent);
@@ -271,8 +324,11 @@ describe('EquipmentFormComponent', () => {
 
       expect(campo('nome').value).toBe('Prensa excêntrica 60t');
       expect(campo('serie').value).toBe('SN-1234');
+      clicar('passo-planta');
       expect(campo('setor').value).toBe('Usinagem');
 
+      // Na edição o cadastro já está completo: salvar vale de qualquer etapa.
+      clicar('passo-identificacao');
       digitar('nome', 'Prensa 60t');
       salvar();
       const req = http.expectOne(`${EQUIPAMENTOS}/EQ-0001`);

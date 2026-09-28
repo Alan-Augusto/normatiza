@@ -3,8 +3,11 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideBox, lucideCamera, lucideCheck, lucideMapPin } from '@ng-icons/lucide';
 import { AutoComplete, type AutoCompleteCompleteEvent } from 'primeng/autocomplete';
-import { Button } from 'primeng/button';
+import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
+import { Step, StepList, Stepper } from 'primeng/stepper';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Observable, TimeoutError, catchError, map, of, switchMap, timeout } from 'rxjs';
@@ -34,6 +37,28 @@ const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
 /** Quanto cada etapa do salvar espera o servidor — a mesma regra do cadastro de empresa. */
 const LIMITE_DE_ESPERA_MS = 20_000;
 
+type Campo = 'nome' | 'tipo' | 'modelo' | 'fabricante' | 'serie' | 'ano' | 'tag' | 'patrimonio' | 'setor';
+
+interface Etapa {
+  valor: number;
+  chave: 'identificacao' | 'planta' | 'foto';
+  titulo: string;
+  icone: string;
+  /** Os campos que esta etapa confere antes de deixar avançar. */
+  campos: Campo[];
+}
+
+/**
+ * As três etapas, na ordem em que a pessoa tem a informação diante da máquina:
+ * o que ela é (a plaqueta do fabricante), onde ela está e como a planta a
+ * chama, e por fim a foto — a última coisa que se faz, com o celular na mão.
+ */
+const ETAPAS: readonly Etapa[] = [
+  { valor: 1, chave: 'identificacao', titulo: 'Identificação', icone: 'lucideBox', campos: ['nome', 'tipo', 'modelo', 'fabricante', 'ano', 'serie'] },
+  { valor: 2, chave: 'planta', titulo: 'Na planta', icone: 'lucideMapPin', campos: ['setor', 'tag', 'patrimonio'] },
+  { valor: 3, chave: 'foto', titulo: 'Foto', icone: 'lucideCamera', campos: [] },
+];
+
 /**
  * Cadastro e edição do equipamento — Contexto 2 (docs/produto/03 §4.2).
  *
@@ -49,9 +74,23 @@ const LIMITE_DE_ESPERA_MS = 20_000;
 @Component({
   selector: 'app-equipment-form',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AutoComplete, Button, InputText, Message],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    NgIconComponent,
+    AutoComplete,
+    Button,
+    ButtonDirective,
+    ButtonLabel,
+    InputText,
+    Message,
+    Stepper,
+    StepList,
+    Step,
+  ],
+  providers: [provideIcons({ lucideBox, lucideMapPin, lucideCamera, lucideCheck })],
   templateUrl: './equipment-form.component.html',
-  styleUrl: './equipment-form.component.css',
+  styleUrls: ['../../../../../shared/styles/cadastro-em-etapas.css', './equipment-form.component.css'],
 })
 export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
   private readonly inventory = inject(InventoryService);
@@ -70,7 +109,7 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     modelo: this.fb.control(''),
     fabricante: this.fb.control(''),
     serie: this.fb.control(''),
-    ano: this.fb.control(''),
+    ano: this.fb.control('', Validators.pattern(/^\s*\d{4}\s*$/)),
     tag: this.fb.control(''),
     patrimonio: this.fb.control(''),
     setor: this.fb.control(''),
@@ -90,7 +129,6 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
   readonly salvando = signal(false);
   readonly erro = signal<string | null>(null);
   readonly erros = signal<Partial<Record<'nome' | 'tag' | 'ano', string>>>({});
-  readonly tentouSalvar = signal(false);
 
   readonly repetidosNaSerie = signal<EquipmentRef[]>([]);
   readonly repetidosNoPatrimonio = signal<EquipmentRef[]>([]);
@@ -99,6 +137,12 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
   readonly fotoPrevia = signal<string | null>(null);
   readonly fotoRemovida = signal(false);
   readonly erroDaFoto = signal<string | null>(null);
+
+  readonly etapas = ETAPAS;
+  readonly passo = signal(1);
+  readonly alcancado = signal(1);
+  readonly etapaAtual = computed(() => ETAPAS[this.passo() - 1]);
+  readonly ultimaEtapa = computed(() => this.passo() === ETAPAS.length);
 
   readonly editando = computed(() => this.code() !== null);
   readonly bloqueado = computed(() => this.original()?.actions.edit === false);
@@ -163,6 +207,8 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
           setor: equipamento.sector?.name ?? '',
         });
         this.fotoPrevia.set(equipamento.photoUrl ?? null);
+        // Na edição o cadastro já está completo: qualquer etapa é um clique.
+        this.alcancado.set(ETAPAS.length);
         this.form.markAsPristine();
         if (this.bloqueado()) {
           this.erro.set('Este equipamento está desativado ou fora da sua alçada: aqui ele só é lido.');
@@ -242,18 +288,52 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     this.form.markAsDirty();
   }
 
+  // ── Etapas ───────────────────────────────────────────────────────────────
+
+  /** Avança só com a etapa em ordem: o erro aparece agora, no campo, e não duas telas depois. */
+  avancar(): void {
+    const etapa = this.etapaAtual();
+    if (etapa.campos.some((nome) => this.form.controls[nome].invalid)) {
+      for (const nome of etapa.campos) this.form.controls[nome].markAsTouched();
+      return;
+    }
+    const proximo = Math.min(this.passo() + 1, ETAPAS.length);
+    this.alcancado.update((atual) => Math.max(atual, proximo));
+    this.passo.set(proximo);
+  }
+
+  voltar(): void {
+    this.passo.update((atual) => Math.max(1, atual - 1));
+  }
+
+  irPara(valor: number | undefined): void {
+    if (valor && valor <= this.alcancado()) this.passo.set(valor);
+  }
+
+  /**
+   * Enter num campo **não** salva nem avança: salvar é um clique, nunca um
+   * Enter esbarrado no meio do caminho — a mesma regra do cadastro de empresa.
+   */
+  semEnter(evento: Event): void {
+    if ((evento.target as HTMLElement).tagName !== 'TEXTAREA') evento.preventDefault();
+  }
+
+  /** Leva à etapa do campo com problema — o erro que ninguém vê não existe. */
+  private irParaACampo(campo: Campo): void {
+    const etapa = ETAPAS.find((e) => e.campos.includes(campo));
+    if (etapa) this.passo.set(etapa.valor);
+  }
+
   // ── Salvar ───────────────────────────────────────────────────────────────
 
   erroDe(campo: 'nome' | 'tag' | 'ano'): string | null {
     const doServidor = this.erros()[campo];
     if (doServidor) return doServidor;
-    if (campo === 'nome' && this.tentouSalvar() && this.form.controls.nome.invalid) {
-      return 'Informe o nome do equipamento.';
-    }
-    if (campo === 'ano' && this.tentouSalvar() && !anoVálido(this.form.controls.ano.value)) {
-      return 'O ano de fabricação é um número de quatro dígitos, como 2012.';
-    }
-    return null;
+    const controle = this.form.controls[campo];
+    if (!controle.touched || controle.valid) return null;
+    return campo === 'nome'
+      ? 'Informe o nome do equipamento.'
+      : 'O ano de fabricação é um número de quatro dígitos, como 2012.';
   }
 
   temAlteracoesNaoSalvas(): boolean {
@@ -261,12 +341,13 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
   }
 
   salvar(): void {
-    this.tentouSalvar.set(true);
     this.erros.set({});
     const empresa = this.empresa();
     if (!empresa || this.bloqueado()) return;
-    if (this.form.invalid || !anoVálido(this.form.controls.ano.value)) {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const primeiro = (Object.keys(this.form.controls) as Campo[]).find((c) => this.form.controls[c].invalid);
+      if (primeiro) this.irParaACampo(primeiro);
       return;
     }
 
@@ -381,13 +462,13 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     const mensagem = mensagemDoServidor(erro, 'Não foi possível salvar o equipamento.');
     const doCampo = { name: 'nome', tag: 'tag', manufactureYear: 'ano' } as const;
     const alvo = campo ? doCampo[campo as keyof typeof doCampo] : undefined;
-    if (alvo) this.erros.set({ [alvo]: mensagem });
-    else this.erro.set(mensagem);
+    if (alvo) {
+      this.erros.set({ [alvo]: mensagem });
+      this.irParaACampo(alvo);
+    } else {
+      this.erro.set(mensagem);
+    }
   }
-}
-
-function anoVálido(valor: string): boolean {
-  return !valor.trim() || /^\d{4}$/.test(valor.trim());
 }
 
 /** Sugere o que contém o digitado, sem acento nem caixa; campo vazio mostra tudo. */

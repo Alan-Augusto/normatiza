@@ -201,7 +201,7 @@ const ETAPAS: readonly Etapa[] = [
     }),
   ],
   templateUrl: './company-form.component.html',
-  styleUrl: './company-form.component.css',
+  styleUrls: ['../../../../shared/styles/cadastro-em-etapas.css', './company-form.component.css'],
 })
 export class CompanyFormComponent implements OnInit {
   protected readonly rotas = ROTAS;
