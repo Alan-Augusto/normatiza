@@ -68,6 +68,67 @@ A matriz de permissões hoje marca `○` (leitura) para o Diretor na tabela de p
 
 ---
 
+## 6. Papel do lado cliente em várias empresas
+
+**Situação.** Todo papel do lado cliente vale para **uma empresa só** ([01 §5](./01_papeis_e_permissoes.md)). A base legada contradiz isso em escala. Dos 514 Gestores (`Manager`) vinculados a empresas, **122 estão em mais de uma**: 52 em duas, e há casos de 16, 24, 33, 44 e 46 empresas. Todos ficam dentro de um mesmo engenheiro, ou seja, de uma mesma conta na v2.
+
+**Por que acontece.** No legado, cada unidade é um `Customer` separado: a filial deixou de existir na v1.4.0. As empresas desses Gestores são quase todas pessoas jurídicas (665 com CNPJ, 3 com CPF). O Gestor de muitas empresas é, com toda probabilidade, o gestor de segurança de um grupo que supervisiona várias unidades. A raiz do CNPJ (os 8 primeiros dígitos, que identificam matriz e filiais) confirma isso em parte. Dos 121 Gestores com várias empresas de CNPJ:
+- **82 têm todas as empresas com a mesma raiz**: são matriz e filiais de uma mesma pessoa jurídica;
+- 20 têm raízes em parte repetidas;
+- 19 têm raízes todas diferentes: grupos de pessoas jurídicas distintas, ou um gestor terceirizado que atende várias.
+
+**Por que importa.** Não há como migrar essas pessoas sem quebrar a regra:
+- Um login por pessoa e e-mail único na conta impedem criar um usuário para cada empresa.
+- Mapeá-las para um papel da consultoria as poria do lado errado: veriam a carteira e poderiam fazer análise.
+
+É uma decisão de modelagem: mexe no escopo, no convite e na invariante do banco.
+
+**Caminhos:**
+- **Papel do cliente pelo grupo empresarial.** Um Gestor (ou Diretor) do grupo enxerga todas as empresas do `CompanyGroup`. Hoje o grupo não concede acesso ([04 §2](./04_modelo_de_dados.md)); passaria a conceder, só para papéis do lado cliente vinculados ao grupo. Na migração, a raiz do CNPJ monta o grupo sozinha para os 82 casos de matriz e filiais. Os outros 39 exigem montar o grupo à mão, e como uma empresa pertence a um grupo só, dois Gestores com conjuntos que se cruzam sem coincidir não cabem nesse modelo.
+- **Vários vínculos de cliente, desde que na mesma conta.** A regra passa de "uma empresa" para "as empresas que o convidante lhe der". É mais simples, mas enfraquece a garantia de que a BRF nunca enxerga a Seara, que hoje é estrutural.
+- **Manter a regra**, e migrar essas pessoas com vínculo só na empresa principal, com as demais listadas no relatório para convite manual. Perde acesso que o cliente tem hoje.
+
+---
+
+## 7. Empresa com CPF
+
+**Situação.** `Company.document` só aceita CNPJ válido. Na base legada:
+- 275 empresas têm CNPJ;
+- **22 têm CPF**;
+- 8 têm um valor com outro tamanho;
+- 18 têm o documento vazio.
+
+Numa base agroindustrial (aviário, incubatório), CPF pode ser produtor rural: um cliente legítimo, não erro de cadastro. Isso não está confirmado.
+
+**Impacto se aceitar CPF:** o documento vira "CPF ou CNPJ", com o preenchimento automático pela Receita só para CNPJ, e o laudo imprime o rótulo certo. Os 26 casos restantes (outro tamanho ou vazio) migram sinalizados para correção, qualquer que seja a decisão.
+
+---
+
+## 8. O que é uma empresa: o CNPJ ou a unidade atendida?
+
+**Situação.** O CNPJ é único na conta ([03 §3.2](./03_navegacao_e_telas.md)), o que faz da `Company` uma pessoa jurídica. A base legada trata o cliente como **unidade operacional**. Na maior conta há 20 CNPJs repetidos, somando 61 clientes. São unidades ativas, com análise em períodos que se sobrepõem, e não cadastros duplicados:
+
+- **Áreas de uma mesma planta.** Frigorífico, incubatório, recria e armazéns sob um CNPJ, com 818, 171, 915 e 62 análises. Utilidades, empanados, salsicharia e abate sob outro. Planta, fábrica de ração, incubatório e cereais sob um terceiro.
+- **Unidades produtivas numeradas.** UP01 a UP11, CD01 e ferramentaria sob um CNPJ só: 12 clientes, 3.599 análises.
+- **Blocos de uma planta.** Bloco A e Bloco B, com cerca de 450 análises cada.
+- **Fabricante de máquinas como cliente**, com uma "unidade" para cada planta de terceiros onde as máquinas dele estão instaladas. Aqui o endereço onde a máquina está não é o endereço do CNPJ.
+
+**História que pesa.** O legado já teve o nível de filial entre cliente e setor (`customer_branch`) e o **removeu na v1.4.0**: voltou a um cliente por unidade. Os usuários preferiram a unidade como o objeto de primeiro nível.
+
+**Por que importa.** Cada unidade tem o seu inventário, os seus laudos e, muitas vezes, o seu Gestor. Juntá-las numa empresa só:
+- faz o Gestor de uma área enxergar as outras;
+- mistura os indicadores;
+- rebaixa as antigas unidades a setores, perdendo o nível de setor que elas já têm dentro de si.
+
+**Caminhos:**
+- **A empresa é a unidade atendida.** O CNPJ deixa de ser único na conta. Um CNPJ repetido gera aviso, e não recusa ("Já existe *BRF Toledo* com este CNPJ. É outra unidade?"). O nome distingue as unidades. O grupo empresarial, que pode ser montado pela raiz do CNPJ, consolida os relatórios.
+  - É o que a base já é, e a migração fica direta.
+  - Combina com o caminho do "Gestor do grupo" da §6.
+- **A empresa é o CNPJ, e as unidades ficam dentro dela** como um nível novo entre empresa e setor. É o caminho que o legado tentou e abandonou.
+- **A empresa é o CNPJ, e as unidades viram setores.** É o mais barato, mas perde o nível de setor e mistura Gestores de áreas diferentes.
+
+---
+
 ## Como usar este documento
 
 Ao resolver uma pendência:

@@ -59,6 +59,9 @@ Arquivos de trabalho **efêmeros**, um por feature em desenvolvimento: objetivo,
 
 *   [Índice e regras da pasta](./planos/README.md) — **plano não é fonte da verdade**: nenhuma regra de negócio nasce ali, ela vive em `docs/produto`.
 
+### 🔁 Migração de Dados (`docs/migracao`)
+*   [Mapeamento legado → v2](./migracao/README.md): de-para de cada tabela e coluna, deduplicação, relatório da migração. **Cresce com cada entidade implementada** — toda feature que cria ou muda uma entidade com origem no legado atualiza este documento.
+
 ### 🗄️ Legado (`docs/legado`)
 *   [Especificação do sistema anterior](./legado/README.md): acervo congelado do Normatiza em produção (.NET + React). Referência **exclusiva** para migração e preservação de regras históricas de cálculo. Não descreve o que será construído.
 

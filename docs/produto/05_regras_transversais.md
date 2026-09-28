@@ -86,32 +86,12 @@ A busca global respeita o escopo: **ninguém encontra na busca o que não poderi
 
 ## 6. Preparação para migração
 
-Mesmo sem migrar agora, a estrutura precisa comportar a migração posterior de toda a base atual.
+A estrutura nova precisa comportar a migração de toda a base do sistema legado. As regras de produto que a migração obedece:
 
-### Fórmula e tabelas HRN idênticas
-Laudos históricos devem permanecer reproduzíveis. A versão inicial de `HrnTableVersion` replica exatamente os pesos e faixas do sistema legado.
+- **HRN reproduzível.** A versão inicial de `HrnTableVersion` replica exatamente os pesos e faixas do legado ([04 §7](./04_modelo_de_dados.md)); laudos históricos continuam recalculáveis.
+- **Todo registro migrado guarda o identificador de origem**, para rastrear a correspondência com o sistema antigo.
+- **Análises históricas entram concluídas e congeladas**, sem plano de ação retroativo.
+- **Ninguém redefine senha por causa da migração.** O hash legado é aceito uma única vez, no primeiro login, e reescrito em Argon2id no mesmo ato ([autenticação §2](../backend/autenticacao.md)).
+- **Segredos externos saem do código.** O token de conversão de documentos estava no fonte legado; toda credencial vive em variável de ambiente ou gerenciador de segredos.
 
-### Mapa de papéis
-
-| Sistema legado | Novo papel |
-| :--- | :--- |
-| `Admin` | Admin do Sistema |
-| `Engineer` | Engenheiro Responsável (dono da conta) |
-| `Analyst` | Técnico |
-| `GuestEngineer` | Engenheiro da Consultoria |
-| `Manager` | Gestor |
-| `Customer` | **Diretor** — leitura pura, que é exatamente o que ele já era |
-
-O `Customer` do sistema legado acumula duas coisas: era o **usuário de leitura** e também a **entidade empresa** — a tabela `user` guarda razão social, CNPJ e endereço da indústria. **Na migração isso se separa:** os dados corporativos viram o registro de `Company` e o login vira um `Membership` com papel `DIRECTOR` vinculado a ela.
-
-Os papéis **Engenheiro do Cliente** e **Executor** não têm origem na base atual — nascem vazios e são preenchidos no onboarding de cada cliente.
-
-### Regras da migração
-
-- **Referência ao identificador de origem** em cada registro migrado, para rastrear a correspondência com o sistema antigo
-- **Análises históricas entram como concluídas e congeladas**, sem plano de ação retroativo
-- **Senhas não migram.** O esquema legado (SHA-256 com `Encoding.Default`, dependente do sistema operacional do host) é frágil. A migração exige redefinição de senha por todos os usuários, com o novo esquema usando Argon2id ou PBKDF2-SHA512
-- **Segredos externos saem do código.** O token de conversão de documentos estava hardcoded no fonte legado; na nova versão toda credencial vive em variável de ambiente ou gerenciador de segredos
-- **Fotos** hoje no Firebase Storage: decidir entre manter as referências ou reprocessar o acervo — ver [06 — Pendências](./06_pendencias.md)
-
-A especificação completa do sistema legado, para consulta durante a migração, está em [`docs/legado/`](../legado/README.md).
+O mapeamento de cada tabela e coluna do legado para o modelo novo — papéis, empresas, equipamentos, fotos — está em [Migração de Dados](../migracao/README.md), que cresce junto com cada entidade implementada.

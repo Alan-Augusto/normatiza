@@ -170,11 +170,15 @@ interface Equipment {
   companyId: string;
   sectorId?: string;
 
+  // Identidade — do ativo, não da vistoria
   name: string;                  // "Prensa Hidráulica 100 Toneladas"
-  tag: string;                   // TAG de identificação na planta
+  machineType?: string;          // "Prensa hidráulica"
   model?: string;
   manufacturerName?: string;
-  patrimonyCode?: string;
+  serialNumber?: string;
+  manufactureYear?: number;
+  tag?: string;                  // TAG de identificação na planta — única na empresa quando preenchida
+  patrimonyCode?: string;        // número de patrimônio do cliente
   mainPhotoFileId?: string;
 
   // Estado derivado, recalculado — nunca editado à mão
@@ -188,7 +192,9 @@ interface Equipment {
 }
 ```
 
-> O cadastro inicial é enxuto de propósito — a ficha técnica densa é preenchida durante a análise, não no momento de criar o registro.
+> O cadastro inicial é enxuto de propósito — a ficha técnica densa é preenchida durante a análise, não no momento de criar o registro. **A fronteira:** o que identifica a máquina é do `Equipment` e vale para todas as análises dela; o que se mede na vistoria é da `TechnicalSheet`. A análise concluída guarda uma cópia da identidade (`TechnicalSheet.identity`), para que o laudo emitido não mude quando alguém corrigir o cadastro depois.
+>
+> `tag` é **opcional e única por empresa** (`@@unique([companyId, tag])`, com nulos livres): muita planta não etiqueta as máquinas, e exigir o campo travaria o cadastro e a migração. `serialNumber` e `patrimonyCode` não são únicos — repetição gera aviso, não recusa.
 >
 > `complianceStatus` e `worstCurrentHrn` são **projeções**, derivadas dos pontos. A fonte da verdade é sempre o conjunto de `RiskPoint`; estes campos existem para listagem e dashboard sem varrer a árvore inteira.
 
@@ -224,12 +230,16 @@ interface Analysis {
 
 ```typescript
 interface TechnicalSheet {
-  machineType?: string;
-  manufactureYear?: number;
-  serialNumber?: string;
+  // Cópia da identidade do equipamento, gravada ao concluir. Enquanto a análise
+  // é rascunho, a identidade lida é a do Equipment.
+  identity?: {
+    name: string; machineType?: string; model?: string; manufacturerName?: string;
+    serialNumber?: string; manufactureYear?: number; tag?: string; patrimonyCode?: string;
+    sectorName?: string;
+  };
 
   manufacturer?: {
-    name: string; document?: string; registry?: string;
+    document?: string; registry?: string;       // CNPJ e CREA
     address?: string; city?: string; zipCode?: string;
   };
 
@@ -247,20 +257,22 @@ interface TechnicalSheet {
 
   energySources: {
     electric: boolean; pneumatic: boolean; hydraulic: boolean;
-    mechanical: boolean; radioactive: boolean; extraction: boolean;
+    mechanical: boolean; radioactive: boolean;
   };
 
+  // As seis perguntas de 03 §5.2, na mesma ordem e com o mesmo texto do legado
   safetyManagement: {
-    hasManualInPortuguese: boolean;
-    hasFormalProcedures: boolean;
-    hasRegisteredMaintenance: boolean;
-    hasMaintenancePlan: boolean;
-    recordsAvailableAtInspection: boolean;
+    maintenancePlannedByQualifiedProfessional: boolean;
+    maintenanceRecorded: boolean;
+    maintenanceRecordsAvailable: boolean;
+    hasInstructionManual: boolean;
+    hasWorkAndSafetyProcedures: boolean;
+    workersTrained: boolean;
   };
 
   // 4 vistas obrigatórias
   recognitionPhotos: {
-    front?: string; leftSide?: string; rightSide?: string; top?: string;
+    front?: string; leftSide?: string; rightSide?: string; rear?: string;
   };
 }
 ```

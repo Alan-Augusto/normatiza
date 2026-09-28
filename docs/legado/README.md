@@ -42,7 +42,7 @@ Estes são os pontos deste acervo que têm efeito direto sobre o sistema novo:
 
 1. **As fórmulas e tabelas de HRN** (documento 03) precisam ser reproduzidas **identicamente**, para que laudos históricos permaneçam válidos e recalculáveis.
 2. **A estrutura de PAP e PE** (documento 03) é reaproveitada integralmente na nova análise.
-3. **O mapa de perfis** (documento 01) alimenta a tradução de papéis descrita em [05 — Regras Transversais](../produto/05_regras_transversais.md).
+3. **O mapa de perfis** (documento 01) alimenta a tradução de papéis descrita em [Migração de Dados](../migracao/README.md).
 4. **O modelo de dados** (documento 02) é a origem dos registros a migrar, incluindo a separação do `Customer` — que hoje acumula login de leitura e cadastro da empresa — em duas entidades distintas.
 
 ## Problemas conhecidos, corrigidos na nova versão

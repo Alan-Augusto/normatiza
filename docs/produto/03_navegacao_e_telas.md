@@ -241,10 +241,15 @@ Inventário da planta. Clicar em um equipamento **muda o contexto** para o Conte
 **Tela:** busca, filtro por setor, por status de conformidade e por faixa de risco. Visualização em tabela ou cards com foto. Colunas: Foto, Nome, TAG, Setor, Pior HRN atual, Status, Pontos em aberto, Última análise.
 
 **Formulário de cadastro inicial** — *a ficha técnica densa é preenchida durante a análise; aqui é só criar o registro*:
-- Nome do equipamento, TAG de identificação, Modelo, Fabricante
+- Nome do equipamento, Tipo de máquina, Modelo, Fabricante
+- Número de série, Ano de fabricação
+- TAG de identificação, Número de patrimônio
 - Setor (seleção)
 - Foto principal
-- Número de patrimônio
+
+**O que identifica a máquina mora no equipamento; o que se mede na vistoria mora na análise.** Nome, tipo, modelo, fabricante, série, ano, TAG, patrimônio e setor são do ativo: não mudam de uma vistoria para outra, e o painel do equipamento os mostra sem depender de análise alguma. Dimensões, tempos, operação, fontes de energia e gestão de segurança são da ficha técnica da análise (§5.2), porque são a fotografia daquela vistoria.
+
+**TAG é opcional, mas não se repete dentro da empresa.** Muita planta não etiqueta as máquinas, e a base legada quase não tem TAG — exigir o campo travaria o cadastro e a migração. Quando preenchida, a TAG identifica: uma segunda máquina com a mesma TAG na mesma empresa é recusada, nomeando a que já a usa. Número de série e patrimônio repetidos não são recusados, mas o formulário avisa antes de salvar — pode ser engano, pode ser uma máquina recadastrada.
 
 ### 4.3. Setores
 Organização física da planta — galpões, linhas de produção, áreas.
@@ -316,7 +321,7 @@ Linha do tempo de tudo que aconteceu nesta empresa: equipamentos cadastrados, an
 ### 5.1. Dashboard do Equipamento
 Radiografia da máquina.
 - Foto principal e galeria das 4 vistas
-- Identificação: Nome, TAG, Modelo, Fabricante, Ano, Setor, Patrimônio
+- Identificação: Nome, Tipo de máquina, TAG, Modelo, Fabricante, Número de série, Ano, Setor, Patrimônio
 - **Selo de conformidade NR-12** com cor baseada no pior HRN atual
 - Indicadores: Pontos de risco mapeados · Pontos em aberto · Pontos conformados · Investimento previsto vs. realizado · Data da última análise · Próxima revisão prevista
 - **Barra de progresso da adequação** — quantos pontos faltam para liberar o Laudo de Adequação. O denominador são os pontos que geraram tarefa; pontos aceitáveis ficam de fora
@@ -332,15 +337,20 @@ Radiografia da máquina.
 
 **Etapa 1 — Ficha Técnica**
 
-- *Identidade:* Nome, Modelo, Tipo de máquina, Ano de fabricação, Número de série, TAG, Patrimônio
-- *Localização:* Setor
-- *Fabricante:* Nome, CNPJ, CREA, Endereço, Cidade, CEP
+- *Identidade:* os dados do equipamento (§4.2) — Nome, Tipo de máquina, Modelo, Fabricante, Número de série, Ano de fabricação, TAG, Patrimônio e Setor. A etapa os mostra e permite corrigi-los; a correção vale para o equipamento. Ao concluir, a análise guarda uma **cópia** deles, e o laudo emitido continua mostrando a máquina como ela estava identificada naquela data
+- *Fabricante:* CNPJ, CREA, Endereço, Cidade, CEP
 - *Características físicas:* Altura, Largura, Profundidade, Peso
 - *Produtividade e tempos:* Capacidade produtiva, Potência, Tempo de ciclo, Tempo de acionamento, Tempo de parada de emergência
 - *Operação:* Postos de comando, Total de operadores expostos, Regime de uso (turnos). Textos longos: Descrição do processo, Intervenções comuns do operador, Outras informações
-- *Fontes de energia:* Elétrica · Pneumática · Hidráulica · Mecânica · Radioativa · Captação
-- *Gestão de segurança:* Manual em português? · Procedimentos de trabalho formalizados? · Manutenção preventiva registrada? · Plano de manutenção previsto? · Registro disponível no ato da vistoria?
-- *Reconhecimento visual:* 4 fotos obrigatórias — Frontal, Lateral Esquerda, Lateral Direita, Superior
+- *Fontes de energia:* Elétrica · Pneumática · Hidráulica · Mecânica · Radioativa
+- *Gestão de segurança* — seis perguntas de Sim/Não, com o texto dos requisitos da NR-12, idêntico ao do sistema legado para que as respostas migradas signifiquem o mesmo:
+  1. As manutenções preventivas com potencial de causar acidentes do trabalho são objeto de planejamento e gerenciamento efetuado por profissional legalmente habilitado?
+  2. As manutenções preventivas e corretivas são registradas em livro próprio, ficha ou sistema informatizado — cronograma, intervenções realizadas, data de cada intervenção, serviço realizado, peças reparadas ou substituídas, condições de segurança do equipamento, indicação conclusiva quanto às condições de segurança da máquina e nome do responsável pelas intervenções?
+  3. O registro das manutenções está disponível aos trabalhadores envolvidos na operação, manutenção e reparos, à CIPA, ao SESMT e à fiscalização do Ministério do Trabalho e Emprego?
+  4. As máquinas e equipamentos possuem manual de instruções fornecido pelo fabricante ou importador, com informações relativas à segurança em todas as fases de utilização?
+  5. A máquina possui procedimentos de trabalho e segurança específicos, padronizados, com descrição detalhada de cada tarefa, passo a passo, a partir da análise de risco?
+  6. Os trabalhadores envolvidos na operação, manutenção, inspeção e demais intervenções possuem capacitação providenciada pelo empregador, compatível com suas funções, que aborde os riscos a que estão expostos e as medidas de proteção existentes e necessárias?
+- *Reconhecimento visual:* 4 fotos obrigatórias — Frontal, Lateral Esquerda, Lateral Direita, Posterior. As quatro vistas que cercam a máquina no chão da fábrica, e as que o acervo legado tem: a vista de cima raramente é fotografável em campo
 
 **Etapa 2 — Pontos de Risco e HRN**
 
