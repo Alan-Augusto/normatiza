@@ -174,6 +174,116 @@ describe('Cadastro de empresas (e2e)', () => {
   // 2.2 — Validação que depende do banco
   // ───────────────────────────────────────────────────────────────────────────
 
+  describe('o endereço da empresa (slug)', () => {
+    /** Um CNPJ válido a partir de 12 dígitos quaisquer: o teste precisa de várias empresas. */
+    function cnpj(base: string): string {
+      const dígito = (números: string) => {
+        const pesos = números.length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        const resto = [...números].reduce((soma, d, i) => soma + Number(d) * pesos[i], 0) % 11;
+        return resto < 2 ? '0' : String(11 - resto);
+      };
+      const com13 = base + dígito(base);
+      return com13 + dígito(com13);
+    }
+
+    const unidade = (tradeName: string, city: string, n: number) =>
+      empresaNova({
+        tradeName,
+        document: cnpj(`5566677700${String(n).padStart(2, '0')}`),
+        address: { ...empresaNova().address, city },
+      });
+
+    it('deve nascer do nome fantasia', async () => {
+      const jbs = await companies.create(await escopo(elenco.josué.id), empresaNova({ tradeName: 'JBS S/A' }));
+
+      expect(jbs.slug).toBe('jbs');
+    });
+
+    it('deve desempatar pela cidade, e depois por número, quando o nome já existe na conta', async () => {
+      const josué = await escopo(elenco.josué.id);
+
+      const toledo = await companies.create(josué, unidade('BRF', 'Toledo', 1));
+      const toledo2 = await companies.create(josué, unidade('BRF', 'Toledo', 2));
+
+      expect(toledo.slug).toBe('brf-toledo');
+      expect(toledo2.slug).toBe('brf-toledo-2');
+    });
+
+    it('deve deixar outra consultoria usar o mesmo slug, porque ele é único só na conta', async () => {
+      const { empresa } = await montarConsultoriaRival(ctx.prisma);
+      await ctx.prisma.company.update({ where: { id: empresa.id }, data: { slug: 'jbs' } });
+
+      const jbs = await companies.create(await escopo(elenco.josué.id), empresaNova());
+
+      expect(jbs.slug).toBe('jbs');
+    });
+
+    it('deve mudar com o nome fantasia, e o endereço antigo continuar levando à empresa', async () => {
+      // O escopo é lido de novo depois de criar: a empresa nova entra nele.
+      const josué = () => escopo(elenco.josué.id);
+      const jbs = await companies.create(await josué(), empresaNova());
+
+      const renomeada = await companies.update(await josué(), jbs.id, empresaNova({ tradeName: 'JBS Friboi' }));
+
+      expect(renomeada.slug).toBe('jbs-friboi');
+      expect(await companies.resolveSlug(await josué(), 'jbs')).toEqual({ id: jbs.id, slug: 'jbs-friboi' });
+      expect(await companies.resolveSlug(await josué(), 'jbs-friboi')).toEqual({ id: jbs.id, slug: 'jbs-friboi' });
+    });
+
+    it('não deve dar a outra empresa um endereço que já foi de alguém', async () => {
+      // O escopo é lido de novo depois de criar: a empresa nova entra nele.
+      const josué = () => escopo(elenco.josué.id);
+      const jbs = await companies.create(await josué(), empresaNova());
+      await companies.update(await josué(), jbs.id, empresaNova({ tradeName: 'JBS Friboi' }));
+
+      const outra = await companies.create(await josué(), unidade('JBS', 'Lins', 3));
+
+      expect(outra.slug).toBe('jbs-lins');
+      expect(await companies.resolveSlug(await josué(), 'jbs')).toEqual({ id: jbs.id, slug: 'jbs-friboi' });
+    });
+
+    it('não deve mudar quando o que muda não é o nome fantasia', async () => {
+      // O escopo é lido de novo depois de criar: a empresa nova entra nele.
+      const josué = () => escopo(elenco.josué.id);
+      const jbs = await companies.create(await josué(), empresaNova());
+
+      const editada = await companies.update(
+        await josué(),
+        jbs.id,
+        empresaNova({ address: { ...empresaNova().address, city: 'Lins' } }),
+      );
+
+      expect(editada.slug).toBe('jbs');
+    });
+
+    it('deve recuperar o endereço de antes quando o nome volta a ser o de antes', async () => {
+      // O escopo é lido de novo depois de criar: a empresa nova entra nele.
+      const josué = () => escopo(elenco.josué.id);
+      const jbs = await companies.create(await josué(), empresaNova());
+      await companies.update(await josué(), jbs.id, empresaNova({ tradeName: 'JBS Friboi' }));
+
+      const devolta = await companies.update(await josué(), jbs.id, empresaNova());
+
+      expect(devolta.slug).toBe('jbs');
+      expect(await companies.resolveSlug(await josué(), 'jbs-friboi')).toEqual({ id: jbs.id, slug: 'jbs' });
+    });
+
+    it('não deve revelar, pelo slug, empresa fora do escopo de quem pergunta', async () => {
+      await expect(companies.resolveSlug(await escopo(elenco.fernando.id), 'seara')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(companies.resolveSlug(await escopo(elenco.josué.id), 'nao-existe')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('deve ir junto na lista, para a tela montar o link', async () => {
+      const lista = await companies.list(await escopo(elenco.josué.id));
+
+      expect(lista.map((e) => e.slug).sort()).toEqual(['brf', 'seara']);
+    });
+  });
+
   describe('CNPJ', () => {
     it('deve recusar CNPJ com dígito verificador errado', async () => {
       await expect(

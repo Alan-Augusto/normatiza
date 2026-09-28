@@ -1,8 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { ActivatedRoute, provideRouter } from '@angular/router';
+
+import { rotaDaEmpresa } from '../../../../../core/routing/testing/rota-da-empresa';
 import { firstValueFrom } from 'rxjs';
 
 import type { CompanyTeam, MembershipWithCompany } from '@normatiza/shared';
@@ -57,13 +58,7 @@ describe('CompanyTeamComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: API },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            paramMap: of(convertToParamMap({ companyId: BRF.id })),
-            snapshot: { paramMap: convertToParamMap({ companyId: BRF.id }) },
-          },
-        },
+        { provide: ActivatedRoute, useValue: rotaDaEmpresa(BRF.slug) },
       ],
     });
     http = TestBed.inject(HttpTestingController);

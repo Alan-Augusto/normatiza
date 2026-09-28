@@ -62,6 +62,8 @@ export interface Membership {
 /** Projeção mínima de empresa — o suficiente para exibir um vínculo. */
 export interface CompanySummary {
   id: string;
+  /** O trecho legível da URL do Contexto 2 (docs/produto/03 §4). */
+  slug: string;
   tradeName: string;
   corporateName: string;
   status: CompanyStatus;

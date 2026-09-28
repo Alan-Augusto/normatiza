@@ -144,6 +144,15 @@ export class AuthService {
     );
   }
 
+  /**
+   * A empresa que a URL nomeia. O slug é apresentação (docs/produto/03 §4):
+   * daqui em diante, quem pergunta usa o `id`. Um slug antigo não está na
+   * sessão — quem o traduz é a guarda de rota, pela API.
+   */
+  companyBySlug(slug: string): CompanySummary | null {
+    return this.vínculosAtivos().find((vínculo) => vínculo.company.slug === slug)?.company ?? null;
+  }
+
   rolesInCompany(companyId: string): Role[] {
     return this.vínculosAtivos()
       .filter((vínculo) => vínculo.companyId === companyId)

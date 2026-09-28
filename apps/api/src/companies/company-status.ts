@@ -80,10 +80,11 @@ export function refDoGestor(gestor: Gestor, agora: Date = new Date()): CompanyMa
 }
 
 export function resumoDaEmpresa(
-  company: Pick<EmpresaComGestores, 'id' | 'tradeName' | 'corporateName' | 'deactivatedAt' | 'memberships'>,
+  company: Pick<EmpresaComGestores, 'id' | 'slug' | 'tradeName' | 'corporateName' | 'deactivatedAt' | 'memberships'>,
 ): CompanySummary {
   return {
     id: company.id,
+    slug: company.slug,
     tradeName: company.tradeName,
     corporateName: company.corporateName,
     status: statusDaEmpresa(company),

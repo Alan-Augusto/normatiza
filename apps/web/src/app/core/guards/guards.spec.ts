@@ -9,7 +9,7 @@ import {
   UrlTree,
   provideRouter,
 } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, isObservable, type Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../auth/api.config';
 import { AuthService } from '../auth/auth.service';
@@ -114,7 +114,7 @@ describe('guardas de rota', () => {
       const url = router.serializeUrl(destino as UrlTree);
 
       expect(url).not.toBe('/app');
-      expect(url).toBe(`/app/empresas/${BRF.id}/painel`);
+      expect(url).toBe(`/app/empresas/${BRF.slug}/painel`);
     });
 
     it('deve barrar o anônimo', () => {
@@ -157,7 +157,7 @@ describe('guardas de rota', () => {
 
       const destino = rodar(accountOwnerGuard, '/app/assinatura');
       expect(router.serializeUrl(destino as UrlTree)).toBe(
-        `/app/empresas/${BRF.id}/painel`,
+        `/app/empresas/${BRF.slug}/painel`,
       );
     });
 
@@ -178,14 +178,60 @@ describe('guardas de rota', () => {
       expect(rodar(roleGuard(['MANAGER']))).not.toBe(true);
     });
 
-    it('deve exigir o papel na empresa da rota', async () => {
+    it('deve exigir o papel na empresa da rota, que a URL nomeia pelo slug', async () => {
       // O Gestor da BRF não vira Gestor da Seara por a rota mudar de parâmetro.
-      await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+      await entrarComo([vínculo(BRF.id, ['MANAGER']), vínculo(SEARA.id, ['DIRECTOR'])]);
 
-      expect(rodar(roleGuard(['MANAGER']), '/app/empresas/x', { companyId: BRF.id })).toBe(true);
-      expect(rodar(roleGuard(['MANAGER']), '/app/empresas/y', { companyId: SEARA.id })).not.toBe(
-        true,
-      );
+      expect(rodar(roleGuard(['MANAGER']), '/app/empresas/brf/painel', { companySlug: 'brf' })).toBe(true);
+      expect(
+        rodar(roleGuard(['MANAGER']), '/app/empresas/seara/painel', { companySlug: 'seara' }),
+      ).not.toBe(true);
+    });
+
+    describe('um slug que a sessão não conhece', () => {
+      async function resolver(resultado: unknown) {
+        return firstValueFrom(resultado as Observable<boolean | UrlTree>);
+      }
+
+      it('deve levar o endereço antigo ao atual, mantendo a tela que a pessoa pediu', async () => {
+        // A BRF se chamava "BRF Concórdia": o favorito antigo ainda abre.
+        await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+
+        const resultado = rodar(roleGuard(['MANAGER']), '/app/empresas/brf-concordia/equipe', {
+          companySlug: 'brf-concordia',
+        });
+        expect(isObservable(resultado)).toBe(true);
+        const destino = resolver(resultado);
+        http.expectOne(`${API}/companies/by-slug/brf-concordia`).flush({ id: BRF.id, slug: 'brf' });
+
+        expect(router.serializeUrl((await destino) as UrlTree)).toBe('/app/empresas/brf/equipe');
+      });
+
+      it('deve mandar para a porta de entrada quando a empresa não existe para quem pergunta', async () => {
+        await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
+
+        const destino = resolver(
+          rodar(roleGuard(['MANAGER']), '/app/empresas/outra/painel', { companySlug: 'outra' }),
+        );
+        http
+          .expectOne(`${API}/companies/by-slug/outra`)
+          .flush(null, { status: 404, statusText: 'Not Found' });
+
+        expect(router.serializeUrl((await destino) as UrlTree)).toBe('/app/empresas/brf/painel');
+      });
+
+      it('não deve deixar o endereço antigo virar atalho para uma empresa sem o papel pedido', async () => {
+        await entrarComo([vínculo(BRF.id, ['DIRECTOR'])]);
+
+        const destino = resolver(
+          rodar(roleGuard(['MANAGER']), '/app/empresas/brf-concordia/equipe', {
+            companySlug: 'brf-concordia',
+          }),
+        );
+        http.expectOne(`${API}/companies/by-slug/brf-concordia`).flush({ id: BRF.id, slug: 'brf' });
+
+        expect(router.serializeUrl((await destino) as UrlTree)).not.toContain('/equipe');
+      });
     });
 
     /**
@@ -212,7 +258,7 @@ describe('guardas de rota', () => {
       const destino = rodar(roleGuard(CONTEXTO_1), '/app/painel');
 
       expect(router.serializeUrl(destino as UrlTree)).toBe(
-        `/app/empresas/${BRF.id}/painel`,
+        `/app/empresas/${BRF.slug}/painel`,
       );
     });
 

@@ -30,7 +30,7 @@ describe('rotaDeEntrada', () => {
     // A dimensão de plataforma não muda de que lado a pessoa trabalha: ela
     // continua nascendo dentro do Contexto 2 da empresa dela.
     expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['MANAGER'])], true))).toBe(
-      `/app/empresas/${BRF.id}/painel`,
+      `/app/empresas/${BRF.slug}/painel`,
     );
   });
 
@@ -55,19 +55,19 @@ describe('rotaDeEntrada', () => {
 
   it('deve levar o Gestor direto ao Contexto 2 da empresa dele', () => {
     expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['MANAGER'])]))).toBe(
-      `/app/empresas/${BRF.id}/painel`,
+      `/app/empresas/${BRF.slug}/painel`,
     );
   });
 
   it('deve levar o Engenheiro do Cliente direto ao Contexto 2', () => {
     expect(rotaDeEntrada(sessão([vínculo(SEARA.id, ['CLIENT_ENGINEER'])]))).toBe(
-      `/app/empresas/${SEARA.id}/painel`,
+      `/app/empresas/${SEARA.slug}/painel`,
     );
   });
 
   it('deve levar o Diretor ao dashboard da empresa dele', () => {
     expect(rotaDeEntrada(sessão([vínculo(BRF.id, ['DIRECTOR'])]))).toBe(
-      `/app/empresas/${BRF.id}/painel`,
+      `/app/empresas/${BRF.slug}/painel`,
     );
   });
 
@@ -87,7 +87,7 @@ describe('rotaDeEntrada', () => {
       vínculo(BRF.id, ['MANAGER'], { isActive: false }),
       vínculo(SEARA.id, ['MANAGER']),
     ];
-    expect(rotaDeEntrada(sessão(desligadoDaBrf))).toBe(`/app/empresas/${SEARA.id}/painel`);
+    expect(rotaDeEntrada(sessão(desligadoDaBrf))).toBe(`/app/empresas/${SEARA.slug}/painel`);
   });
 
   it('deve mandar para o perfil quem entrou sem vínculo ativo nenhum', () => {

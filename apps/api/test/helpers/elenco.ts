@@ -1,3 +1,4 @@
+import { slugBase } from '@normatiza/shared';
 import { Role } from '@prisma/client';
 
 import { PasswordService } from '../../src/auth/password.service';
@@ -30,6 +31,7 @@ export function dadosDeEmpresa(
     accountId,
     corporateName,
     tradeName,
+    slug: slugBase(tradeName),
     document: document.replace(/\D/g, ''),
     contactName: `Contato ${tradeName}`,
     contactEmail: `contato@${tradeName.toLowerCase().replace(/\W/g, '')}.com`,

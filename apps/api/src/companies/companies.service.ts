@@ -11,7 +11,9 @@ import {
   ROLE_ORDER,
   ROLE_SIDE,
   canInvite,
+  candidatosDeSlug,
   isValidCnpj,
+  slugBase,
   normalizeForSearch,
   onlyDigits,
   type CompanyActions,
@@ -21,6 +23,7 @@ import {
   type CompanyListQuery,
   type CompanyMetrics,
   type CompanyProfile,
+  type CompanySlugResolution,
   type CompanyStatus,
   type CompanyUpsertRequest,
   type CompanyView,
@@ -94,6 +97,7 @@ export class CompaniesService {
     return Promise.all(
       linhas.map(async ({ empresa, status }) => ({
         id: empresa.id,
+        slug: empresa.slug,
         tradeName: empresa.tradeName,
         corporateName: empresa.corporateName,
         document: empresa.document,
@@ -121,6 +125,29 @@ export class CompaniesService {
     }
 
     return this.projetar(actor, companyId, this.permissions.effectiveRoles(actor, companyId));
+  }
+
+  /**
+   * O slug da URL para o id — o vigente ou um que a empresa já teve. Fora do
+   * escopo é 404, como qualquer empresa inacessível: o slug não é atalho para
+   * saber que uma empresa existe.
+   */
+  async resolveSlug(actor: SessionScope, slug: string): Promise<CompanySlugResolution> {
+    const vigente = await this.prisma.company.findFirst({
+      where: { accountId: actor.accountId, slug },
+      select: { id: true, slug: true },
+    });
+    const empresa =
+      vigente ??
+      (
+        await this.prisma.companySlugAlias.findFirst({
+          where: { accountId: actor.accountId, slug },
+          select: { company: { select: { id: true, slug: true } } },
+        })
+      )?.company;
+
+    if (!empresa || !this.permissions.canAccessCompany(actor, empresa.id)) throw new NotFoundException();
+    return { id: empresa.id, slug: empresa.slug };
   }
 
   async listGroups(actor: SessionScope, q?: string): Promise<CompanyGroupOption[]> {
@@ -169,9 +196,10 @@ export class CompaniesService {
     const empresa = await this.gravar(() =>
       this.prisma.$transaction(async (tx) => {
         const groupId = await resolverGrupo(tx, actor, dto.groupName);
+        const slug = await escolherSlug(tx, actor.accountId, dados.tradeName, dados.city);
 
         const criada = await tx.company.create({
-          data: { accountId: actor.accountId, createdByUserId: actor.userId, groupId, ...dados },
+          data: { accountId: actor.accountId, createdByUserId: actor.userId, groupId, slug, ...dados },
         });
 
         await tx.membership.createMany({
@@ -214,7 +242,8 @@ export class CompaniesService {
     await this.gravar(() =>
       this.prisma.$transaction(async (tx) => {
         const groupId = await resolverGrupo(tx, actor, dto.groupName);
-        await tx.company.update({ where: { id: companyId }, data: { ...dados, groupId } });
+        const slug = await renomearSlug(tx, antes, dados.tradeName, dados.city);
+        await tx.company.update({ where: { id: companyId }, data: { ...dados, groupId, slug } });
       }),
     );
 
@@ -473,6 +502,7 @@ export class CompaniesService {
     const perfil: CompanyProfile = {
       view: 'CLIENT',
       id: empresa.id,
+      slug: empresa.slug,
       tradeName: empresa.tradeName,
       corporateName: empresa.corporateName,
       document: empresa.document,
@@ -580,6 +610,63 @@ function corresponde(empresa: EmpresaCompleta, q: string): boolean {
  * **mesmo fora da carteira** de quem cadastra, e sem contar isso a ninguém
  * (D21) — duplicar seria pior, e a tela nunca soube o id.
  */
+/**
+ * O primeiro candidato livre na conta (docs/produto/03 §4). Livre quer dizer:
+ * nem slug vigente de outra empresa, nem slug que alguma empresa já teve — senão
+ * um link antigo abriria a empresa errada. Os apelidos **da própria** empresa
+ * contam como livres: voltar ao nome antigo devolve o endereço antigo.
+ */
+async function escolherSlug(
+  tx: Prisma.TransactionClient,
+  accountId: string,
+  tradeName: string,
+  city: string,
+  companyId?: string,
+): Promise<string> {
+  const candidatos = candidatosDeSlug(slugBase(tradeName), city);
+  const [vigentes, apelidos] = await Promise.all([
+    tx.company.findMany({
+      where: { accountId, slug: { in: candidatos }, ...(companyId ? { id: { not: companyId } } : {}) },
+      select: { slug: true },
+    }),
+    tx.companySlugAlias.findMany({
+      where: { accountId, slug: { in: candidatos }, ...(companyId ? { companyId: { not: companyId } } : {}) },
+      select: { slug: true },
+    }),
+  ]);
+  const ocupados = new Set([...vigentes, ...apelidos].map((e) => e.slug));
+
+  const livre = candidatos.find((slug) => !ocupados.has(slug));
+  // Cem unidades com o mesmo nome na mesma cidade não é caso real; se for, o
+  // endereço fica feio mas continua único.
+  return livre ?? `${candidatos[candidatos.length - 1]}-${Date.now().toString(36)}`;
+}
+
+/**
+ * O slug só muda com o nome fantasia (D4 do plano): a cidade entra no slug por
+ * causa de um conflito, e editá-la não justifica trocar um endereço que alguém
+ * pode ter salvo. O anterior vira apelido; o apelido reaproveitado deixa de ser.
+ */
+async function renomearSlug(
+  tx: Prisma.TransactionClient,
+  antes: { id: string; accountId: string; slug: string; tradeName: string },
+  tradeName: string,
+  city: string,
+): Promise<string> {
+  if (slugBase(tradeName) === slugBase(antes.tradeName)) return antes.slug;
+
+  const novo = await escolherSlug(tx, antes.accountId, tradeName, city, antes.id);
+  if (novo === antes.slug) return novo;
+
+  await tx.companySlugAlias.deleteMany({ where: { accountId: antes.accountId, slug: novo } });
+  await tx.companySlugAlias.upsert({
+    where: { accountId_slug: { accountId: antes.accountId, slug: antes.slug } },
+    create: { accountId: antes.accountId, companyId: antes.id, slug: antes.slug },
+    update: {},
+  });
+  return novo;
+}
+
 async function resolverGrupo(
   tx: Prisma.TransactionClient,
   actor: SessionScope,

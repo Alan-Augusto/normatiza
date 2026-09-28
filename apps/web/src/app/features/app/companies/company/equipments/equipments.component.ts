@@ -1,9 +1,8 @@
-import { Component, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { map } from 'rxjs/operators';
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { MAQUINAS_PROVISORIAS } from './maquinas-provisorias';
+import { empresaDaRota } from '../../../../../core/routing/empresa-da-rota';
 import { ROTAS } from '../../../../../core/routing/rotas';
 
 /**
@@ -25,20 +24,11 @@ import { ROTAS } from '../../../../../core/routing/rotas';
   styleUrl: './equipments.component.css',
 })
 export class EquipmentsComponent {
-  private readonly route = inject(ActivatedRoute);
-
   readonly maquinas = MAQUINAS_PROVISORIAS;
 
-  /**
-   * O `companyId` vem do pai — `equipamentos` é filha de `empresas/:companyId`,
-   * e `ActivatedRoute.paramMap` só enxerga os parâmetros do próprio nível.
-   */
-  readonly companyId = toSignal(
-    this.route.parent!.paramMap.pipe(map((params) => params.get('companyId') ?? '')),
-    { initialValue: this.route.parent?.snapshot.paramMap.get('companyId') ?? '' },
-  );
+  private readonly empresa = empresaDaRota();
 
   rotaDoEquipamento(equipmentId: string): string {
-    return ROTAS.empresa(this.companyId()).equipamento(equipmentId).painel;
+    return ROTAS.empresa(this.empresa()?.slug ?? '').equipamento(equipmentId).painel;
   }
 }

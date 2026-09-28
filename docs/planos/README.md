@@ -14,3 +14,4 @@ Arquivos de trabalho **efêmeros**, um por feature em desenvolvimento. Cada arqu
 
 - [Gestão de Equipe](./gestao-de-equipe.md)
 - [Cadastro de Empresas](./cadastro-de-empresas.md)
+- [Slug da empresa na URL](./slug-de-empresa.md)

@@ -88,7 +88,7 @@
             <app-company-logo [url]="empresa.logoUrl" />
             <a
               data-testid="abrir-empresa"
-              [routerLink]="rotas.empresa(empresa.id).painel"
+              [routerLink]="rotas.empresa(empresa.slug).painel"
               class="font-medium text-surface-900 hover:text-primary dark:text-surface-0"
             >
               {{ empresa.tradeName }}
@@ -157,7 +157,7 @@
                   data-testid="acao-editar"
                   icon="lucidePencil"
                   label="Editar"
-                  [link]="rotas.editarEmpresa(empresa.id)"
+                  [link]="rotas.editarEmpresa(empresa.slug)"
                 />
               }
               @if (empresa.actions.reactivate) {

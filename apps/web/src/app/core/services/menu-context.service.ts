@@ -114,9 +114,9 @@ export class MenuContextService {
     // CONTEXTO 3 — Equipamento
     const equipmentMatch = url.match(/^\/app\/empresas\/([^\/]+)\/equipamentos\/([^\/]+)/);
     if (equipmentMatch) {
-      const companyId = equipmentMatch[1];
+      const slug = equipmentMatch[1];
       const equipmentId = equipmentMatch[2];
-      const daEmpresa = ROTAS.empresa(companyId);
+      const daEmpresa = ROTAS.empresa(slug);
       const rotas = daEmpresa.equipamento(equipmentId);
 
       const items: MenuItem[] = [
@@ -125,7 +125,7 @@ export class MenuContextService {
         { label: 'Histórico', icon: 'pi pi-history', route: rotas.historico }
       ];
 
-      const companyName = this.activeContext.company()?.name ?? `Empresa ${companyId}`;
+      const companyName = this.activeContext.company()?.name ?? `Empresa ${slug}`;
       const equipmentName = this.activeContext.equipment()?.name ?? `Equipamento ${equipmentId}`;
 
       const breadcrumbs: BreadcrumbItem[] = [
@@ -150,7 +150,7 @@ export class MenuContextService {
     // CADASTRO DE EMPRESA — Contexto 1, embora more sob `/app/empresas/`.
     //
     // "nova" não é uma empresa, e editar o cadastro não é entrar nela. Sem
-    // este desvio, o casamento abaixo lia "nova" como `companyId` e abria o
+    // este desvio, o casamento abaixo lia "nova" como o slug de uma empresa e abria o
     // menu da empresa por cima do formulário da carteira — com links para
     // `/app/empresas/nova/painel`.
     const cadastro = url.match(/^\/app\/empresas\/(nova|[^\/]+\/editar)(\/|$)/);
@@ -167,8 +167,8 @@ export class MenuContextService {
     // CONTEXTO 2 — Empresa
     const companyMatch = url.match(/^\/app\/empresas\/([^\/]+)/);
     if (companyMatch) {
-      const companyId = companyMatch[1];
-      const rotas = ROTAS.empresa(companyId);
+      const slug = companyMatch[1];
+      const rotas = ROTAS.empresa(slug);
 
       const items: MenuItem[] = [
         { label: 'Dashboard', icon: 'pi pi-chart-pie', route: rotas.painel },
@@ -177,7 +177,7 @@ export class MenuContextService {
         { label: 'Equipe', icon: 'pi pi-users', route: rotas.equipe }
       ];
 
-      const companyName = this.activeContext.company()?.name ?? `Empresa ${companyId}`;
+      const companyName = this.activeContext.company()?.name ?? `Empresa ${slug}`;
       const breadcrumbs: BreadcrumbItem[] = this.temCarteira()
         ? [
             { label: 'Empresas', route: ROTAS.empresas },

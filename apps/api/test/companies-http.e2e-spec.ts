@@ -133,14 +133,14 @@ describe('Cadastro de empresas — HTTP (e2e)', () => {
     });
 
     it('não deve deixar o corpo escolher o que é do servidor', async () => {
-      // Conta, status e desativação não se escrevem por formulário.
+      // Conta, status, desativação e slug não se escrevem por formulário.
       const res = await http()
         .post('/companies')
         .set('Authorization', await como(elenco.josué))
-        .send({ ...corpo(), accountId: 'outra', deactivatedAt: new Date().toISOString() })
+        .send({ ...corpo(), accountId: 'outra', deactivatedAt: new Date().toISOString(), slug: 'meu' })
         .expect(400);
 
-      expect(JSON.stringify(res.body.message)).toMatch(/accountId|deactivatedAt/);
+      expect(JSON.stringify(res.body.message)).toMatch(/accountId|deactivatedAt|slug/);
     });
   });
 
@@ -167,6 +167,19 @@ describe('Cadastro de empresas — HTTP (e2e)', () => {
       // 404, e o teste passaria contra implementação nenhuma.
       await http().get(`/companies/${elenco.brf.id}`).set('Authorization', token).expect(200);
       await http().get(`/companies/${rival.empresa.id}`).set('Authorization', token).expect(404);
+    });
+
+    it('deve trocar o slug da URL pelo id, e responder 404 fora da conta', async () => {
+      const rival = await montarConsultoriaRival(ctx.prisma);
+      const token = await como(elenco.josué);
+
+      const res = await http().get('/companies/by-slug/brf').set('Authorization', token).expect(200);
+
+      expect(res.body).toEqual({ id: elenco.brf.id, slug: 'brf' });
+      await http()
+        .get(`/companies/by-slug/${rival.empresa.slug}`)
+        .set('Authorization', token)
+        .expect(404);
     });
 
     it('deve listar os grupos da carteira', async () => {

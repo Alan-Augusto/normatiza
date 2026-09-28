@@ -203,6 +203,7 @@ No legado, o `Customer` é ao mesmo tempo o login de leitura e o cadastro da ind
 | `postalCode`, `streetName`, `streetNumber`, `complement`, `district`, `city`, `state` | `zipCode`, `street`, `addressNumber`, `complement`, `district`, `city`, `state` | — |
 | `disabledAt` | `deactivatedAt` | Empresa inativa, em modo leitura |
 | `engineerId` | `accountId` | A conta do engenheiro |
+| — | `slug` | Gerado pela regra de [03 §4](../produto/03_navegacao_e_telas.md), a partir do `tradeName` já migrado. As unidades de mesmo nome fantasia (§3.2, CNPJ repetido) caem no desempate por cidade e número. **Ordem de geração: `createdAt` do cliente**, para que a unidade mais antiga fique com o slug sem sufixo |
 
 **O status da empresa não se migra: ele é calculado.** Com o Gestor vindo de `manager_customer`, a empresa nasce *ativa* quando há um Gestor e *em implantação* quando não há.
 
@@ -273,6 +274,7 @@ Quando duas linhas são juntadas, **a identidade vem da análise mais recente**.
 | `sectorId` | `sectorId` | O setor unificado (§4) |
 | `frontPhotoId` | `mainPhotoFileId` | Quando não houver, a primeira que existir entre a esquerda, a direita e a posterior |
 | `createdAt` | `createdAt` | Quando linhas são juntadas, o da mais antiga |
+| — | `code` | `EQ-0001` em diante, por empresa, na ordem de `createdAt` da máquina. O código do inventário legado (`{customerCode}-{sequencial}`) não é reaproveitado, porque é o sequencial da análise (§5.4) |
 
 **Vistoria → `TechnicalSheet`:**
 

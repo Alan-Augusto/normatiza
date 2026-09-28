@@ -21,7 +21,7 @@ describe('MenuContextService', () => {
   let http: HttpTestingController;
 
   const API = 'http://api.teste';
-  const DENTRO_DA_EMPRESA = `/app/empresas/${BRF.id}/painel`;
+  const DENTRO_DA_EMPRESA = `/app/empresas/${BRF.slug}/painel`;
 
   async function menuEm(url: string, papéis: Role[], isPlatformAdmin = false, éDono = false) {
     TestBed.resetTestingModule();
@@ -100,7 +100,7 @@ describe('MenuContextService', () => {
       // Sem isto, o único jeito de sair das configurações é clicar num item de
       // menu que a pessoa nem deveria estar vendo.
       const cliente = await menuEm('/app/perfil', ['MANAGER']);
-      expect(cliente.backLink?.route).toBe(`/app/empresas/${BRF.id}/painel`);
+      expect(cliente.backLink?.route).toBe(`/app/empresas/${BRF.slug}/painel`);
 
       const consultoria = await menuEm('/app/perfil', ['LEAD_ENGINEER']);
       expect(consultoria.backLink?.route).toBe('/app/painel');
@@ -161,7 +161,7 @@ describe('MenuContextService', () => {
   describe('o cadastro de empresa é do Contexto 1', () => {
     // "new" e "edit" moram sob /app/empresas, mas não são uma empresa: lidos
     // como id, abriam o menu da empresa em cima do formulário da carteira.
-    for (const url of ['/app/empresas/nova', `/app/empresas/${BRF.id}/editar`]) {
+    for (const url of ['/app/empresas/nova', `/app/empresas/${BRF.slug}/editar`]) {
       it(`deve manter o menu da carteira em ${url}`, async () => {
         const ctx = await menuEm(url, ['LEAD_ENGINEER']);
 

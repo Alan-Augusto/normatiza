@@ -219,6 +219,15 @@ Visão consolidada para apresentar ao cliente ou usar internamente:
 *Acesso: todos os papéis com escopo naquela empresa — dos dois lados.*
 *O cabeçalho da aplicação deve deixar permanentemente visível qual empresa está em contexto.*
 
+**O endereço da empresa é legível.** A URL do Contexto 2 leva o **slug** da empresa, não o identificador interno: `/app/empresas/brf-toledo/equipamentos`. A URL é a parte do sistema que a pessoa lê, cola numa mensagem e salva nos favoritos.
+
+- **Nasce do nome fantasia**, sem acento, em minúsculas, com hífens, e sem o sufixo societário (Ltda, S/A, S.A., ME, EPP, Eireli), que não ajuda a identificar: "São Salvador Alimentos S/A" vira `sao-salvador-alimentos`.
+- **É único na conta**, não no sistema: duas consultorias podem ter, cada uma, a sua `brf`.
+- **No conflito, entra a cidade e depois um número.** `brf-toledo` e `brf-chapeco` distinguem as filiais, que é o caso comum. Quatro unidades com o mesmo nome na mesma cidade ficam `…-itaberai`, `…-itaberai-2` e assim por diante. Nada aleatório nem iniciais: o objetivo é ser lido.
+- **Renomear muda o slug, e o antigo continua funcionando.** Mudar o nome fantasia gera um slug novo. Quem abre um link com o slug antigo, vindo de favorito ou e-mail, é levado ao atual. Um slug antigo nunca é dado a outra empresa, para que um link velho não abra a empresa errada.
+- **Palavras reservadas** não viram slug, porque colidiriam com telas: `nova` é o cadastro (`/app/empresas/nova`).
+- **Não é chave de acesso.** Abrir o slug de uma empresa fora do escopo dá o mesmo "não encontrado" que qualquer outra empresa inacessível, e a API continua identificando a empresa pelo identificador interno.
+
 ### 4.0. Dados da Empresa
 
 Clicar no **nome da empresa** na sidebar abre um diálogo de leitura — texto formatado, sem campo de formulário — com os dados principais: nome fantasia e razão social, CNPJ e inscrição estadual, endereço, contato técnico, status, e a linha de contexto de quem presta o serviço e assina por ele (§1 de [01](./01_papeis_e_permissoes.md), "A lista do cliente é a da empresa dele").
@@ -238,7 +247,9 @@ Visão executiva da situação de segurança da planta.
 ### 4.2. Equipamentos
 Inventário da planta. Clicar em um equipamento **muda o contexto** para o Contexto 3.
 
-**Tela:** busca, filtro por setor, por status de conformidade e por faixa de risco. Visualização em tabela ou cards com foto. Colunas: Foto, Nome, TAG, Setor, Pior HRN atual, Status, Pontos em aberto, Última análise.
+**Tela:** busca, filtro por setor, por status de conformidade e por faixa de risco. Visualização em tabela ou cards com foto. Colunas: Foto, Código, Nome, TAG, Setor, Pior HRN atual, Status, Pontos em aberto, Última análise.
+
+**O código do equipamento.** Todo equipamento recebe, ao ser cadastrado, um código curto e sequencial **por empresa**: `EQ-0001`, `EQ-0002`… É o que identifica a máquina na URL (`/app/empresas/brf-toledo/equipamentos/eq-0042`), na lista e, adiante, na etiqueta. O nome não serve para isso, porque a planta tem dezenas de "Esteira transportadora" iguais. A TAG também não, porque é opcional e é do cliente. O código não é editável e não é reaproveitado: um equipamento desativado mantém o seu, e o próximo cadastro segue a sequência.
 
 **Formulário de cadastro inicial** — *a ficha técnica densa é preenchida durante a análise; aqui é só criar o registro*:
 - Nome do equipamento, Tipo de máquina, Modelo, Fabricante

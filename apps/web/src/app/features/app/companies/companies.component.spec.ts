@@ -37,8 +37,8 @@ describe('CompaniesComponent', () => {
         provideRouter([
           { path: 'app/empresas', component: CompaniesComponent },
           { path: 'app/empresas/nova', component: Destino },
-          { path: 'app/empresas/:companyId/editar', component: Destino },
-          { path: 'app/empresas/:companyId/painel', component: Destino },
+          { path: 'app/empresas/:companySlug/editar', component: Destino },
+          { path: 'app/empresas/:companySlug/painel', component: Destino },
         ]),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -144,7 +144,7 @@ describe('CompaniesComponent', () => {
       await abrir();
 
       const link = el(`[data-company="${BRF.id}"] [data-testid="abrir-empresa"]`) as HTMLAnchorElement;
-      expect(link.getAttribute('href')).toBe(`/app/empresas/${BRF.id}/painel`);
+      expect(link.getAttribute('href')).toBe(`/app/empresas/${BRF.slug}/painel`);
     });
 
     it('deve entrar na empresa clicando em qualquer ponto da linha', async () => {
@@ -154,7 +154,7 @@ describe('CompaniesComponent', () => {
       (el(`[data-company="${SEARA.id}"] [data-testid="equipamentos"]`) as HTMLElement).click();
       await harness.fixture.whenStable();
 
-      expect(TestBed.inject(Router).url).toBe(`/app/empresas/${SEARA.id}/painel`);
+      expect(TestBed.inject(Router).url).toBe(`/app/empresas/${SEARA.slug}/painel`);
     });
 
     it('não deve entrar na empresa quando o clique é numa ação da linha', async () => {
@@ -218,7 +218,7 @@ describe('CompaniesComponent', () => {
       await abrir();
 
       const editar = el(`[data-company="${BRF.id}"] [data-testid="acao-editar"] a`) as HTMLAnchorElement;
-      expect(editar.getAttribute('href')).toBe(`/app/empresas/${BRF.id}/editar`);
+      expect(editar.getAttribute('href')).toBe(`/app/empresas/${BRF.slug}/editar`);
     });
 
     it('deve pedir confirmação antes de desativar, dizendo que a empresa fica em modo leitura', async () => {

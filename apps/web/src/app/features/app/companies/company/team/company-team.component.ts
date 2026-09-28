@@ -3,9 +3,6 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
-import { map } from 'rxjs/operators';
 
 import {
   ROLE_LABEL,
@@ -17,6 +14,7 @@ import {
 } from '@normatiza/shared';
 
 import { AuthService } from '../../../../../core/auth/auth.service';
+import { empresaDaRota } from '../../../../../core/routing/empresa-da-rota';
 import { mensagemDoServidor } from '../../../../../core/http/mensagem-de-erro';
 import { TeamService } from '../../../../../core/services/team.service';
 import { DataTable } from '../../../../../shared/components/data-table/data-table.component';
@@ -79,12 +77,11 @@ import { RowActionComponent } from '../../../../../shared/components/row-action/
 export class CompanyTeamComponent {
   private readonly team = inject(TeamService);
   private readonly auth = inject(AuthService);
-  private readonly route = inject(ActivatedRoute);
 
-  readonly companyId = toSignal(
-    this.route.paramMap.pipe(map((params) => params.get('companyId') ?? '')),
-    { initialValue: this.route.snapshot.paramMap.get('companyId') ?? '' },
-  );
+  private readonly empresa = empresaDaRota();
+
+  /** O id da empresa — a URL traz o slug, e a API fala por id. */
+  readonly companyId = computed(() => this.empresa()?.id ?? '');
 
   readonly membros = signal<CompanyMember[]>([]);
   readonly nomeDaConsultoria = signal('');

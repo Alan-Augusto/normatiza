@@ -46,16 +46,18 @@ A pasta de features **espelha a hierarquia do domínio**, que é a mesma dos con
 | Nível | Rota | Arquivo |
 | :--- | :--- | :--- |
 | Lista de empresas | `/app/empresas` | `app/companies/companies.component.ts` |
-| Contexto de uma empresa | `/app/empresas/:companyId` | `app/companies/company/` |
-| Lista de equipamentos | `/app/empresas/:companyId/equipamentos` | `app/companies/company/equipments/equipments.component.ts` |
+| Contexto de uma empresa | `/app/empresas/:companySlug` | `app/companies/company/` |
+| Lista de equipamentos | `/app/empresas/:companySlug/equipamentos` | `app/companies/company/equipments/equipments.component.ts` |
 | Contexto de um equipamento | `.../equipamentos/:equipmentId` | `app/companies/company/equipments/equipment/` |
 
 ### URLs em português
 
 A URL é a parte do código que o usuário lê — na barra do navegador, no link do
 e-mail, no favorito. Por isso ela é **em português**, e todo o resto continua em
-inglês: pastas, componentes, parâmetros de rota (`:companyId`) e a API
+inglês: pastas, componentes, parâmetros de rota (`:companySlug`) e a API
 (`/companies`, `/auth`).
+
+**A empresa entra na URL pelo slug, não pelo id** ([produto 03 §4](../produto/03_navegacao_e_telas.md)). A tela que precisa do id o pede a `empresaDaRota()` (`core/routing/empresa-da-rota.ts`), que traduz o slug pela sessão. A guarda de rota já trocou um slug antigo pelo atual antes de a tela abrir. A API continua falando só por id.
 
 1. **Palavras inteiras, sem acento, em kebab-case:** `plano-de-acao`,
    `esqueci-a-senha`, `catalogos/solucoes`. Termos que já são do vocabulário do

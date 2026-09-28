@@ -41,7 +41,7 @@ ng g c features/app/companies/company/files --skip-tests
 > ```
 
 ### Passo 3: Registrar Rota com Lazy Loading
-No arquivo [app.routes.ts](../../apps/web/src/app/app.routes.ts), adicione a nova rota dentro do contexto correto (no exemplo, entre os filhos de `empresas/:companyId`), sempre com `label` e `subtitle`. O `path` é em português — a pasta continua em inglês — e o endereço entra também em [`ROTAS`](../../apps/web/src/app/core/routing/rotas.ts) ([arquitetura §3](./arquitetura.md#urls-em-português)):
+No arquivo [app.routes.ts](../../apps/web/src/app/app.routes.ts), adicione a nova rota dentro do contexto correto (no exemplo, entre os filhos de `empresas/:companySlug`), sempre com `label` e `subtitle`. O `path` é em português — a pasta continua em inglês — e o endereço entra também em [`ROTAS`](../../apps/web/src/app/core/routing/rotas.ts) ([arquitetura §3](./arquitetura.md#urls-em-português)):
 ```typescript
 {
   path: 'arquivos',

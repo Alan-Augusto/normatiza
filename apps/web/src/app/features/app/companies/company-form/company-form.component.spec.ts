@@ -41,9 +41,9 @@ describe('CompanyFormComponent', () => {
         provideRouter([
           { path: 'app/empresas', component: Destino },
           { path: 'app/empresas/nova', component: CompanyFormComponent },
-          { path: 'app/empresas/:companyId/editar', component: CompanyFormComponent },
-          { path: 'app/empresas/:companyId/painel', component: Destino },
-          { path: 'app/empresas/:companyId/equipe', component: Destino },
+          { path: 'app/empresas/:companySlug/editar', component: CompanyFormComponent },
+          { path: 'app/empresas/:companySlug/painel', component: Destino },
+          { path: 'app/empresas/:companySlug/equipe', component: Destino },
         ]),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -108,7 +108,7 @@ describe('CompanyFormComponent', () => {
 
   async function editarBrf(detalhe = detalheDaBrf()) {
     harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl(`/app/empresas/${BRF.id}/editar`, CompanyFormComponent);
+    await harness.navigateByUrl(`/app/empresas/${BRF.slug}/editar`, CompanyFormComponent);
     grupos(gruposDaConta);
     http.expectOne(`${API}/companies/${BRF.id}`).flush(detalhe);
     harness.detectChanges();
@@ -418,7 +418,7 @@ describe('CompanyFormComponent', () => {
         },
         groupName: 'Grupo Friboi',
       });
-      req.flush(detalheDaBrf({ id: 'c-jbs', tradeName: 'JBS', status: 'IMPLANTATION', managers: [] }));
+      req.flush(detalheDaBrf({ id: 'c-jbs', slug: 'jbs', tradeName: 'JBS', status: 'IMPLANTATION', managers: [] }));
 
       // A empresa nova só existe na sessão depois de recarregá-la: sem isto, a
       // guarda do Contexto 2 recusaria abrir a empresa que acabou de nascer.
@@ -431,7 +431,7 @@ describe('CompanyFormComponent', () => {
       harness.detectChanges();
 
       expect(el('[data-testid="sucesso"]')?.textContent).toContain('JBS');
-      expect(el('[data-testid="abrir-empresa"]')?.getAttribute('href')).toBe('/app/empresas/c-jbs/painel');
+      expect(el('[data-testid="abrir-empresa"]')?.getAttribute('href')).toBe('/app/empresas/jbs/painel');
     });
 
     it('deve voltar à identificação e pôr no campo CNPJ a recusa por CNPJ repetido', async () => {
@@ -646,6 +646,20 @@ describe('CompanyFormComponent', () => {
   });
 
   describe('editar', () => {
+    it('deve abrir por um endereço antigo, trocando a URL pelo atual', async () => {
+      // A BRF se chamava "BRF Concórdia": o link salvo antes do renome ainda edita.
+      harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/app/empresas/brf-concordia/editar', CompanyFormComponent);
+      http.expectOne(`${API}/companies/by-slug/brf-concordia`).flush({ id: BRF.id, slug: BRF.slug });
+      grupos(gruposDaConta);
+      http.expectOne(`${API}/companies/${BRF.id}`).flush(detalheDaBrf());
+      await harness.fixture.whenStable();
+      harness.detectChanges();
+
+      expect(TestBed.inject(Router).url).toBe(`/app/empresas/${BRF.slug}/editar`);
+      expect(campo('fantasia').value).toBe('BRF');
+    });
+
     it('deve abrir com o cadastro preenchido, e deixar ir direto a qualquer etapa', async () => {
       await editarBrf();
 

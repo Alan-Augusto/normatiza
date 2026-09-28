@@ -59,7 +59,7 @@ export function rotaDaConsultoria(session: SessionUser): string {
   // acima dela para navegar, e mostrar o Contexto 1 revelaria à BRF que a
   // consultoria atende a Seara também.
   const naEmpresa = tem(CONTEXTO_2)[0];
-  if (naEmpresa) return ROTAS.empresa(naEmpresa.companyId).painel;
+  if (naEmpresa) return ROTAS.empresa(naEmpresa.company.slug).painel;
 
   if (tem(['EXECUTOR']).length > 0) return ROTAS.execucao;
 

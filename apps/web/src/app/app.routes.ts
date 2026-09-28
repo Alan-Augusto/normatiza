@@ -89,7 +89,7 @@ export const routes: Routes = [
       },
       {
         // Cadastro e edição moram no Contexto 1, e **antes** de
-        // `empresas/:companyId`: declarados depois, "nova" e "editar" seriam
+        // `empresas/:companySlug`: declarados depois, "nova" e "editar" seriam
         // engolidos pelo contexto da empresa e abririam o layout do Contexto 2.
         path: 'empresas/nova',
         canActivate: [companyAdminGuard],
@@ -102,7 +102,7 @@ export const routes: Routes = [
         }
       },
       {
-        path: 'empresas/:companyId/editar',
+        path: 'empresas/:companySlug/editar',
         canActivate: [companyAdminGuard],
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () => import('./features/app/companies/company-form/company-form.component').then(m => m.CompanyFormComponent),
@@ -139,8 +139,8 @@ export const routes: Routes = [
       // CONTEXTO 2 — EMPRESA
       {
         // O Contexto 2 é dos dois lados — mas só de quem tem vínculo **nesta**
-        // empresa. É o `companyId` da rota que a guarda usa para checar.
-        path: 'empresas/:companyId',
+        // empresa. A guarda troca o slug da rota pela empresa e checa o papel nela.
+        path: 'empresas/:companySlug',
         canActivate: [roleGuard(VÊ_A_EMPRESA)],
         loadComponent: () => import('./features/app/companies/company/company.layout').then(m => m.CompanyLayoutComponent),
         children: [

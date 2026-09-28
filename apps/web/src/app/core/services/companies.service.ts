@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import type {
+  CompanySlugResolution,
   CompanyDetail,
   CompanyGroupOption,
   CompanyListItem,
@@ -34,6 +35,13 @@ export class CompaniesService {
     if (query.q?.trim()) params = params.set('q', query.q.trim());
     if (query.status) params = params.set('status', query.status);
     return this.http.get<CompanyListItem[]>(`${this.api}/companies`, { params });
+  }
+
+  /** O slug da URL para o id — o vigente ou um antigo, que volta como o atual. */
+  resolveSlug(slug: string): Observable<CompanySlugResolution> {
+    return this.http.get<CompanySlugResolution>(
+      `${this.api}/companies/by-slug/${encodeURIComponent(slug)}`,
+    );
   }
 
   get(companyId: string): Observable<CompanyView> {

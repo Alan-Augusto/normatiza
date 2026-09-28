@@ -1,6 +1,7 @@
 import { PrismaClient, type ExecutorType, type Role } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { config as loadEnv } from 'dotenv';
+import { slugBase } from '@normatiza/shared';
 
 loadEnv();
 
@@ -233,8 +234,8 @@ async function main() {
       where: { accountId: conta.id, OR: [{ document }, { tradeName: dados.tradeName }] },
     });
     const empresa = existente
-      ? await prisma.company.update({ where: { id: existente.id }, data: { document, ...dados } })
-      : await prisma.company.create({ data: { accountId: conta.id, document, ...dados } });
+      ? await prisma.company.update({ where: { id: existente.id }, data: { document, slug: slugBase(dados.tradeName), ...dados } })
+      : await prisma.company.create({ data: { accountId: conta.id, document, slug: slugBase(dados.tradeName), ...dados } });
     empresas.set(document, empresa.id);
   }
 

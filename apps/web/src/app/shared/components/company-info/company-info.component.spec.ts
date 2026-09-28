@@ -88,7 +88,7 @@ describe('CompanyInfoComponent', () => {
     expect(texto()).toContain('Grupo BRF');
     expect(texto()).toContain('CLI-0001');
     expect(texto()).toContain('Visitas técnicas só às terças.');
-    expect(el('[data-testid="editar-empresa"] a')?.getAttribute('href')).toBe(`/app/empresas/${BRF.id}/editar`);
+    expect(el('[data-testid="editar-empresa"] a')?.getAttribute('href')).toBe(`/app/empresas/${BRF.slug}/editar`);
   });
 
   it('não deve oferecer Editar à consultoria sem alçada — o Técnico', () => {

@@ -1,14 +1,12 @@
 import { Component, DestroyRef, inject, effect } from '@angular/core';
-import { RouterOutlet, ActivatedRoute } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs/operators';
+import { RouterOutlet } from '@angular/router';
 import { ActiveContextService } from '@core/services/active-context.service';
-import { AuthService } from '@core/auth/auth.service';
+import { empresaDaRota } from '@core/routing/empresa-da-rota';
 
 /**
  * Contexto 2 — Empresa.
  *
- * Resolve a empresa em contexto a partir dos parâmetros da rota e a publica no
+ * Resolve a empresa em contexto a partir do slug da rota e a publica no
  * `ActiveContextService`, que o layout exibe permanentemente acima do título da
  * tela (docs/web/arquitetura.md §5.3). As telas filhas não repetem esse cabeçalho.
  */
@@ -20,30 +18,19 @@ import { AuthService } from '@core/auth/auth.service';
   styleUrl: './company.layout.css',
 })
 export class CompanyLayoutComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly activeContext = inject(ActiveContextService);
-  private readonly auth = inject(AuthService);
 
-  private readonly companyId = toSignal(
-    this.route.paramMap.pipe(map((params) => params.get('companyId'))),
-    { initialValue: null },
-  );
+  /**
+   * O nome vem da sessão: quem abre esta rota tem vínculo com a empresa — a
+   * guarda já trocou o slug pela empresa e conferiu o papel —, e o vínculo
+   * carrega o nome fantasia.
+   */
+  private readonly empresa = empresaDaRota();
 
   constructor() {
     effect(() => {
-      const id = this.companyId();
-      if (!id) {
-        this.activeContext.setCompany(null);
-        return;
-      }
-
-      // O nome vem da sessão: quem abre esta rota tem vínculo com a empresa, e
-      // o vínculo já carrega o nome fantasia. Sem ele, o cabeçalho de contexto
-      // e a migalha mostrariam o `cuid` da empresa — que não diz nada a
-      // ninguém. O `id` como último recurso é para o caso que a guarda já
-      // impede: sem vínculo, não se chega aqui.
-      const empresa = this.auth.companyInScope(id);
-      this.activeContext.setCompany({ id, name: empresa?.tradeName ?? id });
+      const empresa = this.empresa();
+      this.activeContext.setCompany(empresa ? { id: empresa.id, name: empresa.tradeName } : null);
     });
 
     // Sair da empresa tem de apagar a empresa. Sem isto, o contexto publicado

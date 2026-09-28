@@ -15,6 +15,7 @@ export const NADA: CompanyActions = { edit: false, deactivate: false, reactivate
 export function linhaDeEmpresa(over: Partial<CompanyListItem> = {}): CompanyListItem {
   return {
     id: BRF.id,
+    slug: BRF.slug,
     tradeName: 'BRF',
     corporateName: 'BRF S.A.',
     document: '22222222000191',
@@ -33,6 +34,7 @@ export const CARTEIRA: CompanyListItem[] = [
   linhaDeEmpresa(),
   linhaDeEmpresa({
     id: SEARA.id,
+    slug: SEARA.slug,
     tradeName: 'Seara',
     corporateName: 'Seara Alimentos Ltda.',
     document: '33333333000191',
@@ -47,6 +49,7 @@ export function perfilDaBrf(over: Partial<CompanyProfile> = {}): CompanyProfile 
   return {
     view: 'CLIENT',
     id: BRF.id,
+    slug: BRF.slug,
     tradeName: 'BRF',
     corporateName: 'BRF S.A.',
     document: '22222222000191',

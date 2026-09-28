@@ -56,6 +56,7 @@ import {
   CnpjLookupResult,
   CnpjLookupService,
 } from '../../../../core/services/external/cnpj-lookup.service';
+import { PARAMETRO_DA_EMPRESA } from '../../../../core/routing/empresa-da-rota';
 import { ROTAS } from '../../../../core/routing/rotas';
 import {
   InviteFormComponent,
@@ -338,12 +339,11 @@ export class CompanyFormComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('companyId');
-    if (id) {
-      this.companyId.set(id);
+    const slug = this.route.snapshot.paramMap.get(PARAMETRO_DA_EMPRESA);
+    if (slug) {
       // Na edição o cadastro já está completo: qualquer etapa é um clique.
       this.alcancado.set(ETAPAS.length);
-      this.carregar(id);
+      this.abrirPeloSlug(slug);
     }
 
     // Sem a lista, o campo continua aceitando texto livre — só perde as sugestões.
@@ -351,6 +351,33 @@ export class CompanyFormComponent implements OnInit {
       .listGroups()
       .pipe(catchError(() => of([])), takeUntilDestroyed(this.destroyRef))
       .subscribe((grupos) => this.grupos.set(grupos.map((g) => g.name)));
+  }
+
+  /**
+   * A URL traz o slug; a API fala por id. O da sessão resolve na hora. Um
+   * endereço antigo (a empresa foi renomeada) passa pela API, e a URL é trocada
+   * pela atual sem entrar no histórico — voltar não reabre o endereço velho.
+   */
+  private abrirPeloSlug(slug: string): void {
+    const daSessão = this.auth.companyBySlug(slug);
+    if (daSessão) {
+      this.companyId.set(daSessão.id);
+      this.carregar(daSessão.id);
+      return;
+    }
+
+    this.carregando.set(true);
+    this.companies.resolveSlug(slug).subscribe({
+      next: ({ id, slug: atual }) => {
+        this.companyId.set(id);
+        if (atual !== slug) void this.router.navigateByUrl(ROTAS.editarEmpresa(atual), { replaceUrl: true });
+        this.carregar(id);
+      },
+      error: (erro) => {
+        this.carregando.set(false);
+        this.erro.set(mensagemDoServidor(erro, 'Não foi possível carregar a empresa.'));
+      },
+    });
   }
 
   private carregar(id: string): void {

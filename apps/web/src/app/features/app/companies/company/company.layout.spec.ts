@@ -1,11 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { firstValueFrom, of } from 'rxjs';
+import { ActivatedRoute, provideRouter } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { API_BASE_URL } from '../../../../core/auth/api.config';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { rotaDaEmpresa } from '../../../../core/routing/testing/rota-da-empresa';
 import { BRF, respostaDeLogin, sessão, vínculo } from '../../../../core/auth/testing/sessao';
 import { ActiveContextService } from '../../../../core/services/active-context.service';
 import { CompanyLayoutComponent } from './company.layout';
@@ -23,7 +24,8 @@ describe('CompanyLayoutComponent', () => {
 
   const API = 'http://api.teste';
 
-  async function abrirEm(companyId: string) {
+  async function abrirEm(slug: string) {
+
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -33,7 +35,7 @@ describe('CompanyLayoutComponent', () => {
         { provide: API_BASE_URL, useValue: API },
         {
           provide: ActivatedRoute,
-          useValue: { paramMap: of(convertToParamMap({ companyId })) },
+          useValue: rotaDaEmpresa(slug),
         },
       ],
     });
@@ -55,26 +57,26 @@ describe('CompanyLayoutComponent', () => {
 
   afterEach(() => http.verify());
 
-  it('deve publicar a empresa pelo nome, não pelo id', async () => {
-    const { contexto } = await abrirEm(BRF.id);
+  it('deve publicar a empresa que o slug da URL nomeia, pelo nome e com o id da API', async () => {
+    const { contexto } = await abrirEm(BRF.slug);
 
-    expect(contexto.company()?.name).toBe(BRF.tradeName);
-    expect(contexto.company()?.name).not.toContain(BRF.id);
+    expect(contexto.company()).toEqual({ id: BRF.id, name: BRF.tradeName });
   });
 
-  it('deve cair no id quando a empresa não está no escopo de quem olha', async () => {
-    // A guarda de rota já impede chegar aqui sem vínculo. Se chegar, o id é a
-    // resposta honesta: inventar um nome seria pior do que mostrar um feio.
-    const { contexto } = await abrirEm('company-que-nao-e-minha');
+  it('não deve publicar empresa nenhuma para um slug fora da sessão', async () => {
+    // A guarda de rota troca slug antigo pelo atual e recusa o desconhecido:
+    // chegar aqui com um deles é defeito, e um cabeçalho com o slug cru
+    // afirmaria uma empresa que a tela não conseguiu carregar.
+    const { contexto } = await abrirEm('empresa-que-nao-e-minha');
 
-    expect(contexto.company()?.name).toBe('company-que-nao-e-minha');
+    expect(contexto.company()).toBeNull();
   });
 
   it('deve apagar o contexto ao sair da empresa', async () => {
     // O defeito: o layout publicava ao entrar e nunca limpava ao sair. Quem
     // voltasse para a carteira continuava lendo "BRF" na sidebar, numa tela
     // que não é de empresa nenhuma.
-    const { contexto, fixture } = await abrirEm(BRF.id);
+    const { contexto, fixture } = await abrirEm(BRF.slug);
     expect(contexto.company()).not.toBeNull();
 
     fixture.destroy();
@@ -84,7 +86,7 @@ describe('CompanyLayoutComponent', () => {
 
   it('deve levar o equipamento junto ao sair da empresa', async () => {
     // Não existe máquina sem a planta dela: sair da BRF apaga as duas linhas.
-    const { contexto, fixture } = await abrirEm(BRF.id);
+    const { contexto, fixture } = await abrirEm(BRF.slug);
     contexto.setEquipment({ id: 'eq-injetora', name: 'Injetora de plástico' });
 
     fixture.destroy();

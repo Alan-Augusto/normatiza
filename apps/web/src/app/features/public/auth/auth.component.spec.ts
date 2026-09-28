@@ -208,7 +208,7 @@ describe('AuthComponent', () => {
         .flush(respostaDeLogin({ session: sessão([vínculo(BRF.id, ['MANAGER'])]) }));
       await fixture.whenStable();
 
-      expect(navegou).toContain(`/app/empresas/${BRF.id}/painel`);
+      expect(navegou).toContain(`/app/empresas/${BRF.slug}/painel`);
     });
 
     it('deve levar a consultoria para o Contexto 1', async () => {

@@ -88,6 +88,8 @@ export interface CompanyManagerRef {
 /** Uma linha de `GET /companies`. */
 export interface CompanyListItem extends CompanyMetrics {
   id: string;
+  /** O trecho da URL do Contexto 2 — `ROTAS.empresa(slug)`. */
+  slug: string;
   tradeName: string;
   corporateName: string;
   /** Só dígitos. */
@@ -119,6 +121,7 @@ export interface CompanyListQuery {
 export interface CompanyProfile {
   view: 'CLIENT';
   id: string;
+  slug: string;
   tradeName: string;
   corporateName: string;
   document: string;
@@ -153,6 +156,15 @@ export interface CompanyDetail extends Omit<CompanyProfile, 'view'> {
 
 /** A resposta de `GET /companies/:companyId` — qual das duas, decide o servidor. */
 export type CompanyView = CompanyProfile | CompanyDetail;
+
+/**
+ * A resposta de `GET /companies/by-slug/:slug`. `slug` é o **atual**: quando o
+ * pedido veio com um endereço antigo, a tela troca a URL por ele.
+ */
+export interface CompanySlugResolution {
+  id: string;
+  slug: string;
+}
 
 /**
  * Corpo de `POST /companies` e `PATCH /companies/:companyId`.

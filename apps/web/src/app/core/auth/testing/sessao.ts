@@ -13,6 +13,7 @@ import type {
 
 export const BRF: CompanySummary = {
   id: 'company-brf',
+  slug: 'brf',
   tradeName: 'BRF',
   corporateName: 'BRF S.A.',
   status: 'ACTIVE',
@@ -20,6 +21,7 @@ export const BRF: CompanySummary = {
 
 export const SEARA: CompanySummary = {
   id: 'company-seara',
+  slug: 'seara',
   tradeName: 'Seara',
   corporateName: 'Seara Alimentos Ltda.',
   status: 'ACTIVE',

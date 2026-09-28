@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type {
+  CompanySlugResolution,
   CompanyDetail,
   CompanyGroupOption,
   CompanyListItem,
@@ -51,6 +52,18 @@ export class CompaniesController {
     @Query() query: CompanyListQueryDto,
   ): Promise<CompanyListItem[]> {
     return this.companies.list(await this.escopo(req), query);
+  }
+
+  /**
+   * O slug da URL do painel para o id. Declarado antes de `:companyId` por
+   * clareza — tem dois segmentos, e não colidiria de qualquer forma.
+   */
+  @Get('by-slug/:slug')
+  async resolveSlug(
+    @Req() req: AuthenticatedRequest,
+    @Param('slug') slug: string,
+  ): Promise<CompanySlugResolution> {
+    return this.companies.resolveSlug(await this.escopo(req), slug);
   }
 
   @Get(':companyId')

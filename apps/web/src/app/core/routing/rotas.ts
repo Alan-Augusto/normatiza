@@ -13,8 +13,12 @@
 
 import { PAGINAS_DOS_EMAILS } from '@normatiza/shared';
 
-function empresa(companyId: string) {
-  const raiz = `/app/empresas/${companyId}`;
+/**
+ * A empresa entra na URL pelo **slug**, não pelo id (docs/produto/03 §4): é a
+ * parte que a pessoa lê. Quem precisa do id o obtém com `empresaDaRota()`.
+ */
+function empresa(slug: string) {
+  const raiz = `/app/empresas/${slug}`;
   return {
     raiz,
     painel: `${raiz}/painel`,
@@ -53,7 +57,7 @@ export const ROTAS = {
   painel: '/app/painel',
   empresas: '/app/empresas',
   novaEmpresa: '/app/empresas/nova',
-  editarEmpresa: (companyId: string) => `/app/empresas/${companyId}/editar`,
+  editarEmpresa: (slug: string) => `/app/empresas/${slug}/editar`,
   equipe: '/app/equipe',
   solucoes: '/app/catalogos/solucoes',
 

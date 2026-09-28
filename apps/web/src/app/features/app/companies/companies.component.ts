@@ -202,7 +202,7 @@ export class CompaniesComponent implements OnInit {
     const alvo = evento.target as HTMLElement | null;
     if (alvo?.closest('a, button, input, [role="button"]')) return;
     if (window.getSelection()?.toString()) return;
-    this.router.navigateByUrl(ROTAS.empresa(empresa.id).painel);
+    this.router.navigateByUrl(ROTAS.empresa(empresa.slug).painel);
   }
 
   cnpj(documento: string): string {

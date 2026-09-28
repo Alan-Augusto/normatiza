@@ -1,5 +1,8 @@
 import {
+  SLUGS_RESERVADOS_DE_EMPRESA,
+  candidatosDeSlug,
   deriveCompanyStatus,
+  slugBase,
   formatCnpj,
   isValidCnpj,
   normalizeForSearch,
@@ -38,6 +41,60 @@ describe('Regras de empresa', () => {
   describe('texto de busca', () => {
     it('deve tratar acento, maiúscula e espaço sobrando como a mesma coisa', () => {
       expect(normalizeForSearch('  São   PAULO ')).toBe(normalizeForSearch('sao paulo'));
+    });
+  });
+
+  describe('slug da empresa', () => {
+    it('deve nascer do nome fantasia, sem acento, em minúsculas e com hífens', () => {
+      expect(slugBase('Frigorífico São João')).toBe('frigorifico-sao-joao');
+    });
+
+    it('deve deixar de fora o sufixo societário, que não ajuda a identificar', () => {
+      expect(slugBase('São Salvador Alimentos S/A')).toBe('sao-salvador-alimentos');
+      expect(slugBase('BRF S.A.')).toBe('brf');
+      expect(slugBase('Pedreira Sucia Ltda.')).toBe('pedreira-sucia');
+      expect(slugBase('Comercial Silva ME')).toBe('comercial-silva');
+      expect(slugBase('Handtmann do Brasil LTDA - EPP')).toBe('handtmann-do-brasil');
+    });
+
+    it('não deve cortar uma palavra que só começa como sufixo', () => {
+      expect(slugBase('Mesa Brasil')).toBe('mesa-brasil');
+      expect(slugBase('SA Ferragens')).toBe('sa-ferragens');
+    });
+
+    it('deve juntar pontuação e espaço sobrando num hífen só', () => {
+      expect(slugBase('  BRF   S.A. — Toledo/PR  ')).toBe('brf-s-a-toledo-pr');
+    });
+
+    it('deve caber numa URL sem cortar palavra no meio', () => {
+      const slug = slugBase('Cooperativa Agroindustrial dos Produtores Rurais do Sudoeste Goiano');
+
+      expect(slug.length).toBeLessThanOrEqual(60);
+      expect(slug).toBe('cooperativa-agroindustrial-dos-produtores-rurais-do-sudoeste');
+    });
+
+    it('deve ter um nome mesmo quando o nome fantasia não tem letra nem número', () => {
+      expect(slugBase('— / —')).toBe('empresa');
+    });
+
+    it('deve desempatar pela cidade e depois por número, nessa ordem', () => {
+      const candidatos = candidatosDeSlug('sao-salvador-alimentos', 'Itaberaí');
+
+      expect(candidatos.slice(0, 4)).toEqual([
+        'sao-salvador-alimentos',
+        'sao-salvador-alimentos-itaberai',
+        'sao-salvador-alimentos-itaberai-2',
+        'sao-salvador-alimentos-itaberai-3',
+      ]);
+    });
+
+    it('não deve repetir a cidade quando o nome já termina com ela', () => {
+      expect(candidatosDeSlug('brf-toledo', 'Toledo').slice(0, 2)).toEqual(['brf-toledo', 'brf-toledo-2']);
+    });
+
+    it('não deve oferecer uma palavra reservada, que colidiria com uma tela', () => {
+      expect(SLUGS_RESERVADOS_DE_EMPRESA).toContain('nova');
+      expect(candidatosDeSlug('nova', 'Curitiba')[0]).toBe('nova-curitiba');
     });
   });
 

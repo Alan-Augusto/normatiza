@@ -247,6 +247,10 @@ model Company {
   // ── Identificação ──────────────────────────────────────────────────────────
   corporateName     String
   tradeName         String
+  /// O trecho legível da URL do Contexto 2 (`/app/empresas/brf-toledo`). Nasce
+  /// do nome fantasia e muda com ele; o anterior vira `CompanySlugAlias`.
+  /// docs/produto/03 §4.
+  slug              String
   /// CNPJ **só com dígitos**. A máscara é apresentação.
   document          String
   stateRegistration String?
@@ -282,15 +286,37 @@ model Company {
   deactivatedByUserId String?
 
   memberships Membership[]
-  files       FileAsset[]  @relation("CompanyFiles")
+  files       FileAsset[]        @relation("CompanyFiles")
+  slugAliases CompanySlugAlias[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   createdByUserId String?
 
   @@unique([accountId, document])
+  @@unique([accountId, slug])
   @@unique([id, accountId])
   @@map("companies")
+}
+
+/// Um slug que a empresa já teve. O link antigo — favorito, e-mail — continua
+/// abrindo a empresa depois de um renome, e o endereço nunca passa a outra
+/// empresa. Único na conta **também contra os slugs vigentes**, o que o serviço
+/// confere: o banco não tem restrição que atravesse as duas tabelas.
+model CompanySlugAlias {
+  id        String @id @default(cuid())
+  accountId String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  slug String
+
+  createdAt DateTime @default(now())
+
+  @@unique([accountId, slug])
+  @@index([companyId])
+  @@map("company_slug_aliases")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

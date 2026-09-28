@@ -126,6 +126,7 @@ interface Company {
 
   corporateName: string;
   tradeName: string;
+  slug: string;                  // "brf-toledo" — da URL; único na conta (03 §4)
   document: string;              // CNPJ
   stateRegistration?: string;
 
@@ -143,6 +144,15 @@ interface Company {
   logoFileId?: string;           // aparece nos laudos
   deactivatedAt?: Date;          // preenchido = INACTIVE
   deactivatedByUserId?: string;
+}
+
+// O slug que a empresa já teve. Mantém funcionando o link antigo (favorito,
+// e-mail) depois de um renome, e impede que outra empresa herde o endereço.
+interface CompanySlugAlias {
+  id: string;
+  accountId: string;
+  companyId: string;
+  slug: string;                  // único na conta, junto com os slugs vigentes
 }
 
 interface Sector {
@@ -169,6 +179,8 @@ interface Equipment {
   accountId: string;
   companyId: string;
   sectorId?: string;
+
+  code: string;                  // "EQ-0042" — sequencial por empresa, da URL (03 §4.2)
 
   // Identidade — do ativo, não da vistoria
   name: string;                  // "Prensa Hidráulica 100 Toneladas"
