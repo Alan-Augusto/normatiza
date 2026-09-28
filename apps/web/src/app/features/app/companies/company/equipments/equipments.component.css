@@ -1,0 +1,120 @@
+/*
+ * O código é identificador, não texto corrido: fonte de largura fixa, para que
+ * EQ-0011 e EQ-0111 se alinhem numa coluna lida de cima a baixo.
+ */
+.codigo {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--p-text-muted-color);
+}
+
+.selo {
+  display: inline-block;
+  white-space: nowrap;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--p-text-muted-color);
+  background: color-mix(in srgb, var(--p-text-muted-color) 15%, transparent);
+}
+
+.linha-clicavel {
+  cursor: pointer;
+}
+
+.linha-clicavel:hover > td {
+  background: var(--p-datatable-row-hover-background, var(--p-content-hover-background));
+}
+
+.miniatura {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--p-border-radius-md);
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-hover-background);
+}
+
+.miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Alternador tabela × cartões ─────────────────────────────────────────── */
+
+.alternador {
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: var(--p-border-radius-md);
+  border: 1px solid var(--p-content-border-color);
+}
+
+.alternador button {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--p-text-muted-color);
+}
+
+.alternador button + button {
+  border-left: 1px solid var(--p-content-border-color);
+}
+
+.alternador button[aria-pressed='true'] {
+  color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+
+/* ── Cartões ─────────────────────────────────────────────────────────────── */
+
+.cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.cartao {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--p-border-radius-lg);
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+  transition: border-color 0.15s;
+}
+
+.cartao:hover {
+  border-color: var(--p-primary-color);
+}
+
+.cartao-foto {
+  display: flex;
+  aspect-ratio: 4 / 3;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-content-hover-background);
+}
+
+.cartao-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--p-border-radius-lg);
+  border: 1px dashed var(--p-content-border-color);
+  padding: 3rem 1rem;
+  text-align: center;
+}

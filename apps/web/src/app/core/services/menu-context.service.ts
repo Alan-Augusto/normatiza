@@ -112,7 +112,9 @@ export class MenuContextService {
     }
 
     // CONTEXTO 3 — Equipamento
-    const equipmentMatch = url.match(/^\/app\/empresas\/([^\/]+)\/equipamentos\/([^\/]+)/);
+    // Só um código de equipamento abre o Contexto 3: "novo" é o cadastro, e
+    // `/editar` é o formulário — os dois moram no Contexto 2.
+    const equipmentMatch = url.match(/^\/app\/empresas\/([^\/]+)\/equipamentos\/(eq-\d+)(?!\/editar)(?=\/|\?|$)/i);
     if (equipmentMatch) {
       const slug = equipmentMatch[1];
       const equipmentId = equipmentMatch[2];
@@ -126,7 +128,7 @@ export class MenuContextService {
       ];
 
       const companyName = this.activeContext.company()?.name ?? `Empresa ${slug}`;
-      const equipmentName = this.activeContext.equipment()?.name ?? `Equipamento ${equipmentId}`;
+      const equipmentName = this.activeContext.equipment()?.name ?? equipmentId.toUpperCase();
 
       const breadcrumbs: BreadcrumbItem[] = [
         { label: 'Empresas', route: ROTAS.empresas },
@@ -173,6 +175,7 @@ export class MenuContextService {
       const items: MenuItem[] = [
         { label: 'Dashboard', icon: 'pi pi-chart-pie', route: rotas.painel },
         { label: 'Equipamentos', icon: 'pi pi-box', route: rotas.equipamentos },
+        { label: 'Setores', icon: 'pi pi-sitemap', route: rotas.setores },
         { label: 'Planos de Ação', icon: 'pi pi-list-check', route: rotas.planoDeAcao },
         { label: 'Equipe', icon: 'pi pi-users', route: rotas.equipe }
       ];
@@ -187,7 +190,13 @@ export class MenuContextService {
 
       const activeItem = items.find(i => url.startsWith(i.route));
       if (activeItem && activeItem.label !== 'Dashboard') {
-        breadcrumbs.push({ label: activeItem.label });
+        const formulário = url.match(/\/equipamentos\/(novo|eq-\d+\/editar)(\/|\?|$)/i);
+        breadcrumbs.push(formulário ? { label: activeItem.label, route: activeItem.route } : { label: activeItem.label });
+        if (formulário) {
+          breadcrumbs.push({
+            label: formulário[1] === 'novo' ? 'Novo equipamento' : `Editar ${formulário[1].split('/')[0].toUpperCase()}`,
+          });
+        }
       }
 
       return {

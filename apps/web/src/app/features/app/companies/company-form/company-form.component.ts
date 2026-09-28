@@ -630,6 +630,9 @@ export class CompanyFormComponent implements OnInit {
   // ── Salvar ────────────────────────────────────────────────────────────────
 
   /** Para a guarda de saída: há algo digitado que ainda não foi salvo? */
+  /** Para a confirmação de saída: "Há alterações não salvas nesta empresa". */
+  readonly sobreOQue = 'nesta empresa';
+
   temAlteracoesNaoSalvas(): boolean {
     return this.form.dirty && !this.salvando() && !this.criada();
   }

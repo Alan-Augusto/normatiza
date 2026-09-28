@@ -1,1 +1,76 @@
-<p>record works!</p>
+@if (equipamento(); as e) {
+  <div class="space-y-4">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <span class="codigo">{{ e.code }}</span>
+        @if (e.status === 'INACTIVE') {
+          <span class="selo ml-2">{{ rotuloDoStatus() }}</span>
+        }
+      </div>
+      @if (e.actions.edit) {
+        <a pButton outlined data-testid="editar" [routerLink]="rotaDeEdicao()">
+          <ng-icon pButtonIcon name="lucidePencil" />
+          <span pButtonLabel>Editar cadastro</span>
+        </a>
+      }
+    </div>
+
+    <div class="grade">
+      <div class="foto">
+        @if (e.photoUrl) {
+          <img data-testid="foto" [src]="e.photoUrl" [alt]="e.name" />
+        } @else {
+          <div class="sem-foto">
+            <ng-icon name="lucideBox" size="2.5rem" class="text-muted-color" />
+            <span class="text-xs text-muted-color">Sem foto</span>
+          </div>
+        }
+      </div>
+
+      <section class="painel">
+        <h2 class="titulo">Identificação</h2>
+        <dl class="identidade">
+          @for (item of identidade(); track item.chave) {
+            <div>
+              <dt>{{ item.rotulo }}</dt>
+              <dd [attr.data-testid]="'identidade-' + item.chave">{{ item.valor ?? '—' }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+    </div>
+
+    <section class="painel">
+      <h2 class="titulo">Situação NR-12</h2>
+      <!--
+        Da análise, não do cadastro: "—" até a primeira. Zero pontos em aberto
+        é verdade — sem análise, não há ponto nenhum.
+      -->
+      <dl class="indicadores">
+        <div>
+          <dt>Conformidade</dt>
+          <dd data-testid="conformidade"><span class="selo" [attr.data-status]="e.complianceStatus">{{ rotuloDaConformidade() }}</span></dd>
+        </div>
+        <div>
+          <dt>Pior HRN atual</dt>
+          <dd data-testid="pior-hrn" class="tabular-nums">
+            {{ e.worstCurrentHrn !== undefined ? (e.worstCurrentHrn | number: '1.0-1') : '—' }}
+          </dd>
+        </div>
+        <div>
+          <dt>Pontos em aberto</dt>
+          <dd data-testid="pontos-abertos" class="tabular-nums">{{ e.openPointsCount }}</dd>
+        </div>
+        <div>
+          <dt>Última análise</dt>
+          <dd data-testid="ultima-analise">{{ e.lastAnalysisAt ? (e.lastAnalysisAt | date: 'dd/MM/yyyy') : '—' }}</dd>
+        </div>
+      </dl>
+      @if (e.complianceStatus === 'NOT_ASSESSED') {
+        <p class="mt-3 text-sm text-muted-color">
+          Esta máquina ainda não tem análise de risco. Os indicadores se preenchem quando a primeira for concluída.
+        </p>
+      }
+    </section>
+  </div>
+}

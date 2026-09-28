@@ -1,50 +1,74 @@
-import { Component, DestroyRef, inject, effect } from '@angular/core';
-import { RouterOutlet, ActivatedRoute } from '@angular/router';
+import { Component, DestroyRef, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs/operators';
-import { ActiveContextService } from '@core/services/active-context.service';
 
-import { nomeDaMaquina } from '../maquinas-provisorias';
+import { empresaDaRota } from '@core/routing/empresa-da-rota';
+import { ROTAS } from '@core/routing/rotas';
+import { ActiveContextService } from '@core/services/active-context.service';
+import { InventoryService } from '@core/services/inventory.service';
+
+import { EquipmentContext } from './equipment-context';
 
 /**
  * Contexto 3 — Equipamento.
  *
- * Publica o equipamento em contexto para o layout exibir junto da empresa,
- * de modo que o usuário sempre saiba em qual máquina está atuando.
+ * Carrega a máquina que a URL nomeia pelo código (`eq-0042`) e a publica duas
+ * vezes: no `ActiveContextService`, para o cabeçalho mostrar em qual máquina a
+ * pessoa está, e no `EquipmentContext`, para as telas de dentro.
  */
 @Component({
   selector: 'app-equipment-layout',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, RouterLink],
+  providers: [EquipmentContext],
   templateUrl: './equipment.layout.html',
   styleUrl: './equipment.layout.css',
 })
 export class EquipmentLayoutComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly activeContext = inject(ActiveContextService);
+  private readonly inventory = inject(InventoryService);
+  protected readonly contexto = inject(EquipmentContext);
 
-  private readonly equipmentId = toSignal(
-    this.route.paramMap.pipe(map((params) => params.get('equipmentId'))),
-    { initialValue: null },
-  );
+  private readonly empresa = empresaDaRota();
+  private readonly code = toSignal(this.route.paramMap.pipe(map((p) => p.get('equipmentCode'))), {
+    initialValue: this.route.snapshot?.paramMap.get('equipmentCode') ?? null,
+  });
+
+  protected readonly voltar = () => ROTAS.empresa(this.empresa()?.slug ?? '').equipamentos;
 
   constructor() {
     effect(() => {
-      const id = this.equipmentId();
-      if (!id) {
-        this.activeContext.setEquipment(null);
-        return;
-      }
-
-      // Provisório enquanto `Equipment` não existir: o nome vem da lista
-      // inventada, a mesma que a tela de equipamentos exibe. O `id` como último
-      // recurso vale para uma URL digitada à mão, e é honesto — mostrar um nome
-      // bonito para uma máquina que não está na lista seria inventar duas vezes.
-      this.activeContext.setEquipment({ id, name: nomeDaMaquina(id) ?? id });
+      const empresa = this.empresa();
+      const code = this.code();
+      if (!empresa || !code) return;
+      this.carregar(empresa.id, code);
     });
 
     // Voltar para a lista de equipamentos apaga a máquina, e só ela: a empresa
     // continua em contexto, porque a pessoa continua dentro dela.
     inject(DestroyRef).onDestroy(() => this.activeContext.setEquipment(null));
+  }
+
+  private carregar(companyId: string, code: string): void {
+    this.contexto.carregando.set(true);
+    this.contexto.inexistente.set(false);
+
+    this.inventory.getEquipment(companyId, code).subscribe({
+      next: (equipamento) => {
+        this.contexto.atual.set(equipamento);
+        this.contexto.carregando.set(false);
+        this.activeContext.setEquipment({ id: equipamento.code, name: equipamento.name });
+      },
+      error: () => {
+        // Não existe, ou não existe para quem olha — a API não distingue, e a
+        // tela também não: um nome inventado seria pior que o aviso.
+        this.contexto.atual.set(null);
+        this.contexto.carregando.set(false);
+        this.contexto.inexistente.set(true);
+        this.activeContext.setEquipment(null);
+      },
+    });
   }
 }

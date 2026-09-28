@@ -24,9 +24,9 @@ Como cada tabela e coluna do sistema legado vira dado no modelo novo. **O docume
 | `user` tipo `Customer` | `Company` + `User` com papel `DIRECTOR` | implementado | §3.2, com pendências |
 | `user` tipo `Admin` | `PlatformAdmin` | implementado | pendente |
 | tabelas N:N `*_customer`, `*_enginner` | `Membership` | implementado | §3.1 |
-| `sector` | `Sector` | modelado | §4 |
-| `machine` | `Equipment` + `Analysis.technicalSheet` | modelado | §5 |
-| `photo` | `FileAsset` | implementado (sem `equipmentId`) | §6 |
+| `sector` | `Sector` | implementado | §4 |
+| `machine` | `Equipment` (implementado) + `Analysis.technicalSheet` (modelado) | em parte | §5 |
+| `photo` | `FileAsset` | implementado | §6 |
 | `analysis`, `risk`, `pap`, `pe` e N:N | `Analysis`, `RiskPoint`, `PapAssessment`, `PeAssessment` | modelado | pendente |
 | `danger_*`, `security*`, `standard*` | catálogos globais ([04 §7](../produto/04_modelo_de_dados.md)) | modelado | pendente |
 | `studies` | `SafetyStudy` | modelado | pendente |
@@ -230,7 +230,7 @@ No legado, o `Customer` é ao mesmo tempo o login de leitura e o cadastro da ind
 
 ## 4. Setores
 
-**Origem:** `sector` (`id`, `name`, `customerId`). **Destino:** `Sector` ([04 §2](../produto/04_modelo_de_dados.md)), que ainda não está no `schema.prisma`.
+**Origem:** `sector` (`id`, `name`, `customerId`). **Destino:** `Sector` ([04 §2](../produto/04_modelo_de_dados.md)), tabela `sectors`.
 
 | Legado | v2 | Transformação |
 | :--- | :--- | :--- |
@@ -245,7 +245,7 @@ No legado, o `Customer` é ao mesmo tempo o login de leitura e o cadastro da ind
 
 ## 5. Equipamentos
 
-**Origem:** `machine`. **Destino:** `Equipment` (a identidade do ativo) e `Analysis.technicalSheet` (a fotografia da vistoria), conforme [04 §3 e §4](../produto/04_modelo_de_dados.md). Nenhum dos dois está no `schema.prisma` ainda.
+**Origem:** `machine`. **Destino:** `Equipment` (a identidade do ativo) e `Analysis.technicalSheet` (a fotografia da vistoria), conforme [04 §3 e §4](../produto/04_modelo_de_dados.md). O `Equipment` já existe (tabela `equipments`); a análise ainda não.
 
 ### 5.1. A virada: de linha da análise para ativo
 
@@ -270,12 +270,12 @@ Quando duas linhas são juntadas, **a identidade vem da análise mais recente**.
 | `manufacturer` | `manufacturerName` | — |
 | `serialNumber` | `serialNumber` | — |
 | `manufactureYear` | `manufactureYear` | Fora de 1900 até o ano corrente → nulo, e entra no relatório |
-| `manufacturerTag` | `tag` | **Não é do fabricante, apesar do nome:** é a TAG do cliente. TAG repetida na mesma empresa (§5.3) |
+| `manufacturerTag` | `tag` | **Não é do fabricante, apesar do nome:** é a TAG do cliente. Gravada aparada e **em maiúsculas**, como o cadastro faz. TAG repetida na mesma empresa (§5.3) |
 | `manufacturerPatrimony` | `patrimonyCode` | Idem: patrimônio do cliente |
 | `sectorId` | `sectorId` | O setor unificado (§4) |
 | `frontPhotoId` | `mainPhotoFileId` | Quando não houver, a primeira que existir entre a esquerda, a direita e a posterior |
 | `createdAt` | `createdAt` | Quando linhas são juntadas, o da mais antiga |
-| — | `code` | `EQ-0001` em diante, por empresa, na ordem de `createdAt` da máquina. O código do inventário legado (`{customerCode}-{sequencial}`) não é reaproveitado, porque é o sequencial da análise (§5.4) |
+| — | `code` | `EQ-0001` em diante, por empresa, na ordem de `createdAt` da máquina, e `Company.equipmentSequence` fica com o último número dado — o cadastro novo continua a sequência. O código do inventário legado (`{customerCode}-{sequencial}`) não é reaproveitado, porque é o sequencial da análise (§5.4) |
 
 **Vistoria → `TechnicalSheet`:**
 
@@ -350,7 +350,7 @@ Laudos emitidos e documentos citam esses códigos. A análise migrada guarda o c
 
 O front do legado já reduzia as fotos a no máximo 6000 px e as regravava em JPEG com qualidade 0,75.
 
-**Destino:** `FileAsset` ([04 §8](../produto/04_modelo_de_dados.md)), com a `storageKey` sempre prefixada por `accounts/{accountId}/`. Hoje `FileAsset` tem `companyId`, mas **ainda não tem `equipmentId`**: a coluna nasce com o cadastro de equipamentos.
+**Destino:** `FileAsset` ([04 §8](../produto/04_modelo_de_dados.md)), com a `storageKey` sempre prefixada por `accounts/{accountId}/`. `FileAsset` tem `companyId` e `equipmentId`, e a foto principal do equipamento guarda também a miniatura (`thumbnailKey`, WebP de 480 px). Para o acervo migrado, a miniatura se gera no migrador ou sob demanda — é a pendência abaixo.
 
 | Legado | v2 | Transformação |
 | :--- | :--- | :--- |

@@ -1,49 +1,80 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { ActivatedRoute, provideRouter } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
+import { API_BASE_URL } from '../../../../../../core/auth/api.config';
+import { AuthService } from '../../../../../../core/auth/auth.service';
+import { BRF, respostaDeLogin, sessão, vínculo } from '../../../../../../core/auth/testing/sessao';
+import { rotaDaEmpresa } from '../../../../../../core/routing/testing/rota-da-empresa';
 import { ActiveContextService } from '../../../../../../core/services/active-context.service';
+import { detalheDeEquipamento } from '../../../../../../core/services/testing/equipamentos';
+import { EquipmentContext } from './equipment-context';
 import { EquipmentLayoutComponent } from './equipment.layout';
 
 /**
- * Contexto 3 — o layout publica a máquina em contexto, e precisa apagá-la ao
- * sair. A empresa **não** vai junto: quem volta para a lista de equipamentos
- * continua dentro da planta.
+ * Contexto 3 — o layout carrega a máquina que a URL nomeia pelo código, a
+ * publica para as telas de dentro e para o cabeçalho, e a apaga ao sair. A
+ * empresa **não** vai junto: quem volta para a lista continua dentro da planta.
  */
 describe('EquipmentLayoutComponent', () => {
-  function abrirEm(equipmentId: string) {
+  const API = 'http://api.teste';
+  let http: HttpTestingController;
+
+  async function abrirEm(code: string) {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ equipmentId })) } },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: API },
+        { provide: ActivatedRoute, useValue: rotaDaEmpresa(BRF.slug, { equipmentCode: code }) },
       ],
     });
+    http = TestBed.inject(HttpTestingController);
+
+    const login = firstValueFrom(TestBed.inject(AuthService).login({ email: 'x@y.com', password: 'z' }));
+    http.expectOne(`${API}/auth/login`).flush(respostaDeLogin({ session: sessão([vínculo(BRF.id, ['TECHNICIAN'])]) }));
+    await login;
 
     const contexto = TestBed.inject(ActiveContextService);
-    contexto.setCompany({ id: 'company-brf', name: 'BRF' });
+    contexto.setCompany({ id: BRF.id, name: 'BRF' });
 
     const fixture = TestBed.createComponent(EquipmentLayoutComponent);
     fixture.detectChanges();
-
-    return { contexto, fixture };
+    const equipamento = fixture.debugElement.injector.get(EquipmentContext);
+    return { contexto, fixture, equipamento };
   }
 
-  it('deve publicar a máquina pelo nome da lista provisória', () => {
-    const { contexto } = abrirEm('eq-injetora');
+  afterEach(() => http.verify());
 
-    expect(contexto.equipment()?.name).toBe('Injetora de plástico');
+  it('deve carregar a máquina pelo código da URL e publicá-la pelo nome', async () => {
+    const { contexto, equipamento, fixture } = await abrirEm('eq-0001');
+
+    http.expectOne(`${API}/companies/${BRF.id}/equipments/eq-0001`).flush(detalheDeEquipamento());
+    fixture.detectChanges();
+
+    expect(contexto.equipment()).toEqual({ id: 'EQ-0001', name: 'Prensa excêntrica 60t' });
+    expect(equipamento.atual()?.serialNumber).toBe('SN-1234');
   });
 
-  it('deve cair no id para uma máquina que não está na lista', () => {
-    // URL digitada à mão. Inventar um nome bonito seria inventar duas vezes.
-    const { contexto } = abrirEm('eq-que-nao-existe');
+  it('deve dizer que a máquina não existe, em vez de inventar um nome', async () => {
+    const { contexto, fixture } = await abrirEm('eq-9999');
 
-    expect(contexto.equipment()?.name).toBe('eq-que-nao-existe');
+    http
+      .expectOne(`${API}/companies/${BRF.id}/equipments/eq-9999`)
+      .flush(null, { status: 404, statusText: 'Not Found' });
+    fixture.detectChanges();
+
+    expect(contexto.equipment()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="equipamento-inexistente"]')).not.toBeNull();
   });
 
-  it('deve apagar a máquina ao sair, e só ela', () => {
-    const { contexto, fixture } = abrirEm('eq-injetora');
+  it('deve apagar a máquina ao sair, e só ela', async () => {
+    const { contexto, fixture } = await abrirEm('eq-0001');
+    http.expectOne(`${API}/companies/${BRF.id}/equipments/eq-0001`).flush(detalheDeEquipamento());
 
     fixture.destroy();
 

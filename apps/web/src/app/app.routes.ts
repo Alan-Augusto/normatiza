@@ -3,7 +3,8 @@ import { authGuard } from './core/guards/auth.guard';
 import { accountOwnerGuard } from './core/guards/account-owner.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { companyAdminGuard } from './core/guards/company-admin.guard';
-import { unsavedChangesGuard } from './features/app/companies/company-form/unsaved-changes.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
+import { EQUIPMENT_EDITOR_ROLES } from '@normatiza/shared';
 import { roleGuard } from './core/guards/role.guard';
 import { CONTEXTO_1, VÊ_A_EMPRESA } from './core/auth/entry-route';
 
@@ -164,6 +165,41 @@ export const routes: Routes = [
             }
           },
           {
+            // Cadastro e edição moram no Contexto 2, e **antes** de
+            // `equipamentos/:equipmentCode`: declarados depois, "novo" seria lido
+            // como código e abriria o Contexto 3. Um código é sempre `eq-0000`,
+            // então nenhum equipamento se chama "novo".
+            path: 'equipamentos/novo',
+            canActivate: [roleGuard(EQUIPMENT_EDITOR_ROLES)],
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () => import('./features/app/companies/company/equipment-form/equipment-form.component').then(m => m.EquipmentFormComponent),
+            data: {
+              label: 'Novo equipamento',
+              icon: 'pi pi-box',
+              subtitle: 'Só o nome é obrigatório. A ficha técnica completa se preenche na análise.'
+            }
+          },
+          {
+            path: 'equipamentos/:equipmentCode/editar',
+            canActivate: [roleGuard(EQUIPMENT_EDITOR_ROLES)],
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () => import('./features/app/companies/company/equipment-form/equipment-form.component').then(m => m.EquipmentFormComponent),
+            data: {
+              label: 'Editar equipamento',
+              icon: 'pi pi-box',
+              subtitle: 'A identidade da máquina: o que não muda de uma vistoria para outra.'
+            }
+          },
+          {
+            path: 'setores',
+            loadComponent: () => import('./features/app/companies/company/sectors/sectors.component').then(m => m.SectorsComponent),
+            data: {
+              label: 'Setores',
+              icon: 'pi pi-sitemap',
+              subtitle: 'Galpões, linhas e áreas da planta. Nomes iguais sem acento ou caixa são o mesmo setor.'
+            }
+          },
+          {
             // A mesma tela para os dois lados: o Gestor administra a equipe da
             // planta dele, e a consultoria vê quem está alocado ali. O que ela
             // não faz é desligar da conta — isso é ato do Contexto 1 (D8).
@@ -187,7 +223,7 @@ export const routes: Routes = [
 
           // CONTEXTO 3 — EQUIPAMENTO
           {
-            path: 'equipamentos/:equipmentId',
+            path: 'equipamentos/:equipmentCode',
             loadComponent: () => import('./features/app/companies/company/equipments/equipment/equipment.layout').then(m => m.EquipmentLayoutComponent),
             children: [
               { path: '', redirectTo: 'painel', pathMatch: 'full' },

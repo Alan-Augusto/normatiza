@@ -11,7 +11,7 @@
  * caminho digitado errado não chega à tela.
  */
 
-import { PAGINAS_DOS_EMAILS } from '@normatiza/shared';
+import { PAGINAS_DOS_EMAILS, equipmentCodeForUrl } from '@normatiza/shared';
 
 /**
  * A empresa entra na URL pelo **slug**, não pelo id (docs/produto/03 §4): é a
@@ -23,17 +23,25 @@ function empresa(slug: string) {
     raiz,
     painel: `${raiz}/painel`,
     equipamentos: `${raiz}/equipamentos`,
+    novoEquipamento: `${raiz}/equipamentos/novo`,
+    setores: `${raiz}/setores`,
     equipe: `${raiz}/equipe`,
     planoDeAcao: `${raiz}/plano-de-acao`,
-    equipamento: (equipmentId: string) => equipamento(raiz, equipmentId),
+    equipamento: (code: string) => equipamento(raiz, code),
   };
 }
 
-function equipamento(daEmpresa: string, equipmentId: string) {
-  const raiz = `${daEmpresa}/equipamentos/${equipmentId}`;
+/**
+ * O equipamento entra na URL pelo **código**, em minúsculas (`eq-0042`) — o
+ * código é imutável e único na empresa (docs/produto/03 §4.2), e a API aceita
+ * qualquer caixa.
+ */
+function equipamento(daEmpresa: string, code: string) {
+  const raiz = `${daEmpresa}/equipamentos/${equipmentCodeForUrl(code)}`;
   return {
     raiz,
     painel: `${raiz}/painel`,
+    editar: `${raiz}/editar`,
     analise: `${raiz}/analise`,
     historico: `${raiz}/historico`,
   };

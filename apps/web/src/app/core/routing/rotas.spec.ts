@@ -44,16 +44,19 @@ function abreTela(rota: Route): boolean {
 /** Todas as strings de ROTAS, com os construtores chamados com ids de exemplo. */
 function todosOsEndereços(): string[] {
   const empresa = ROTAS.empresa('emp-1');
-  const equipamento = empresa.equipamento('eq-1');
+  const equipamento = empresa.equipamento('EQ-0001');
   const { empresa: _e, editarEmpresa: _ed, admin, ...fixos } = ROTAS;
   return [
     ...Object.values(fixos),
     ROTAS.editarEmpresa('emp-1'),
     empresa.painel,
     empresa.equipamentos,
+    empresa.novoEquipamento,
+    empresa.setores,
     empresa.equipe,
     empresa.planoDeAcao,
     equipamento.painel,
+    equipamento.editar,
     equipamento.analise,
     equipamento.historico,
     ...Object.values(admin),
@@ -67,8 +70,8 @@ describe('ROTAS', () => {
   });
 
   it('deve ter as URLs em português', () => {
-    expect(ROTAS.empresa('emp-1').equipamento('eq-1').analise).toBe(
-      '/app/empresas/emp-1/equipamentos/eq-1/analise',
+    expect(ROTAS.empresa('brf').equipamento('EQ-0042').analise).toBe(
+      '/app/empresas/brf/equipamentos/eq-0042/analise',
     );
     expect(ROTAS.editarEmpresa('emp-1')).toBe('/app/empresas/emp-1/editar');
   });

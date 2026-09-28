@@ -6,10 +6,11 @@ import { PARAMETRO_DA_EMPRESA } from '../empresa-da-rota';
 /**
  * Um `ActivatedRoute` de tela do Contexto 2, com o slug na URL como o roteador
  * o entrega. Tem `pathFromRoot` porque é por ele que `empresaDaRota()` procura
- * o parâmetro, na profundidade que for.
+ * o parâmetro, na profundidade que for. `outros` são os parâmetros da própria
+ * tela — o código do equipamento, no Contexto 3.
  */
-export function rotaDaEmpresa(slug: string): ActivatedRoute {
-  const params = { [PARAMETRO_DA_EMPRESA]: slug };
+export function rotaDaEmpresa(slug: string, outros: Record<string, string> = {}): ActivatedRoute {
+  const params = { [PARAMETRO_DA_EMPRESA]: slug, ...outros };
   const rota: Record<string, unknown> = {
     paramMap: of(convertToParamMap(params)),
     snapshot: { paramMap: convertToParamMap(params) },

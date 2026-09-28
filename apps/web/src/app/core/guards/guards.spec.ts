@@ -188,6 +188,19 @@ describe('guardas de rota', () => {
       ).not.toBe(true);
     });
 
+    it('deve achar a empresa num nível acima da rota guardada, como em equipamentos/novo', async () => {
+      await entrarComo([vínculo(BRF.id, ['DIRECTOR']), vínculo(SEARA.id, ['MANAGER'])]);
+      const empresa = { params: { companySlug: 'brf' } };
+      const filha = { params: {}, data: {}, pathFromRoot: [empresa] } as unknown as ActivatedRouteSnapshot;
+      filha.pathFromRoot.push(filha);
+
+      // A Débora é Diretora na BRF: ser Gestora na Seara não a deixa cadastrar na BRF.
+      const resultado = TestBed.runInInjectionContext(() =>
+        roleGuard(['MANAGER'])(filha, { url: '/app/empresas/brf/equipamentos/novo' } as RouterStateSnapshot),
+      );
+      expect(resultado).not.toBe(true);
+    });
+
     describe('um slug que a sessão não conhece', () => {
       async function resolver(resultado: unknown) {
         return firstValueFrom(resultado as Observable<boolean | UrlTree>);

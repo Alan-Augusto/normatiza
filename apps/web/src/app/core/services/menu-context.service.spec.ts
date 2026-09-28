@@ -194,4 +194,33 @@ describe('MenuContextService', () => {
       expect(ctx.level).toBe('execution');
     });
   });
+
+  describe('o inventário', () => {
+    it('deve oferecer os setores no menu da empresa', async () => {
+      const ctx = await menuEm(DENTRO_DA_EMPRESA, ['TECHNICIAN']);
+      expect(rótulos(ctx)).toContain('Setores');
+    });
+
+    it('não deve ler o cadastro de equipamento como uma máquina', async () => {
+      // "novo" não é código: abrir o Contexto 3 aqui daria um menu de máquina
+      // com links para `/equipamentos/novo/painel`.
+      const ctx = await menuEm(`/app/empresas/${BRF.slug}/equipamentos/novo`, ['TECHNICIAN']);
+
+      expect(ctx.level).toBe('company');
+      expect(ctx.breadcrumbs.map((b) => b.label)).toContain('Novo equipamento');
+    });
+
+    it('deve deixar a edição do equipamento no Contexto 2, nomeando a máquina pelo código', async () => {
+      const ctx = await menuEm(`/app/empresas/${BRF.slug}/equipamentos/eq-0042/editar`, ['TECHNICIAN']);
+
+      expect(ctx.level).toBe('company');
+      expect(ctx.breadcrumbs.at(-1)?.label).toBe('Editar EQ-0042');
+    });
+
+    it('deve abrir o Contexto 3 pelo código do equipamento', async () => {
+      const ctx = await menuEm(`/app/empresas/${BRF.slug}/equipamentos/eq-0042/painel`, ['TECHNICIAN']);
+
+      expect(ctx.level).toBe('equipment');
+    });
+  });
 });

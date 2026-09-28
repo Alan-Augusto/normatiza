@@ -1,0 +1,199 @@
+<form class="formulario" [formGroup]="form" (ngSubmit)="salvar()">
+  @if (erro()) {
+    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
+
+  <section class="secao">
+    <h2 class="titulo-secao">Identificação</h2>
+    <p class="descricao-secao">O que identifica a máquina e não muda de uma vistoria para outra.</p>
+
+    <div class="grade">
+      <div class="campo sm:col-span-2">
+        <label for="eq-nome">Nome do equipamento</label>
+        <input
+          pInputText
+          id="eq-nome"
+          data-testid="campo-nome"
+          class="w-full"
+          formControlName="nome"
+          placeholder="Ex.: Prensa excêntrica 60 toneladas"
+          [attr.aria-invalid]="erroDe('nome') !== null"
+          [attr.aria-describedby]="erroDe('nome') ? 'erro-nome' : null"
+        />
+        <p id="erro-nome" data-testid="erro-nome" role="alert" class="erro">{{ erroDe('nome') }}</p>
+      </div>
+
+      <div class="campo">
+        <label for="eq-tipo">Tipo de máquina <span class="opcional">opcional</span></label>
+        <p-autocomplete
+          inputId="eq-tipo"
+          data-testid="campo-tipo"
+          formControlName="tipo"
+          [suggestions]="tiposSugeridos()"
+          (completeMethod)="filtrarTipos($event)"
+          [dropdown]="true"
+          [completeOnFocus]="true"
+          [showEmptyMessage]="false"
+          [delay]="0"
+          appendTo="body"
+          placeholder="Ex.: Prensa hidráulica"
+          dropdownAriaLabel="Mostrar tipos"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        />
+        <p id="ajuda-tipo" data-testid="ajuda-tipo" class="ajuda">
+          @if (tipoForaDoCatalogo()) {
+            {{ criaTipo() ? 'Tipo novo — entra no catálogo da consultoria ao salvar.' : 'Fora do catálogo — fica em branco, e a consultoria classifica.' }}
+          } @else {
+            Do catálogo — é o que escolhe o checklist da análise.
+          }
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="eq-modelo">Modelo <span class="opcional">opcional</span></label>
+        <input pInputText id="eq-modelo" data-testid="campo-modelo" class="w-full" formControlName="modelo" />
+        <p class="erro"></p>
+      </div>
+
+      <div class="campo">
+        <label for="eq-fabricante">Fabricante <span class="opcional">opcional</span></label>
+        <input pInputText id="eq-fabricante" data-testid="campo-fabricante" class="w-full" formControlName="fabricante" />
+        <p class="erro"></p>
+      </div>
+
+      <div class="campo">
+        <label for="eq-ano">Ano de fabricação <span class="opcional">opcional</span></label>
+        <input
+          pInputText
+          id="eq-ano"
+          data-testid="campo-ano"
+          class="w-full"
+          inputmode="numeric"
+          maxlength="4"
+          formControlName="ano"
+          placeholder="Ex.: 2012"
+        />
+        <p data-testid="erro-ano" role="alert" class="erro">{{ erroDe('ano') }}</p>
+      </div>
+
+      <div class="campo">
+        <label for="eq-serie">Número de série <span class="opcional">opcional</span></label>
+        <input
+          pInputText
+          id="eq-serie"
+          data-testid="campo-serie"
+          class="w-full"
+          formControlName="serie"
+          (blur)="conferirRepetidos('serie')"
+        />
+        <p data-testid="aviso-serie" class="aviso">
+          @if (repetidosNaSerie().length) {
+            Já cadastrado em {{ descreverRepetidos(repetidosNaSerie()) }}. Pode ser engano, ou uma máquina idêntica.
+          }
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2 class="titulo-secao">Na planta</h2>
+    <p class="descricao-secao">Onde a máquina está e como a empresa a identifica.</p>
+
+    <div class="grade">
+      <div class="campo">
+        <label for="eq-setor">Setor <span class="opcional">opcional</span></label>
+        <p-autocomplete
+          inputId="eq-setor"
+          data-testid="campo-setor"
+          formControlName="setor"
+          [suggestions]="setoresSugeridos()"
+          (completeMethod)="filtrarSetores($event)"
+          [dropdown]="true"
+          [completeOnFocus]="true"
+          [showEmptyMessage]="false"
+          [delay]="0"
+          appendTo="body"
+          placeholder="Ex.: Usinagem"
+          dropdownAriaLabel="Mostrar setores"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        />
+        <p data-testid="ajuda-setor" class="ajuda">
+          {{ setorNovo() ? 'Setor novo — será criado ao salvar.' : 'Galpão, linha ou área da planta.' }}
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="eq-tag">TAG <span class="opcional">opcional · única na empresa</span></label>
+        <input
+          pInputText
+          id="eq-tag"
+          data-testid="campo-tag"
+          class="w-full"
+          formControlName="tag"
+          placeholder="Ex.: PR-01"
+          [attr.aria-invalid]="erroDe('tag') !== null"
+        />
+        <p data-testid="erro-tag" role="alert" class="erro">{{ erroDe('tag') }}</p>
+      </div>
+
+      <div class="campo">
+        <label for="eq-patrimonio">Número de patrimônio <span class="opcional">opcional</span></label>
+        <input
+          pInputText
+          id="eq-patrimonio"
+          data-testid="campo-patrimonio"
+          class="w-full"
+          formControlName="patrimonio"
+          (blur)="conferirRepetidos('patrimonio')"
+        />
+        <p data-testid="aviso-patrimonio" class="aviso">
+          @if (repetidosNoPatrimonio().length) {
+            Já cadastrado em {{ descreverRepetidos(repetidosNoPatrimonio()) }}.
+          }
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2 class="titulo-secao">Foto principal</h2>
+    <p class="descricao-secao">A que reconhece a máquina na lista. As quatro vistas de reconhecimento são da análise.</p>
+
+    <div class="flex flex-wrap items-center gap-3">
+      @if (fotoPrevia()) {
+        <img [src]="fotoPrevia()" alt="Foto do equipamento" class="foto-previa" />
+      }
+      <label for="eq-foto" class="botao-arquivo">{{ fotoPrevia() ? 'Trocar foto' : 'Escolher foto' }}</label>
+      <input
+        id="eq-foto"
+        data-testid="foto-arquivo"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        capture="environment"
+        class="sr-only"
+        [disabled]="bloqueado()"
+        (change)="aoEscolherFoto($event)"
+      />
+      @if (fotoPrevia()) {
+        <p-button data-testid="remover-foto" label="Remover" severity="secondary" [text]="true" size="small" (onClick)="removerFoto()" />
+      }
+      <span class="text-xs text-muted-color">PNG, JPG ou WebP, até 10 MB.</span>
+    </div>
+    <p data-testid="foto-erro" role="alert" class="erro">{{ erroDaFoto() }}</p>
+  </section>
+
+  <div class="acoes">
+    <a [routerLink]="rotaDeVolta()" class="text-sm font-medium text-muted-color hover:text-surface-900 dark:hover:text-surface-0">
+      Cancelar
+    </a>
+    <p-button
+      data-testid="salvar"
+      type="submit"
+      [label]="editando() ? 'Salvar alterações' : 'Cadastrar equipamento'"
+      [loading]="salvando()"
+      [disabled]="bloqueado() || carregando()"
+    />
+  </div>
+</form>

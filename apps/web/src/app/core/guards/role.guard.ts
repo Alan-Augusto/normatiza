@@ -42,7 +42,11 @@ export function roleGuard(roles: readonly Role[]): CanActivateFn {
 
     const recusa = () => router.parseUrl(rotaDeEntrada(auth.session()!));
 
-    const slug = route.params[PARAMETRO_DA_EMPRESA] as string | undefined;
+    // A empresa pode estar num nível acima: `equipamentos/novo` é filha de
+    // `empresas/:companySlug`, e o roteador não herda o parâmetro para ela.
+    const slug = (route.pathFromRoot ?? [route])
+      .map((nível) => nível.params?.[PARAMETRO_DA_EMPRESA] as string | undefined)
+      .find(Boolean);
     if (!slug) return auth.hasRole(roles) || recusa();
 
     const empresa = auth.companyBySlug(slug);

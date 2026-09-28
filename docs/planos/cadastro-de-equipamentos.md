@@ -1,6 +1,6 @@
 # Plano — Cadastro de Equipamentos
 
-> **Status:** em andamento · **Criado em:** 2026-09-28
+> **Status:** implementado (API e painel), falta o fechamento: deploy e aceite no homelab · **Criado em:** 2026-09-28
 > **Regras de negócio:** [03 — Navegação §4.2, §4.3 e §5.1](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §2, §3, §7 e §8](../produto/04_modelo_de_dados.md) · [01 — Permissões §7](../produto/01_papeis_e_permissoes.md) · [05 — Regras Transversais §4](../produto/05_regras_transversais.md) (fotos)
 > **Padrões herdados:** [Cadastro de Empresas](./cadastro-de-empresas.md): `actions` por linha, `app-data-table`, reactive forms tipado, "—" em vez de zero inventado, estado da lista na URL, formulário em página própria
 > **Migração:** [docs/migracao §4 e §5](../migracao/README.md)
@@ -69,11 +69,11 @@ Trocar as três máquinas inventadas (`maquinas-provisorias.ts`) pelo inventári
 - [x] Contratos em `@normatiza/shared`.
 
 ### Fase 4 — Painel
-- [ ] Setores: tela do Contexto 2 e item no menu.
-- [ ] Inventário: tabela e cartões, busca, filtro de setor e de ativos, estado na URL.
-- [ ] Formulário `novo`/`editar`: setor e tipo com criação na hora, foto, aviso de série e patrimônio repetidos, TAG recusada no campo.
-- [ ] Contexto 3 com a máquina real: o layout resolve o código, e o painel mostra a identificação.
-- [ ] Apagar `maquinas-provisorias.ts`.
+- [x] Setores: tela do Contexto 2 e item no menu.
+- [x] Inventário: tabela e cartões, busca, filtro de setor e de ativos, estado na URL.
+- [x] Formulário `novo`/`editar`: setor e tipo com criação na hora, foto, aviso de série e patrimônio repetidos, TAG recusada no campo.
+- [x] Contexto 3 com a máquina real: o layout resolve o código, e o painel mostra a identificação.
+- [x] Apagar `maquinas-provisorias.ts`.
 
 ### Fase 5 — Fechamento
 - [ ] Atualizar [`docs/migracao`](../migracao/README.md) com o que a implementação decidiu.

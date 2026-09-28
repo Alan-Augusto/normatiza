@@ -4,11 +4,13 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   lucideEye,
   lucideMailX,
+  lucideMerge,
   lucidePencil,
   lucidePower,
   lucideRotateCcw,
   lucideSend,
   lucideShieldOff,
+  lucideTrash2,
   lucideUserCog,
   lucideUserMinus,
   lucideUserPlus,
@@ -35,6 +37,8 @@ const ICONES = {
   lucideUserMinus,
   lucideUserPlus,
   lucideShieldOff,
+  lucideTrash2,
+  lucideMerge,
 };
 
 export type RowActionIcon = keyof typeof ICONES;
