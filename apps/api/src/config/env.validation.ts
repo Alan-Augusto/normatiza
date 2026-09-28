@@ -140,6 +140,39 @@ export class EnvironmentVariables {
   @IsString()
   FIREBASE_STORAGE_BUCKET?: string;
 
+  /**
+   * `host:porta` do Firebase Storage Emulator, **sem protocolo** — é o formato
+   * que o SDK exige. Preenchida, a API grava no emulador e dispensa conta de
+   * serviço: o emulador não confere credencial. Em produção, só com
+   * `STORAGE_EMULATOR_IN_PRODUCTION=true`.
+   */
+  @IsOptional()
+  @Matches(/^[^:/]+:\d+$/, {
+    message: 'FIREBASE_STORAGE_EMULATOR_HOST deve ser `host:porta`, sem http://.',
+  })
+  FIREBASE_STORAGE_EMULATOR_HOST?: string;
+
+  /**
+   * De onde o **navegador** lê os arquivos do emulador. Sem ela, é o próprio
+   * `http://FIREBASE_STORAGE_EMULATOR_HOST` — o que basta na rede local. Num
+   * servidor atrás de proxy, é o caminho que o nginx encaminha, só leitura,
+   * para o emulador (`https://…/arquivos-emulador`).
+   */
+  @IsOptional()
+  @Matches(/^https?:\/\//, {
+    message: 'FIREBASE_STORAGE_EMULATOR_PUBLIC_URL deve começar com http:// ou https://.',
+  })
+  FIREBASE_STORAGE_EMULATOR_PUBLIC_URL?: string;
+
+  /**
+   * Opt-in para o emulador em produção — existe para o servidor provisório,
+   * onde os dados são de demonstração. O emulador só grava em disco ao ser
+   * parado, e a leitura dele não expira: é uma decisão, não um padrão.
+   */
+  @IsOptional()
+  @IsIn(['true', 'false'], { message: 'STORAGE_EMULATOR_IN_PRODUCTION deve ser `true` ou `false`.' })
+  STORAGE_EMULATOR_IN_PRODUCTION: string = 'false';
+
   @IsOptional()
   @IsInt()
   PORT: number = 3000;
@@ -207,13 +240,34 @@ export function validate(raw: Record<string, unknown>): EnvironmentVariables {
   }
 
   if (config.STORAGE_DRIVER === 'firebase') {
+    const noEmulador = !!config.FIREBASE_STORAGE_EMULATOR_HOST;
+
+    if (noEmulador && config.NODE_ENV === Environment.Production) {
+      if (config.STORAGE_EMULATOR_IN_PRODUCTION !== 'true') {
+        throw new Error(
+          'FIREBASE_STORAGE_EMULATOR_HOST em produção: os arquivos iriam para o emulador, ' +
+            'que não guarda nada de forma durável nem protege a leitura. Se é mesmo um ' +
+            'servidor provisório, declare STORAGE_EMULATOR_IN_PRODUCTION=true.',
+        );
+      }
+      if (!config.FIREBASE_STORAGE_EMULATOR_PUBLIC_URL?.startsWith('https://')) {
+        throw new Error(
+          'O emulador em produção exige FIREBASE_STORAGE_EMULATOR_PUBLIC_URL com https://: ' +
+            'o endereço do emulador só existe dentro da rede, e uma página HTTPS não ' +
+            'carrega imagem por HTTP.',
+        );
+      }
+    }
+
     const faltando = (
-      [
-        'FIREBASE_PROJECT_ID',
-        'FIREBASE_CLIENT_EMAIL',
-        'FIREBASE_PRIVATE_KEY',
-        'FIREBASE_STORAGE_BUCKET',
-      ] as const
+      noEmulador
+        ? (['FIREBASE_PROJECT_ID', 'FIREBASE_STORAGE_BUCKET'] as const)
+        : ([
+            'FIREBASE_PROJECT_ID',
+            'FIREBASE_CLIENT_EMAIL',
+            'FIREBASE_PRIVATE_KEY',
+            'FIREBASE_STORAGE_BUCKET',
+          ] as const)
     ).filter((chave) => !config[chave]);
 
     if (faltando.length) {

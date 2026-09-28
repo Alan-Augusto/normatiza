@@ -100,6 +100,69 @@ describe('Validação de ambiente', () => {
       ).toThrow(/FIREBASE_PRIVATE_KEY/);
     });
 
+    describe('no emulador', () => {
+      const emulador = {
+        STORAGE_DRIVER: 'firebase',
+        FIREBASE_PROJECT_ID: 'demo-normatiza-v2',
+        FIREBASE_STORAGE_BUCKET: 'demo-normatiza-v2.appspot.com',
+        FIREBASE_STORAGE_EMULATOR_HOST: '192.168.15.15:9199',
+      };
+
+      it('deve subir só com projeto e bucket, porque o emulador não confere credencial', () => {
+        expect(() => validate({ ...ambienteMinimo, ...emulador })).not.toThrow();
+      });
+
+      it('deve recusar o endereço com protocolo, que o SDK rejeitaria no primeiro upload', () => {
+        expect(() =>
+          validate({
+            ...ambienteMinimo,
+            ...emulador,
+            FIREBASE_STORAGE_EMULATOR_HOST: 'http://192.168.15.15:9199',
+          }),
+        ).toThrow(/FIREBASE_STORAGE_EMULATOR_HOST/);
+      });
+
+      it('deve impedir a produção de gravar no emulador sem que alguém tenha decidido isso', () => {
+        expect(() =>
+          validate({ ...ambienteMinimo, ...emulador, ...firebase, NODE_ENV: 'production' }),
+        ).toThrow(/STORAGE_EMULATOR_IN_PRODUCTION/);
+      });
+
+      describe('num servidor provisório, com o emulador liberado', () => {
+        const producao = {
+          ...emulador,
+          NODE_ENV: 'production',
+          STORAGE_EMULATOR_IN_PRODUCTION: 'true',
+        };
+
+        it('deve subir quando a leitura sai por um endereço público HTTPS', () => {
+          expect(() =>
+            validate({
+              ...ambienteMinimo,
+              ...producao,
+              FIREBASE_STORAGE_EMULATOR_PUBLIC_URL: 'https://normatiza.alanaugusto.dev/arquivos-emulador',
+            }),
+          ).not.toThrow();
+        });
+
+        it('deve exigir o endereço público, porque o do emulador só existe dentro da rede', () => {
+          expect(() => validate({ ...ambienteMinimo, ...producao })).toThrow(
+            /FIREBASE_STORAGE_EMULATOR_PUBLIC_URL/,
+          );
+        });
+
+        it('deve recusar um endereço público HTTP, que a página HTTPS não carregaria', () => {
+          expect(() =>
+            validate({
+              ...ambienteMinimo,
+              ...producao,
+              FIREBASE_STORAGE_EMULATOR_PUBLIC_URL: 'http://192.168.15.15:9199',
+            }),
+          ).toThrow(/https/);
+        });
+      });
+    });
+
     it('deve recusar um driver de storage desconhecido', () => {
       expect(() => validate({ ...ambienteMinimo, STORAGE_DRIVER: 's3' })).toThrow(
         /STORAGE_DRIVER/,

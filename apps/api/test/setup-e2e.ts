@@ -10,6 +10,11 @@ process.env.NODE_ENV = 'test';
 // segundos tropeçariam no limite. `rate-limit.e2e-spec.ts` religa e testa.
 process.env.THROTTLE_DISABLED = 'true';
 
+// A suíte grava em disco, qualquer que seja o storage do `.env`: rodar os
+// testes não pode depender de um emulador de pé, nem encher de logo de teste o
+// bucket que o desenvolvimento usa.
+process.env.STORAGE_DRIVER = 'local';
+
 if (!process.env.TEST_DATABASE_URL) {
   throw new Error(
     'TEST_DATABASE_URL não definida. A suíte e2e trunca todas as tabelas — ela ' +

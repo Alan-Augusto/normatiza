@@ -84,6 +84,47 @@ particularidades que não se deduzem do `compose.yml`:
   systemctl --user enable --now normatiza.service
   ```
 
+## Arquivos: o Firebase Storage Emulator
+
+Enquanto não há um projeto Firebase de verdade, os arquivos (logos, e depois fotos e laudos) vão para o **Firebase Storage Emulator** que roda no próprio homelab. Ele fica fora do Docker, como serviço systemd de usuário (`firebase-emulator.service`, em `/srv/projetos/firebase-emulator`), na porta 9199.
+
+```
+navegador ──► Cloudflare ──► [web] nginx ── /arquivos-emulador/ ──┐  só leitura
+                                  │                               ▼
+                                  └──► [api] ── grava ──► emulador no host :9199
+```
+
+- **A API grava** pelo SDK, em `host.docker.internal:9199`. Esse nome vem do `extra_hosts` do `compose.yml` e aponta para o host.
+- **O navegador lê** por `https://normatiza.alanaugusto.dev/arquivos-emulador/…`. O nginx do `web` repassa ao emulador **só** a leitura de um arquivo pelo nome, no formato `/v0/b/{bucket}/o/{objeto}?alt=media`, e só com GET. Qualquer outra coisa (listagem, metadado, a API GCS, gravação ou exclusão) morre no nginx com 404 ou 403. O motivo é que o emulador **não tem autenticação**: aberto por inteiro, qualquer pessoa na internet poderia apagar arquivos ou hospedar o que quisesse no domínio.
+- **Nunca publique a 9199, nem a interface do emulador na 4000**, seja por porta no roteador ou por rota no túnel.
+
+**No `.env` do servidor:**
+
+```sh
+STORAGE_DRIVER=firebase
+FIREBASE_PROJECT_ID=demo-normatiza-v2
+FIREBASE_STORAGE_BUCKET=demo-normatiza-v2.appspot.com
+FIREBASE_STORAGE_EMULATOR_HOST=host.docker.internal:9199
+FIREBASE_STORAGE_EMULATOR_PUBLIC_URL=https://normatiza.alanaugusto.dev/arquivos-emulador
+STORAGE_EMULATOR_IN_PRODUCTION=true
+```
+
+`STORAGE_EMULATOR_IN_PRODUCTION` é o opt-in. Sem ele, a API recusa subir com o emulador sob `NODE_ENV=production`, e ao subir com ele deixa um aviso no log. Existe por dois motivos:
+
+- **O emulador só grava em disco ao ser parado** (`--export-on-exit`). Uma queda de energia perde os uploads feitos desde a última partida.
+- **A leitura não expira.** Quem tiver o link lê o arquivo.
+
+Serve para dados de demonstração, e só enquanto o servidor for provisório.
+
+**O firewall.** O ufw libera a 9199 para a LAN e para a rede do Docker (`172.18.0.0/16`), pela qual passam a API e o nginx. Se a rede do compose for recriada com outra faixa (`docker network inspect normatiza_default`), a regra precisa acompanhar. Os sintomas de regra desatualizada são dois: o upload do logo dá erro, e `/arquivos-emulador/` responde 504.
+
+**Firebase de verdade, quando existir.** No `.env`:
+
+1. Tire `FIREBASE_STORAGE_EMULATOR_HOST`, `FIREBASE_STORAGE_EMULATOR_PUBLIC_URL` e `STORAGE_EMULATOR_IN_PRODUCTION`.
+2. Preencha `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY` com a conta de serviço.
+
+O código não muda. A leitura volta a ser uma URL assinada do Google, que expira sozinha. A rota `/arquivos-emulador/` continua no nginx sem uso: sem o emulador de pé, ela responde 502.
+
 ## Colocando de pé pela primeira vez
 
 ### 1. No servidor

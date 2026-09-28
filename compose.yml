@@ -50,6 +50,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+    # O Firebase Storage Emulator do servidor provisório roda no host, fora do
+    # Docker. `host-gateway` é o endereço do host visto de dentro do container.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     # Também sem `ports:`. Quem fala com a API é o nginx do serviço `web`, pela
     # rede interna. Isso mantém a API inacessível de fora exceto pelos prefixos
     # que o nginx encaminha de propósito.
@@ -61,6 +65,10 @@ services:
   web:
     image: ${IMAGE_WEB:?defina IMAGE_WEB no .env}:${TAG:-latest}
     restart: unless-stopped
+    # O nginx encaminha a leitura de /arquivos-emulador/ para o emulador no host
+    # e resolve este nome na partida: sem ele, o nginx não sobe.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     ports:
       # Única porta publicada. É para cá que o Cloudflare Tunnel aponta.
       # 127.0.0.1 de propósito: quem chega é o cloudflared, que roda no host —

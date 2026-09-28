@@ -22,6 +22,24 @@ import { StorageDriver } from './storage.driver';
       inject: [ConfigService],
       useFactory: (config: ConfigService<EnvironmentVariables, true>): StorageDriver => {
         if (config.get('STORAGE_DRIVER', { infer: true }) === 'firebase') {
+          const emulatorHost = config.get('FIREBASE_STORAGE_EMULATOR_HOST', { infer: true });
+          if (emulatorHost) {
+            const logger = new Logger('StorageModule');
+            const publicUrl = config.get('FIREBASE_STORAGE_EMULATOR_PUBLIC_URL', { infer: true });
+            logger.log(`Arquivos no Firebase Storage Emulator: ${emulatorHost}`);
+            if (config.get('NODE_ENV', { infer: true }) === 'production') {
+              logger.warn(
+                'Emulador em produção (STORAGE_EMULATOR_IN_PRODUCTION): os arquivos não são ' +
+                  'duráveis e a leitura não expira. Só para servidor provisório.',
+              );
+            }
+            return new FirebaseStorage({
+              projectId: config.get('FIREBASE_PROJECT_ID', { infer: true })!,
+              bucket: config.get('FIREBASE_STORAGE_BUCKET', { infer: true })!,
+              emulatorHost,
+              ...(publicUrl ? { publicUrl } : {}),
+            });
+          }
           return new FirebaseStorage({
             projectId: config.get('FIREBASE_PROJECT_ID', { infer: true })!,
             clientEmail: config.get('FIREBASE_CLIENT_EMAIL', { infer: true })!,

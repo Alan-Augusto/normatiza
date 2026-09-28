@@ -244,7 +244,8 @@ Quatro melhorias:
 
 - [ ] **6.1** Roteiro de aceite por pessoa do elenco: Josué cria a JBS (nasce em implantação, entra na carteira dele); Carla cria uma empresa e ela aparece para Josué, não para Fernando; Josué convida Gestor → aguardando; Gestor aceita → ativa; Marcos abre o diálogo e não vê observações; Josué desativa a Seara → convite na Seara é recusado.
 - [ ] **6.2** Dark mode, telas estreitas e teclado no formulário.
-- [ ] **6.3** Configurar o Firebase de verdade (variáveis no `.env` e no deploy) e conferir upload e leitura assinada.
+- [x] **6.3a** Firebase Storage Emulator no desenvolvimento: `FIREBASE_STORAGE_EMULATOR_HOST` troca a conta de serviço por projeto + bucket, a leitura é por URL direta (o emulador não assina) e a validação impede o emulador em produção. Gravação e leitura conferidas contra o emulador; a suíte e2e fica sempre no disco local.
+- [ ] **6.3b** Configurar o Firebase de verdade (conta de serviço no `.env` e no deploy, sem `FIREBASE_STORAGE_EMULATOR_HOST`) e conferir upload e leitura assinada.
 - [ ] **6.4** Apagar este plano.
 
 ---
