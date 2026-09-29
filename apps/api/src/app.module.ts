@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthorizationModule } from './authorization/authorization.module';
+import { CatalogsModule } from './catalogs/catalogs.module';
 import { CompaniesModule } from './companies/companies.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { validate } from './config/env.validation';
@@ -44,6 +45,7 @@ import { TeamModule } from './team/team.module';
     TeamModule,
     CompaniesModule,
     InventoryModule,
+    CatalogsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

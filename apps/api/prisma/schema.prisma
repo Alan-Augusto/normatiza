@@ -673,3 +673,149 @@ model Equipment {
   @@index([sectorId])
   @@map("equipments")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Catálogos da análise — globais, mantidos pela plataforma (docs/produto/04 §7).
+// Vieram do legado (docs/migracao §7): `legacy_refs` guarda de onde.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Capítulo ou anexo da norma: "12.5 Sistemas de segurança", "Anexo VIII -
+/// Prensas e similares". A seleção de normas descumpridas agrupa por aqui.
+model StandardSection {
+  id    String @id @default(cuid())
+  /// Sob qual norma. Hoje só "NR-12"; o eixo existe para outra norma conviver.
+  norm  String @default("NR-12")
+  name  String
+  /// Os capítulos 12.x pela numeração, depois os anexos pela numeração romana.
+  order Int
+
+  standards Standard[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("standard_sections")
+}
+
+/// Item da norma — o que a análise aponta como descumprido.
+model Standard {
+  id        String          @id @default(cuid())
+  norm      String          @default("NR-12")
+  sectionId String
+  section   StandardSection @relation(fields: [sectionId], references: [id])
+
+  /// "12.38.1". Não é único: os anexos recomeçam a numeração ("1.1" existe em
+  /// vários), e o legado tem códigos tortos que os laudos já imprimiram.
+  itemCode String
+  text     String
+  /// Item que saiu da norma continua existindo: há análise apontando para ele.
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sectionId])
+  @@map("standards")
+}
+
+/// Tipo de perigo: mecânico, elétrico, térmico… Agrupa origens e consequências.
+model HazardType {
+  id    String @id @default(cuid())
+  name  String
+  order Int
+
+  origins      HazardOrigin[]
+  consequences HazardConsequence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hazard_types")
+}
+
+/// O nome se repete entre tipos ("Queimadura" é elétrica e térmica), e é certo.
+model HazardOrigin {
+  id           String     @id @default(cuid())
+  hazardTypeId String
+  hazardType   HazardType @relation(fields: [hazardTypeId], references: [id])
+  name         String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hazardTypeId])
+  @@map("hazard_origins")
+}
+
+model HazardConsequence {
+  id           String     @id @default(cuid())
+  hazardTypeId String
+  hazardType   HazardType @relation(fields: [hazardTypeId], references: [id])
+  name         String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hazardTypeId])
+  @@map("hazard_consequences")
+}
+
+/// Tipo de proteção: fixa, móvel, sensores de segurança… Agrupa os dispositivos.
+model ProtectionType {
+  id    String @id @default(cuid())
+  name  String
+  order Int
+
+  protections Protection[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("protection_types")
+}
+
+/// O dispositivo — o que o ponto de risco marca como já instalado.
+model Protection {
+  id               String         @id @default(cuid())
+  protectionTypeId String
+  protectionType   ProtectionType @relation(fields: [protectionTypeId], references: [id])
+  name             String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([protectionTypeId])
+  @@map("protections")
+}
+
+/// A tabela do HRN, versionada (docs/produto/04 §7, 05 §1). A análise guarda a
+/// versão que usou; mudar um peso é criar versão nova, nunca editar esta.
+/// Fatores e faixas são `@normatiza/shared` (`HrnTable`), gravados como estão.
+model HrnTableVersion {
+  id            String    @id
+  label         String
+  effectiveFrom DateTime
+  /// Nulo = vigente.
+  effectiveTo   DateTime?
+  factors       Json
+  levels        Json
+
+  createdAt DateTime @default(now())
+
+  @@map("hrn_table_versions")
+}
+
+/// De onde veio cada registro migrado (docs/migracao §1): `entity` é a tabela
+/// do legado, `legacyId` o id lá, `newId` o id aqui. O legado é um banco só, e
+/// o id de uma tabela não se repete entre contas.
+model LegacyRef {
+  entity   String
+  legacyId Int
+  newId    String
+
+  createdAt DateTime @default(now())
+
+  @@id([entity, legacyId])
+  @@index([entity, newId])
+  @@map("legacy_refs")
+}

@@ -634,7 +634,7 @@ interface HrnTableVersion {
     mpl: HrnFactorOption[];
     np: HrnFactorOption[];
   };
-  levels: { level: RiskLevel; minExclusive: number | null; maxInclusive: number | null }[];
+  levels: { level: RiskLevel; label: string; minExclusive: number | null; maxInclusive: number | null }[];
 }
 
 interface HrnFactorOption {

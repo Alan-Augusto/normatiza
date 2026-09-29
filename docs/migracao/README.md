@@ -28,7 +28,7 @@ Como cada tabela e coluna do sistema legado vira dado no modelo novo. **O docume
 | `machine` | `Equipment` (implementado) + `Analysis.technicalSheet` (modelado) | em parte | §5 |
 | `photo` | `FileAsset` | implementado | §6 |
 | `analysis`, `risk`, `pap`, `pe` e N:N | `Analysis`, `RiskPoint`, `PapAssessment`, `PeAssessment` | modelado | §8, em parte |
-| `danger_*`, `security*`, `standard*` | catálogos globais ([04 §7](../produto/04_modelo_de_dados.md)) | modelado | §7 |
+| `danger_*`, `security*`, `standard*` | catálogos globais ([04 §7](../produto/04_modelo_de_dados.md)) | implementado | §7 |
 | `studies` | `SafetyStudy` | modelado | pendente |
 | `technicalReport` | `Report` | modelado | pendente, e texto a interpretar (§2) |
 | `userDocs` | `FileAsset` da empresa | implementado | pendente |
@@ -388,6 +388,10 @@ Os catálogos entram **antes** da migração oficial, para que a análise da v2 
 | `danger_origin`, `danger_consequence` | `HazardOrigin`, `HazardConsequence` | Com o tipo (`dangerTypeId` → `hazardTypeId`) |
 | `security_type.name` | `ProtectionType.name` | — |
 | `security` | `Protection` | Com o tipo (`securityTypeId` → `protectionTypeId`) |
+
+**Códigos tortos migram como estão**, porque os laudos já os imprimiram: o item 588 tem o código `1,1.2.11.1` (o texto diz "item 1,1.2.11.1 do anexo IX") e o 600 tem `X` (o texto diz "item 4.2 do anexo X"). Corrigi-los é trabalho da tela de catálogos, com o item antigo preservado. O código também **não é único**: os anexos recomeçam a numeração, e 189 códigos se repetem entre capítulos.
+
+Nomes de origem e consequência se repetem entre tipos de perigo ("Queimadura" é elétrica, térmica, de radiação e do ambiente), e isso é certo: dentro do tipo, nenhum se repete.
 
 Item que some do legado entre uma exportação e outra **não é apagado** na v2: pode haver análise apontando para ele. O importador o lista no fim.
 
