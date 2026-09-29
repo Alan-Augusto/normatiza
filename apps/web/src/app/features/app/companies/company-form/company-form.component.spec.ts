@@ -79,7 +79,11 @@ describe('CompanyFormComponent', () => {
   };
   const grupos = (nomes: string[] = []) =>
     http.expectOne(`${API}/company-groups`).flush(nomes.map((name, i) => ({ id: `g-${i}`, name })));
-  const erroDe = (nome: string) => el(`[data-testid="erro-${nome}"]`)?.textContent?.trim() ?? '';
+  /** O erro do campo — a linha de mensagem só é erro quando está como alerta; senão é ajuda. */
+  const erroDe = (nome: string) => {
+    const linha = el(`[data-testid="erro-${nome}"]`);
+    return linha?.getAttribute('role') === 'alert' ? (linha.textContent?.trim() ?? '') : '';
+  };
   const esperar = (ms = 0) => new Promise((r) => setTimeout(r, ms));
   const etapaAtual = () => el('[data-testid="etapa-atual"]')?.getAttribute('data-etapa');
 

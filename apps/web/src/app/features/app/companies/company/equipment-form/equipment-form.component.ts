@@ -38,6 +38,9 @@ import {
 } from '@normatiza/shared';
 
 import { AuthService } from '../../../../../core/auth/auth.service';
+import { CampoComponent } from '../../../../../shared/components/form/campo.component';
+import { MascaraDirective } from '../../../../../shared/components/form/mascara.directive';
+import { NumeroComponent } from '../../../../../shared/components/form/numero.component';
 import { FormularioComAlteracoes } from '../../../../../core/guards/unsaved-changes.guard';
 import { mensagemDoServidor } from '../../../../../core/http/mensagem-de-erro';
 import { empresaDaRota } from '../../../../../core/routing/empresa-da-rota';
@@ -89,24 +92,19 @@ const ETAPAS: readonly Etapa[] = [
   { valor: 5, chave: 'foto', titulo: 'Foto', icone: 'lucideCamera', campos: [] },
 ];
 
-/** Inteiro, como "3" operadores. Vazio é válido: tudo na ficha é opcional. */
-const INTEIRO = Validators.pattern(/^\s*\d+\s*$/);
-/** Decimal com vírgula ou ponto, como "0,55" kW — é como se escreve aqui. */
-const DECIMAL = Validators.pattern(/^\s*\d+([.,]\d+)?\s*$/);
-
+/** A máscara guarda só dígitos: o CNPJ se confere direto, e vazio vale (é opcional). */
 const cnpjValido = (c: AbstractControl<string>): ValidationErrors | null =>
-  !c.value.trim() || isValidCnpj(c.value) ? null : { cnpj: true };
+  !c.value || isValidCnpj(c.value) ? null : { cnpj: true };
 
-/** "0,55" → 0.55; vazio → ausente. */
-function número(texto: string): number | undefined {
-  const limpo = texto.trim().replace(',', '.');
-  return limpo ? Number(limpo) : undefined;
-}
+/** CEP incompleto — a máscara aceita até 8 dígitos, mas não obriga a chegar lá. */
+const cepCompleto = (c: AbstractControl<string>): ValidationErrors | null =>
+  !c.value || c.value.length === 8 ? null : { cep: true };
 
-/** 0.55 → "0,55", como a pessoa digitou. */
-function texto(n: number | undefined): string {
-  return n === undefined ? '' : String(n).replace('.', ',');
-}
+const PRIMEIRO_ANO = 1900;
+const ÚLTIMO_ANO = new Date().getFullYear() + 1;
+
+/** O que o campo numérico guarda vira o que a API espera: ausente, não `null`. */
+const ouAusente = (n: number | null): number | undefined => n ?? undefined;
 
 /**
  * Cadastro e edição do equipamento — Contexto 2 (docs/produto/03 §4.2).
@@ -124,6 +122,9 @@ function texto(n: number | undefined): string {
   selector: 'app-equipment-form',
   standalone: true,
   imports: [
+    CampoComponent,
+    NumeroComponent,
+    MascaraDirective,
     FormsModule,
     Checkbox,
     Textarea,
@@ -161,7 +162,7 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     modelo: this.fb.control(''),
     fabricante: this.fb.control(''),
     serie: this.fb.control(''),
-    ano: this.fb.control('', Validators.pattern(/^\s*\d{4}\s*$/)),
+    ano: this.fb.control<number | null>(null, [Validators.min(PRIMEIRO_ANO), Validators.max(ÚLTIMO_ANO)]),
     tag: this.fb.control(''),
     patrimonio: this.fb.control(''),
     setor: this.fb.control(''),
@@ -169,22 +170,22 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     // Ficha do ativo
     utilizacao: this.fb.control(''),
     capacidade: this.fb.control(''),
-    potencia: this.fb.control('', DECIMAL),
-    postos: this.fb.control('', INTEIRO),
-    operadores: this.fb.control('', INTEIRO),
+    potencia: this.fb.control<number | null>(null),
+    postos: this.fb.control<number | null>(null),
+    operadores: this.fb.control<number | null>(null),
     energias: this.fb.control<EnergySource[]>([]),
     processo: this.fb.control(''),
     intervencoes: this.fb.control(''),
     outras: this.fb.control(''),
-    altura: this.fb.control('', INTEIRO),
-    largura: this.fb.control('', INTEIRO),
-    profundidade: this.fb.control('', INTEIRO),
-    peso: this.fb.control('', DECIMAL),
+    altura: this.fb.control<number | null>(null),
+    largura: this.fb.control<number | null>(null),
+    profundidade: this.fb.control<number | null>(null),
+    peso: this.fb.control<number | null>(null),
     fabricanteCnpj: this.fb.control('', cnpjValido),
     fabricanteCrea: this.fb.control(''),
     fabricanteEndereco: this.fb.control(''),
     fabricanteCidade: this.fb.control(''),
-    fabricanteCep: this.fb.control('', Validators.pattern(/^\s*\d{5}-?\d{3}\s*$|^\s*$/)),
+    fabricanteCep: this.fb.control('', cepCompleto),
   });
 
   readonly fontesDeEnergia = ENERGY_SOURCES.map((valor) => ({ valor, rotulo: ENERGY_SOURCE_LABEL[valor] }));
@@ -275,7 +276,7 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
           modelo: equipamento.model ?? '',
           fabricante: equipamento.manufacturerName ?? '',
           serie: equipamento.serialNumber ?? '',
-          ano: equipamento.manufactureYear ? String(equipamento.manufactureYear) : '',
+          ano: equipamento.manufactureYear ?? null,
           tag: equipamento.tag ?? '',
           patrimonio: equipamento.patrimonyCode ?? '',
           setor: equipamento.sector?.name ?? '',
@@ -410,16 +411,13 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
       case 'nome':
         return 'Informe o nome do equipamento.';
       case 'ano':
-        return 'O ano de fabricação é um número de quatro dígitos, como 2012.';
+        return `O ano de fabricação precisa estar entre ${PRIMEIRO_ANO} e ${ÚLTIMO_ANO}.`;
       case 'fabricanteCnpj':
         return 'Esse CNPJ não é válido. Confira os dígitos, ou deixe em branco.';
       case 'fabricanteCep':
         return 'O CEP tem 8 dígitos.';
-      case 'potencia':
-      case 'peso':
-        return 'Informe um número, como 0,55.';
       default:
-        return 'Informe um número inteiro.';
+        return null;
     }
   }
 
@@ -523,32 +521,32 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
       model: v.modelo,
       manufacturerName: v.fabricante,
       serialNumber: v.serie,
-      manufactureYear: v.ano.trim() ? Number(v.ano) : null,
+      manufactureYear: v.ano,
       tag: v.tag,
       patrimonyCode: v.patrimonio,
       sectorId,
       sheet: {
         purpose: v.utilizacao.trim() || undefined,
         productiveCapacity: v.capacidade.trim() || undefined,
-        powerKw: número(v.potencia),
-        controlStations: número(v.postos),
-        exposedOperators: número(v.operadores),
+        powerKw: ouAusente(v.potencia),
+        controlStations: ouAusente(v.postos),
+        exposedOperators: ouAusente(v.operadores),
         energySources: ENERGY_SOURCES.filter((f) => v.energias.includes(f)),
         processDescription: v.processo.trim() || undefined,
         commonInterventions: v.intervencoes.trim() || undefined,
         otherInfo: v.outras.trim() || undefined,
         dimensions: {
-          heightMm: número(v.altura),
-          widthMm: número(v.largura),
-          depthMm: número(v.profundidade),
-          weightKg: número(v.peso),
+          heightMm: ouAusente(v.altura),
+          widthMm: ouAusente(v.largura),
+          depthMm: ouAusente(v.profundidade),
+          weightKg: ouAusente(v.peso),
         },
         manufacturer: {
-          document: v.fabricanteCnpj.trim() || undefined,
+          document: v.fabricanteCnpj || undefined,
           registry: v.fabricanteCrea.trim() || undefined,
           address: v.fabricanteEndereco.trim() || undefined,
           city: v.fabricanteCidade.trim() || undefined,
-          zipCode: v.fabricanteCep.trim() || undefined,
+          zipCode: v.fabricanteCep || undefined,
         },
       },
     };
@@ -558,17 +556,17 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     return {
       utilizacao: ficha.purpose ?? '',
       capacidade: ficha.productiveCapacity ?? '',
-      potencia: texto(ficha.powerKw),
-      postos: texto(ficha.controlStations),
-      operadores: texto(ficha.exposedOperators),
+      potencia: ficha.powerKw ?? null,
+      postos: ficha.controlStations ?? null,
+      operadores: ficha.exposedOperators ?? null,
       energias: [...ficha.energySources],
       processo: ficha.processDescription ?? '',
       intervencoes: ficha.commonInterventions ?? '',
       outras: ficha.otherInfo ?? '',
-      altura: texto(ficha.dimensions.heightMm),
-      largura: texto(ficha.dimensions.widthMm),
-      profundidade: texto(ficha.dimensions.depthMm),
-      peso: texto(ficha.dimensions.weightKg),
+      altura: ficha.dimensions.heightMm ?? null,
+      largura: ficha.dimensions.widthMm ?? null,
+      profundidade: ficha.dimensions.depthMm ?? null,
+      peso: ficha.dimensions.weightKg ?? null,
       fabricanteCnpj: ficha.manufacturer.document ?? '',
       fabricanteCrea: ficha.manufacturer.registry ?? '',
       fabricanteEndereco: ficha.manufacturer.address ?? '',

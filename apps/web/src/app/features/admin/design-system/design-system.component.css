@@ -36,3 +36,26 @@
 :host-context(.app-dark) ::ng-deep .p-datatable-tbody > tr:hover {
   background-color: var(--p-surface-950);
 }
+
+/* O valor que o formulário guarda, ao pé de cada grupo: a diferença entre o que se vê e o que se grava. */
+.valores {
+  border-top: 1px solid var(--p-content-border-color);
+  padding-top: 0.75rem;
+  font-size: var(--text-xs);
+  color: var(--p-text-muted-color);
+}
+
+.valores strong {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--p-text-color);
+}
+
+.limpar {
+  display: inline-flex;
+  cursor: pointer;
+  color: var(--p-text-muted-color);
+}
+
+.limpar:hover {
+  color: var(--p-text-color);
+}

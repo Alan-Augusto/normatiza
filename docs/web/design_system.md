@@ -314,3 +314,73 @@ Para manter o design limpo, consistente e de alta performance, adotamos uma estr
 
 > [!IMPORTANT]
 > Para garantir a consistência visual da interface, **sempre utilize Lucide** nas páginas internas de funcionalidades. Evite o uso de PrimeIcons fora do escopo de navegação principal (Sidebar).
+
+---
+
+## 📝 9. Campos de formulário
+
+Os campos vivem em `shared/components/form/`. O que a pessoa **vê** é formatado à brasileira; o que o formulário **guarda** é o dado cru: só dígitos no documento, número de verdade na medida, centavos no dinheiro. Validador, busca e API nunca recebem máscara.
+
+### A moldura: `app-campo`
+
+Todo campo vai dentro de um `app-campo`: rótulo ligado ao controle (`para` = `id` do controle), a marca de obrigatório ou opcional, e **uma linha reservada** embaixo para a mensagem.
+
+```html
+<app-campo para="eq-tag" rotulo="TAG" detalhe="única na empresa" [erro]="erroDe('tag')" mensagemId="erro-tag">
+  <input pInputText id="eq-tag" formControlName="tag" aria-describedby="erro-tag" />
+</app-campo>
+```
+
+- **A linha existe mesmo vazia.** Sem ela, o erro nasce empurrando o campo de baixo e a pessoa perde a linha que estava lendo.
+- **Uma mensagem por vez, na ordem do que importa:** erro (vermelho, `role="alert"`), aviso (âmbar: "já cadastrado em EQ-0007", que não impede) e ajuda (cor de apoio).
+- **Marca-se a minoria.** No formulário em que quase tudo é opcional (equipamento), o obrigatório leva `*`, e o leitor de tela lê "obrigatório". No que quase tudo é obrigatório (empresa), o opcional leva a palavra "opcional". Marcar os dois é ruído.
+- `detalhe` é um complemento curto do rótulo ("única na empresa", "para que a máquina serve"). **Unidade não vai no rótulo**: ela é do campo.
+
+### Número com unidade: `app-numero`
+
+```html
+<app-numero inputId="eq-peso" unidade="kg" [casas]="1" formControlName="peso" />
+```
+
+`[ 4.200 | kg ]`: a unidade fica **encostada à direita**, lida junto com o número. Unidades do sistema: `mm`, `kg`, `kW`, `un`, `pessoas`.
+
+- Só entram dígitos e uma vírgula, até `casas` decimais. Letra nem aparece, então não existe erro de "isto não é número".
+- Ao sair do campo, o número se formata com ponto de milhar. Para o que não é quantidade (um ano), use `[agrupar]="false"`.
+- O formulário recebe `number | null`. Vazio é `null`, nunca zero: zero afirmaria uma medida que ninguém fez.
+
+### Dinheiro: `app-moeda`
+
+`[ R$ | 1.234,56 ]`: o símbolo fica **encostado à esquerda**, como se escreve. Sempre duas casas. O formulário recebe **centavos inteiros**, porque campo monetário nunca é ponto flutuante (docs/produto/04).
+
+### Máscara: `appMascara`
+
+```html
+<input pInputText appMascara="cnpj" formControlName="cnpj" />
+```
+
+`cnpj` · `cpf` · `cep` · `telefone`. O telefone acompanha o tamanho: 10 dígitos é fixo, `(49) 3441-1000`, e 11 é celular, `(49) 98877-6655`. É uma diretiva sobre o `pInputText` de sempre, com o mesmo visual. Ela formata enquanto se digita, preserva a posição do cursor e aceita o valor colado com ou sem pontuação.
+
+### Ícone dentro do campo: só onde ele faz alguma coisa
+
+Num formulário longo, um ícone em cada campo polui, e o rótulo já diz o que o campo é. Ícone entra em três casos:
+
+| Campo | Ícone | O que ele faz |
+| :--- | :--- | :--- |
+| Busca | lupa à esquerda + limpar à direita | diz que o campo filtra; o `×` esvazia |
+| Senha | olho à direita (`p-password [toggleMask]`) | mostra o que foi digitado |
+| Data | calendário (`p-datepicker [showIcon]`) | abre o calendário |
+
+Nome, e-mail, CNPJ, CPF e telefone ficam **sem ícone**.
+
+### Os demais, direto do PrimeNG
+
+| Para | Use | Regra |
+| :--- | :--- | :--- |
+| Texto longo | `textarea pTextarea [autoResize]="true"` | cresce com o texto; começa em 2 ou 3 linhas |
+| Uma escolha entre muitas | `p-select` | com `[filter]` a partir de ~10 opções |
+| Várias escolhas | `p-multiselect` | `display="chip"`; com poucas opções (até ~6), prefira checkboxes lado a lado, porque tudo fica à vista |
+| Escolha ou criação | `p-autocomplete` com `[dropdown]` | o que se digita e não existe é **criado ao salvar**, e a linha de ajuda avisa antes |
+| Sim/Não | `p-checkbox [binary]` | o rótulo inteiro é clicável |
+| Data | `p-datepicker` | `dateFormat="dd/mm/yy"`, com ícone |
+
+A página **Design System** (`/admin/design-system`) mostra cada um em uso, com os estados vazio, preenchido, com erro e desabilitado.

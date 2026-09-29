@@ -34,8 +34,6 @@ import { Observable, TimeoutError, catchError, map, of, switchMap, timeout } fro
 import {
   BRAZIL_STATES,
   canInvite,
-  formatCep,
-  formatCnpj,
   isValidCep,
   isValidCnpj,
   normalizeForSearch,
@@ -58,6 +56,8 @@ import {
 } from '../../../../core/services/external/cnpj-lookup.service';
 import { PARAMETRO_DA_EMPRESA } from '../../../../core/routing/empresa-da-rota';
 import { ROTAS } from '../../../../core/routing/rotas';
+import { CampoComponent } from '../../../../shared/components/form/campo.component';
+import { MascaraDirective } from '../../../../shared/components/form/mascara.directive';
 import {
   InviteFormComponent,
   type ConviteInicial,
@@ -170,6 +170,8 @@ const ETAPAS: readonly Etapa[] = [
   selector: 'app-company-form',
   standalone: true,
   imports: [
+    CampoComponent,
+    MascaraDirective,
     ReactiveFormsModule,
     AutoComplete,
     RouterLink,
@@ -412,14 +414,14 @@ export class CompanyFormComponent implements OnInit {
     this.form.setValue({
       razao: e.corporateName,
       fantasia: e.tradeName,
-      cnpj: formatCnpj(e.document),
+      cnpj: e.document,
       ie: e.stateRegistration ?? '',
       contatoNome: e.contact.name,
       contatoCargo: e.contact.role ?? '',
       contatoEmail: e.contact.email,
-      contatoTelefone: e.contact.phone ?? '',
-      contatoCelular: e.contact.mobile ?? '',
-      cep: formatCep(e.address.zipCode),
+      contatoTelefone: onlyDigits(e.contact.phone ?? ''),
+      contatoCelular: onlyDigits(e.contact.mobile ?? ''),
+      cep: onlyDigits(e.address.zipCode),
       logradouro: e.address.street,
       numero: e.address.number,
       complemento: e.address.complement ?? '',
@@ -460,8 +462,8 @@ export class CompanyFormComponent implements OnInit {
 
   aoSairDoCnpj(): void {
     const controle = this.form.controls.cnpj;
+    // A máscara já formata na tela e guarda só os dígitos (appMascara).
     if (!isValidCnpj(controle.value)) return;
-    controle.setValue(formatCnpj(controle.value));
 
     // Na edição o cadastro já existe: consultar a Receita de novo só serviria
     // para, no máximo, não sobrescrever nada.
@@ -494,7 +496,6 @@ export class CompanyFormComponent implements OnInit {
   aoSairDoCep(): void {
     const controle = this.form.controls.cep;
     if (!isValidCep(controle.value)) return;
-    controle.setValue(formatCep(controle.value));
 
     const digitos = onlyDigits(controle.value);
     if (digitos === this.cepConsultado) return;
@@ -526,7 +527,7 @@ export class CompanyFormComponent implements OnInit {
     const destino: [keyof CnpjLookupResult, keyof typeof this.form.controls, (v: string) => string][] = [
       ['corporateName', 'razao', (v) => v],
       ['tradeName', 'fantasia', (v) => v],
-      ['zipCode', 'cep', formatCep],
+      ['zipCode', 'cep', onlyDigits],
       ['street', 'logradouro', (v) => v],
       ['number', 'numero', (v) => v],
       ['complement', 'complemento', (v) => v],
@@ -553,7 +554,7 @@ export class CompanyFormComponent implements OnInit {
     this.form.patchValue({
       contatoNome: g.name,
       contatoEmail: g.email,
-      contatoTelefone: g.phone ?? '',
+      contatoTelefone: onlyDigits(g.phone ?? ''),
       contatoCargo: g.jobTitle ?? '',
     });
     this.form.markAsDirty();

@@ -483,6 +483,169 @@
         </div>
       </div>
     </div>
+
+    <!-- Campos especializados (docs/web/design_system.md §9) -->
+    <div
+      data-testid="ds-campos-especializados"
+      class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg p-6 space-y-8 shadow-sm"
+    >
+      <div class="border-b border-surface-200 dark:border-surface-800 pb-3">
+        <h3 class="text-xl font-bold text-surface-900 dark:text-surface-0">🧩 Campos especializados</h3>
+        <p class="text-sm text-muted-color">
+          O que a pessoa vê é formatado à brasileira; o que o formulário guarda é o dado cru. Os componentes estão em
+          <code>shared/components/form</code>.
+        </p>
+      </div>
+
+      <!-- 1. Números e dinheiro -->
+      <section class="space-y-4">
+        <div>
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">1. Números com unidade e dinheiro</h4>
+          <p class="text-sm text-muted-color">
+            A unidade fica encostada à direita, e o R$ à esquerda. Não vão no rótulo. Só entram dígitos e vírgula.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
+          <app-campo para="ds-altura" rotulo="Altura">
+            <app-numero inputId="ds-altura" unidade="mm" [ngModel]="altura()" (ngModelChange)="altura.set($event)" />
+          </app-campo>
+          <app-campo para="ds-peso" rotulo="Peso">
+            <app-numero inputId="ds-peso" unidade="kg" [casas]="1" [ngModel]="peso()" (ngModelChange)="peso.set($event)" />
+          </app-campo>
+          <app-campo para="ds-potencia" rotulo="Potência">
+            <app-numero inputId="ds-potencia" unidade="kW" [casas]="2" [ngModel]="potencia()" (ngModelChange)="potencia.set($event)" />
+          </app-campo>
+          <app-campo para="ds-valor" rotulo="Valor orçado">
+            <app-moeda inputId="ds-valor" [ngModel]="valor()" (ngModelChange)="valor.set($event)" />
+          </app-campo>
+        </div>
+        <p class="valores">
+          Guardado: altura <strong>{{ altura() ?? 'null' }}</strong> · peso <strong>{{ peso() ?? 'null' }}</strong> ·
+          potência <strong>{{ potencia() ?? 'null' }}</strong> · valor <strong>{{ valor() ?? 'null' }}</strong> (centavos)
+        </p>
+      </section>
+
+      <!-- 2. Máscaras -->
+      <section class="space-y-4">
+        <div>
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">2. Máscaras</h4>
+          <p class="text-sm text-muted-color">
+            Formatam enquanto se digita e aceitam o valor colado com ou sem pontuação. O telefone muda de fixo para
+            celular sozinho. Sem ícone: o rótulo já diz o que é.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
+          <app-campo para="ds-cnpj" rotulo="CNPJ">
+            <input pInputText id="ds-cnpj" appMascara="cnpj" class="w-full" [ngModel]="cnpj()" (ngModelChange)="cnpj.set($event)" />
+          </app-campo>
+          <app-campo para="ds-cpf" rotulo="CPF">
+            <input pInputText id="ds-cpf" appMascara="cpf" class="w-full" [ngModel]="cpf()" (ngModelChange)="cpf.set($event)" />
+          </app-campo>
+          <app-campo para="ds-cep" rotulo="CEP">
+            <input pInputText id="ds-cep" appMascara="cep" class="w-full" [ngModel]="cep()" (ngModelChange)="cep.set($event)" />
+          </app-campo>
+          <app-campo para="ds-telefone" rotulo="Telefone">
+            <input pInputText id="ds-telefone" appMascara="telefone" class="w-full" [ngModel]="telefone()" (ngModelChange)="telefone.set($event)" />
+          </app-campo>
+        </div>
+        <p class="valores">
+          Guardado: CNPJ <strong>{{ cnpj() || '—' }}</strong> · CPF <strong>{{ cpf() || '—' }}</strong> · CEP
+          <strong>{{ cep() || '—' }}</strong> · telefone <strong>{{ telefone() || '—' }}</strong>
+        </p>
+      </section>
+
+      <!-- 3. Ícone só onde faz algo -->
+      <section class="space-y-4">
+        <div>
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">3. Ícone só onde ele faz alguma coisa</h4>
+          <p class="text-sm text-muted-color">Busca, senha e data. Nos demais campos, o ícone é ruído num formulário longo.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-x-6 sm:grid-cols-3">
+          <app-campo para="ds-busca" rotulo="Busca" ajuda="O × esvazia a busca.">
+            <p-iconfield>
+              <p-inputicon><ng-icon name="lucideSearch" /></p-inputicon>
+              <input pInputText id="ds-busca" type="search" class="w-full" placeholder="Código, nome, TAG…" [ngModel]="busca()" (ngModelChange)="busca.set($event)" />
+              @if (busca()) {
+                <p-inputicon>
+                  <button type="button" class="limpar" aria-label="Limpar busca" (click)="busca.set('')"><ng-icon name="lucideX" /></button>
+                </p-inputicon>
+              }
+            </p-iconfield>
+          </app-campo>
+          <app-campo para="ds-senha" rotulo="Senha" ajuda="O olho mostra o que foi digitado.">
+            <p-password inputId="ds-senha" [toggleMask]="true" [feedback]="false" styleClass="w-full" inputStyleClass="w-full" [ngModel]="passwordValue()" (ngModelChange)="passwordValue.set($event)" />
+          </app-campo>
+          <app-campo para="ds-data" rotulo="Prazo">
+            <p-datepicker inputId="ds-data" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="w-full" [ngModel]="data()" (ngModelChange)="data.set($event)" />
+          </app-campo>
+        </div>
+      </section>
+
+      <!-- 4. Escolhas e texto longo -->
+      <section class="space-y-4">
+        <div>
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">4. Escolhas e texto longo</h4>
+          <p class="text-sm text-muted-color">
+            Várias escolhas entre muitas opções: multiselect com chips. Entre poucas, checkboxes lado a lado, com tudo à
+            vista. Texto longo cresce com o que se escreve.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+          <app-campo para="ds-setores" rotulo="Setores">
+            <p-multiselect
+              inputId="ds-setores"
+              [options]="opcoesDeSetor"
+              optionLabel="label"
+              optionValue="value"
+              display="chip"
+              [filter]="true"
+              placeholder="Escolha os setores"
+              appendTo="body"
+              styleClass="w-full"
+              [ngModel]="setores()"
+              (ngModelChange)="setores.set($event)"
+            />
+          </app-campo>
+          <app-campo para="ds-energia-ELECTRIC" rotulo="Fontes de energia">
+            <div class="flex flex-wrap gap-x-5 gap-y-2 pt-2">
+              @for (fonte of fontesDeEnergia; track fonte) {
+                <div class="flex items-center gap-2">
+                  <p-checkbox [inputId]="'ds-energia-' + fonte" [value]="fonte" [ngModel]="energias()" (ngModelChange)="energias.set($event)" />
+                  <label [for]="'ds-energia-' + fonte" class="text-sm">{{ rotuloDaEnergia(fonte) }}</label>
+                </div>
+              }
+            </div>
+          </app-campo>
+          <app-campo para="ds-descricao" rotulo="Descrição do processo" class="sm:col-span-2">
+            <textarea pTextarea id="ds-descricao" rows="2" [autoResize]="true" class="w-full" [ngModel]="textareaValue()" (ngModelChange)="textareaValue.set($event)"></textarea>
+          </app-campo>
+        </div>
+      </section>
+
+      <!-- 5. Marca e mensagens -->
+      <section class="space-y-4">
+        <div>
+          <h4 class="font-semibold text-surface-900 dark:text-surface-0">5. Obrigatório, opcional e a linha de mensagem</h4>
+          <p class="text-sm text-muted-color">
+            Marca-se a minoria. A linha de baixo existe mesmo vazia e mostra uma coisa por vez: erro, aviso ou ajuda.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
+          <app-campo para="ds-obrigatorio" rotulo="Nome do equipamento" marca="obrigatorio" erro="Informe o nome do equipamento." mensagemId="ds-erro">
+            <input pInputText id="ds-obrigatorio" class="w-full ng-invalid ng-dirty" aria-describedby="ds-erro" />
+          </app-campo>
+          <app-campo para="ds-opcional" rotulo="Complemento" marca="opcional" ajuda="Sala, bloco, galpão.">
+            <input pInputText id="ds-opcional" class="w-full" />
+          </app-campo>
+          <app-campo para="ds-aviso" rotulo="Número de série" aviso="Já cadastrado em EQ-0007. Pode ser uma máquina idêntica.">
+            <input pInputText id="ds-aviso" class="w-full" value="871639" />
+          </app-campo>
+          <app-campo para="ds-desabilitado" rotulo="Código" detalhe="gerado pelo sistema">
+            <input pInputText id="ds-desabilitado" class="w-full" value="EQ-0042" [disabled]="true" />
+          </app-campo>
+        </div>
+      </section>
+    </div>
   </div>
 
   <!-- Aba 3: Estrutura & Dados -->

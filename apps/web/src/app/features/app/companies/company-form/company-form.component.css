@@ -1,46 +1,14 @@
 /* ── Campos ─────────────────────────────────────────────────────────────── */
 
+/*
+ * Entre um campo e o de baixo: a linha de mensagem do de cima já reserva 1rem,
+ * mas quando ela tem texto (a ajuda do CNPJ, um aviso) encostaria no rótulo
+ * seguinte sem este respiro.
+ */
 .grade {
   display: grid;
   column-gap: 1rem;
-  row-gap: 0.25rem;
-}
-
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.campo > label,
-.rotulo {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--p-text-color);
-}
-
-.opcional {
-  margin-left: 0.25rem;
-  font-size: var(--text-xs);
-  font-weight: 400;
-  color: var(--p-text-muted-color);
-}
-
-/*
- * Uma linha pequena reservada por campo: o erro nasce sem empurrar o campo de
- * baixo, e a pessoa não perde a linha que estava lendo. Pequena de propósito —
- * reservar a altura de um parágrafo espaçava o formulário inteiro.
- */
-.erro {
-  min-height: 1rem;
-  font-size: var(--text-xs);
-  line-height: 1rem;
-  color: var(--p-red-500);
-}
-
-/* A mesma linha, quando não há erro, serve de ajuda — na cor de apoio, não na de erro. */
-.ajuda {
-  color: var(--p-text-muted-color);
+  row-gap: 0.75rem;
 }
 
 .girando {

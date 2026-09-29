@@ -270,7 +270,15 @@
     </header>
 
     <!-- Content Router Area -->
-    <main class="flex-1 min-h-0 flex flex-col p-6 md:p-4 overflow-y-auto">
+    <!--
+      A área que rola. `relative` a faz o bloco de contenção de todo elemento
+      absoluto das telas — o texto de leitor de tela (`sr-only`), o `input` de
+      arquivo escondido. Sem isso, eles se posicionam pelo `body`, esticam o
+      documento, e rolar além do fim do conteúdo leva a página inteira junto,
+      menu e cabeçalho. `overscroll-contain`: o fim da rolagem daqui não passa
+      para o documento.
+    -->
+    <main class="relative flex-1 min-h-0 flex flex-col p-6 md:p-4 overflow-y-auto overscroll-contain">
       <!-- Page Title Header -->
       <div class="mb-4 select-none shrink-0">
         <h1 class="text-xl font-semibold tracking-tight text-surface-900 dark:text-surface-0">

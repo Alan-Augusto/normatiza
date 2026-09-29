@@ -37,11 +37,13 @@
     <section data-testid="etapa-atual" [attr.data-etapa]="etapaAtual().chave" [attr.aria-label]="etapaAtual().titulo">
       @switch (etapaAtual().chave) {
         @case ('identificacao') {
-          <p class="descricao-etapa">O que identifica a máquina e não muda de uma vistoria para outra — em geral, o que está na plaqueta.</p>
+          <p class="descricao-etapa">
+            O que identifica a máquina e não muda de uma vistoria para outra — em geral, o que está na plaqueta. Só o
+            nome é obrigatório.
+          </p>
 
           <div class="grade sm:grid-cols-2">
-            <div class="campo sm:col-span-2">
-              <label for="eq-nome">Nome do equipamento</label>
+            <app-campo class="sm:col-span-2" para="eq-nome" rotulo="Nome do equipamento" marca="obrigatorio" [erro]="erroDe('nome')" mensagemId="erro-nome">
               <input
                 pInputText
                 id="eq-nome"
@@ -49,14 +51,23 @@
                 class="w-full"
                 formControlName="nome"
                 placeholder="Ex.: Prensa excêntrica 60 toneladas"
+                aria-describedby="erro-nome"
                 [attr.aria-invalid]="erroDe('nome') !== null"
-                [attr.aria-describedby]="erroDe('nome') ? 'erro-nome' : null"
               />
-              <p id="erro-nome" data-testid="erro-nome" role="alert" class="erro">{{ erroDe('nome') }}</p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-tipo">Tipo de máquina <span class="opcional">opcional</span></label>
+            <app-campo
+              para="eq-tipo"
+              rotulo="Tipo de máquina"
+              [ajuda]="
+                tipoForaDoCatalogo()
+                  ? criaTipo()
+                    ? 'Tipo novo — entra no catálogo da consultoria ao salvar.'
+                    : 'Fora do catálogo — fica em branco, e a consultoria classifica.'
+                  : 'Do catálogo — é o que escolhe o checklist da análise.'
+              "
+              mensagemId="ajuda-tipo"
+            >
               <p-autocomplete
                 inputId="eq-tipo"
                 data-testid="campo-tipo"
@@ -73,59 +84,29 @@
                 styleClass="w-full"
                 inputStyleClass="w-full"
               />
-              <p data-testid="ajuda-tipo" class="ajuda">
-                @if (tipoForaDoCatalogo()) {
-                  {{ criaTipo() ? 'Tipo novo — entra no catálogo da consultoria ao salvar.' : 'Fora do catálogo — fica em branco, e a consultoria classifica.' }}
-                } @else {
-                  Do catálogo — é o que escolhe o checklist da análise.
-                }
-              </p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-modelo">Modelo <span class="opcional">opcional</span></label>
+            <app-campo para="eq-modelo" rotulo="Modelo">
               <input pInputText id="eq-modelo" data-testid="campo-modelo" class="w-full" formControlName="modelo" />
-              <p class="erro"></p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-fabricante">Fabricante <span class="opcional">opcional</span></label>
+            <app-campo para="eq-fabricante" rotulo="Fabricante">
               <input pInputText id="eq-fabricante" data-testid="campo-fabricante" class="w-full" formControlName="fabricante" />
-              <p class="erro"></p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-ano">Ano de fabricação <span class="opcional">opcional</span></label>
-              <input
-                pInputText
-                id="eq-ano"
-                data-testid="campo-ano"
-                class="w-full"
-                inputmode="numeric"
-                maxlength="4"
-                formControlName="ano"
-                placeholder="Ex.: 2012"
-                [attr.aria-invalid]="erroDe('ano') !== null"
-              />
-              <p data-testid="erro-ano" role="alert" class="erro">{{ erroDe('ano') }}</p>
-            </div>
+            <app-campo para="eq-ano" rotulo="Ano de fabricação" [erro]="erroDe('ano')" mensagemId="erro-ano">
+              <app-numero inputId="eq-ano" testid="campo-ano" [agrupar]="false" placeholder="Ex.: 2012" descritoPor="erro-ano" formControlName="ano" />
+            </app-campo>
 
-            <div class="campo sm:col-span-2">
-              <label for="eq-serie">Número de série <span class="opcional">opcional</span></label>
-              <input
-                pInputText
-                id="eq-serie"
-                data-testid="campo-serie"
-                class="w-full"
-                formControlName="serie"
-                (blur)="conferirRepetidos('serie')"
-              />
-              <p data-testid="aviso-serie" class="aviso">
-                @if (repetidosNaSerie().length) {
-                  Já cadastrado em {{ descreverRepetidos(repetidosNaSerie()) }}. Pode ser engano, ou uma máquina idêntica.
-                }
-              </p>
-            </div>
+            <app-campo
+              class="sm:col-span-2"
+              para="eq-serie"
+              rotulo="Número de série"
+              [aviso]="repetidosNaSerie().length ? 'Já cadastrado em ' + descreverRepetidos(repetidosNaSerie()) + '. Pode ser engano, ou uma máquina idêntica.' : null"
+              mensagemId="aviso-serie"
+            >
+              <input pInputText id="eq-serie" data-testid="campo-serie" class="w-full" formControlName="serie" (blur)="conferirRepetidos('serie')" />
+            </app-campo>
           </div>
         }
 
@@ -133,8 +114,13 @@
           <p class="descricao-etapa">Onde a máquina está e como a empresa a identifica.</p>
 
           <div class="grade sm:grid-cols-2">
-            <div class="campo sm:col-span-2">
-              <label for="eq-setor">Setor <span class="opcional">opcional</span></label>
+            <app-campo
+              class="sm:col-span-2"
+              para="eq-setor"
+              rotulo="Setor"
+              [ajuda]="setorNovo() ? 'Setor novo — será criado ao salvar.' : 'Galpão, linha ou área da planta.'"
+              mensagemId="ajuda-setor"
+            >
               <p-autocomplete
                 inputId="eq-setor"
                 data-testid="campo-setor"
@@ -151,13 +137,9 @@
                 styleClass="w-full"
                 inputStyleClass="w-full"
               />
-              <p data-testid="ajuda-setor" class="ajuda">
-                {{ setorNovo() ? 'Setor novo — será criado ao salvar.' : 'Galpão, linha ou área da planta.' }}
-              </p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-tag">TAG <span class="opcional">opcional · única na empresa</span></label>
+            <app-campo para="eq-tag" rotulo="TAG" detalhe="única na empresa" [erro]="erroDe('tag')" mensagemId="erro-tag">
               <input
                 pInputText
                 id="eq-tag"
@@ -165,70 +147,50 @@
                 class="w-full"
                 formControlName="tag"
                 placeholder="Ex.: PR-01"
+                aria-describedby="erro-tag"
                 [attr.aria-invalid]="erroDe('tag') !== null"
               />
-              <p data-testid="erro-tag" role="alert" class="erro">{{ erroDe('tag') }}</p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-patrimonio">Número de patrimônio <span class="opcional">opcional</span></label>
-              <input
-                pInputText
-                id="eq-patrimonio"
-                data-testid="campo-patrimonio"
-                class="w-full"
-                formControlName="patrimonio"
-                (blur)="conferirRepetidos('patrimonio')"
-              />
-              <p data-testid="aviso-patrimonio" class="aviso">
-                @if (repetidosNoPatrimonio().length) {
-                  Já cadastrado em {{ descreverRepetidos(repetidosNoPatrimonio()) }}.
-                }
-              </p>
-            </div>
+            <app-campo
+              para="eq-patrimonio"
+              rotulo="Número de patrimônio"
+              [aviso]="repetidosNoPatrimonio().length ? 'Já cadastrado em ' + descreverRepetidos(repetidosNoPatrimonio()) + '.' : null"
+              mensagemId="aviso-patrimonio"
+            >
+              <input pInputText id="eq-patrimonio" data-testid="campo-patrimonio" class="w-full" formControlName="patrimonio" (blur)="conferirRepetidos('patrimonio')" />
+            </app-campo>
           </div>
         }
 
         @case ('operacao') {
           <p class="descricao-etapa">
-            Como a máquina trabalha. É a ficha do ativo: não muda de uma vistoria para outra, e aparece no painel
-            desde já. Tudo opcional.
+            Como a máquina trabalha. É a ficha do ativo: não muda de uma vistoria para outra, e aparece no painel desde já.
           </p>
 
           <div class="grade sm:grid-cols-2">
-            <div class="campo sm:col-span-2">
-              <label for="eq-utilizacao">Utilização <span class="opcional">para que a máquina serve</span></label>
+            <app-campo class="sm:col-span-2" para="eq-utilizacao" rotulo="Utilização" detalhe="para que a máquina serve">
               <input pInputText id="eq-utilizacao" data-testid="campo-utilizacao" class="w-full" formControlName="utilizacao" placeholder="Ex.: Transporte de ração" />
-              <p class="erro"></p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-capacidade">Capacidade produtiva</label>
+            <app-campo para="eq-capacidade" rotulo="Capacidade produtiva">
               <input pInputText id="eq-capacidade" data-testid="campo-capacidade" class="w-full" formControlName="capacidade" placeholder="Ex.: 10 t/h" />
-              <p class="erro"></p>
-            </div>
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-potencia">Potência <span class="opcional">kW</span></label>
-              <input pInputText id="eq-potencia" data-testid="campo-potencia" class="w-full" inputmode="decimal" formControlName="potencia" placeholder="Ex.: 0,55" />
-              <p data-testid="erro-potencia" role="alert" class="erro">{{ erroDe('potencia') }}</p>
-            </div>
+            <app-campo para="eq-potencia" rotulo="Potência">
+              <app-numero inputId="eq-potencia" testid="campo-potencia" unidade="kW" [casas]="2" formControlName="potencia" />
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-postos">Postos de comando</label>
-              <input pInputText id="eq-postos" data-testid="campo-postos" class="w-full" inputmode="numeric" formControlName="postos" />
-              <p data-testid="erro-postos" role="alert" class="erro">{{ erroDe('postos') }}</p>
-            </div>
+            <app-campo para="eq-postos" rotulo="Postos de comando">
+              <app-numero inputId="eq-postos" testid="campo-postos" unidade="un" formControlName="postos" />
+            </app-campo>
 
-            <div class="campo">
-              <label for="eq-operadores">Operadores expostos</label>
-              <input pInputText id="eq-operadores" data-testid="campo-operadores" class="w-full" inputmode="numeric" formControlName="operadores" />
-              <p data-testid="erro-operadores" role="alert" class="erro">{{ erroDe('operadores') }}</p>
-            </div>
+            <app-campo para="eq-operadores" rotulo="Operadores expostos">
+              <app-numero inputId="eq-operadores" testid="campo-operadores" unidade="pessoas" formControlName="operadores" />
+            </app-campo>
 
-            <div class="campo sm:col-span-2">
-              <span class="rotulo">Fontes de energia</span>
-              <div class="flex flex-wrap gap-x-5 gap-y-2" role="group" aria-label="Fontes de energia">
+            <app-campo class="sm:col-span-2" [para]="'energia-' + fontesDeEnergia[0].valor" rotulo="Fontes de energia">
+              <div class="flex flex-wrap gap-x-5 gap-y-2 pt-1" role="group" aria-label="Fontes de energia">
                 @for (fonte of fontesDeEnergia; track fonte.valor) {
                   <div class="flex items-center gap-2" [attr.data-testid]="'energia-' + fonte.valor">
                     <p-checkbox
@@ -243,83 +205,58 @@
                   </div>
                 }
               </div>
-              <p class="erro"></p>
-            </div>
+            </app-campo>
 
-            <div class="campo sm:col-span-2">
-              <label for="eq-processo">Descrição do processo</label>
-              <textarea pTextarea id="eq-processo" data-testid="campo-processo" rows="3" class="w-full" formControlName="processo"></textarea>
-              <p class="erro"></p>
-            </div>
+            <app-campo class="sm:col-span-2" para="eq-processo" rotulo="Descrição do processo">
+              <textarea pTextarea id="eq-processo" data-testid="campo-processo" rows="3" [autoResize]="true" class="w-full" formControlName="processo"></textarea>
+            </app-campo>
 
-            <div class="campo sm:col-span-2">
-              <label for="eq-intervencoes">Intervenções comuns do operador</label>
-              <textarea pTextarea id="eq-intervencoes" data-testid="campo-intervencoes" rows="2" class="w-full" formControlName="intervencoes"></textarea>
-              <p class="erro"></p>
-            </div>
+            <app-campo class="sm:col-span-2" para="eq-intervencoes" rotulo="Intervenções comuns do operador">
+              <textarea pTextarea id="eq-intervencoes" data-testid="campo-intervencoes" rows="2" [autoResize]="true" class="w-full" formControlName="intervencoes"></textarea>
+            </app-campo>
 
-            <div class="campo sm:col-span-2">
-              <label for="eq-outras">Outras informações</label>
-              <textarea pTextarea id="eq-outras" data-testid="campo-outras" rows="2" class="w-full" formControlName="outras"></textarea>
-              <p class="erro"></p>
-            </div>
+            <app-campo class="sm:col-span-2" para="eq-outras" rotulo="Outras informações">
+              <textarea pTextarea id="eq-outras" data-testid="campo-outras" rows="2" [autoResize]="true" class="w-full" formControlName="outras"></textarea>
+            </app-campo>
           </div>
         }
 
         @case ('porte') {
-          <p class="descricao-etapa">O porte da máquina e o cadastro de quem a fabricou — o que vai no laudo. Tudo opcional.</p>
+          <p class="descricao-etapa">O porte da máquina e o cadastro de quem a fabricou — o que vai no laudo.</p>
 
           <h3 class="subtitulo">Dimensões</h3>
-          <div class="grade sm:grid-cols-4">
-            <div class="campo">
-              <label for="eq-altura">Altura <span class="opcional">mm</span></label>
-              <input pInputText id="eq-altura" data-testid="campo-altura" class="w-full" inputmode="numeric" formControlName="altura" />
-              <p data-testid="erro-altura" role="alert" class="erro">{{ erroDe('altura') }}</p>
-            </div>
-            <div class="campo">
-              <label for="eq-largura">Largura <span class="opcional">mm</span></label>
-              <input pInputText id="eq-largura" data-testid="campo-largura" class="w-full" inputmode="numeric" formControlName="largura" />
-              <p data-testid="erro-largura" role="alert" class="erro">{{ erroDe('largura') }}</p>
-            </div>
-            <div class="campo">
-              <label for="eq-profundidade">Profundidade <span class="opcional">mm</span></label>
-              <input pInputText id="eq-profundidade" data-testid="campo-profundidade" class="w-full" inputmode="numeric" formControlName="profundidade" />
-              <p data-testid="erro-profundidade" role="alert" class="erro">{{ erroDe('profundidade') }}</p>
-            </div>
-            <div class="campo">
-              <label for="eq-peso">Peso <span class="opcional">kg</span></label>
-              <input pInputText id="eq-peso" data-testid="campo-peso" class="w-full" inputmode="decimal" formControlName="peso" />
-              <p data-testid="erro-peso" role="alert" class="erro">{{ erroDe('peso') }}</p>
-            </div>
+          <div class="grade sm:grid-cols-2 lg:grid-cols-4">
+            <app-campo para="eq-altura" rotulo="Altura">
+              <app-numero inputId="eq-altura" testid="campo-altura" unidade="mm" formControlName="altura" />
+            </app-campo>
+            <app-campo para="eq-largura" rotulo="Largura">
+              <app-numero inputId="eq-largura" testid="campo-largura" unidade="mm" formControlName="largura" />
+            </app-campo>
+            <app-campo para="eq-profundidade" rotulo="Profundidade">
+              <app-numero inputId="eq-profundidade" testid="campo-profundidade" unidade="mm" formControlName="profundidade" />
+            </app-campo>
+            <app-campo para="eq-peso" rotulo="Peso">
+              <app-numero inputId="eq-peso" testid="campo-peso" unidade="kg" [casas]="1" formControlName="peso" />
+            </app-campo>
           </div>
 
           <h3 class="subtitulo">Fabricante</h3>
           <div class="grade sm:grid-cols-2">
-            <div class="campo">
-              <label for="eq-fabricante-cnpj">CNPJ</label>
-              <input pInputText id="eq-fabricante-cnpj" data-testid="campo-fabricante-cnpj" class="w-full" inputmode="numeric" formControlName="fabricanteCnpj" />
-              <p data-testid="erro-fabricante-cnpj" role="alert" class="erro">{{ erroDe('fabricanteCnpj') }}</p>
-            </div>
-            <div class="campo">
-              <label for="eq-fabricante-crea">Registro CREA</label>
+            <app-campo para="eq-fabricante-cnpj" rotulo="CNPJ" [erro]="erroDe('fabricanteCnpj')" mensagemId="erro-fabricante-cnpj">
+              <input pInputText id="eq-fabricante-cnpj" data-testid="campo-fabricante-cnpj" appMascara="cnpj" class="w-full" formControlName="fabricanteCnpj" aria-describedby="erro-fabricante-cnpj" />
+            </app-campo>
+            <app-campo para="eq-fabricante-crea" rotulo="Registro CREA">
               <input pInputText id="eq-fabricante-crea" data-testid="campo-fabricante-crea" class="w-full" formControlName="fabricanteCrea" />
-              <p class="erro"></p>
-            </div>
-            <div class="campo sm:col-span-2">
-              <label for="eq-fabricante-endereco">Endereço</label>
+            </app-campo>
+            <app-campo class="sm:col-span-2" para="eq-fabricante-endereco" rotulo="Endereço">
               <input pInputText id="eq-fabricante-endereco" data-testid="campo-fabricante-endereco" class="w-full" formControlName="fabricanteEndereco" />
-              <p class="erro"></p>
-            </div>
-            <div class="campo">
-              <label for="eq-fabricante-cidade">Cidade</label>
+            </app-campo>
+            <app-campo para="eq-fabricante-cidade" rotulo="Cidade">
               <input pInputText id="eq-fabricante-cidade" data-testid="campo-fabricante-cidade" class="w-full" formControlName="fabricanteCidade" />
-              <p class="erro"></p>
-            </div>
-            <div class="campo">
-              <label for="eq-fabricante-cep">CEP</label>
-              <input pInputText id="eq-fabricante-cep" data-testid="campo-fabricante-cep" class="w-full" inputmode="numeric" formControlName="fabricanteCep" />
-              <p data-testid="erro-fabricante-cep" role="alert" class="erro">{{ erroDe('fabricanteCep') }}</p>
-            </div>
+            </app-campo>
+            <app-campo para="eq-fabricante-cep" rotulo="CEP" [erro]="erroDe('fabricanteCep')" mensagemId="erro-fabricante-cep">
+              <input pInputText id="eq-fabricante-cep" data-testid="campo-fabricante-cep" appMascara="cep" class="w-full" formControlName="fabricanteCep" aria-describedby="erro-fabricante-cep" />
+            </app-campo>
           </div>
         }
 

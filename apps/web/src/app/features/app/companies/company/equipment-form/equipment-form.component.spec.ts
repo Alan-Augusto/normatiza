@@ -301,23 +301,34 @@ describe('EquipmentFormComponent', () => {
         exposedOperators: 3,
         energySources: ['ELECTRIC', 'PNEUMATIC'],
         dimensions: { heightMm: 1200, weightKg: 450.5 },
-        manufacturer: { document: '11.222.333/0001-81' },
+        manufacturer: { document: '11222333000181' },
       });
       req.flush(detalheDeEquipamento());
     });
 
-    it('não deve passar da operação com número que não é número', async () => {
+    it('não deve deixar digitar letra onde a medida é número, e mostrar a unidade no campo', async () => {
       await comoFernando();
       await abrir();
 
       digitar('nome', 'Esteira');
       avançar();
       avançar();
-      digitar('operadores', 'três');
+      digitar('operadores', '3 pessoas');
+
+      expect(campo('operadores').value).toBe('3');
+      expect(el('[data-testid="campo-operadores"]')?.closest('p-inputgroup')?.textContent).toContain('pessoas');
+    });
+
+    it('deve recusar na identificação o ano fora do possível', async () => {
+      await comoFernando();
+      await abrir();
+
+      digitar('nome', 'Prensa');
+      digitar('ano', '1850');
       avançar();
 
-      expect(etapaAtual()).toBe('operacao');
-      expect(el('[data-testid="erro-operadores"]')?.textContent).toContain('número');
+      expect(etapaAtual()).toBe('identificacao');
+      expect(el('[data-testid="erro-ano"]')?.textContent).toContain('1900');
     });
 
     it('deve enviar a foto depois de criar o equipamento', async () => {
@@ -382,7 +393,8 @@ describe('EquipmentFormComponent', () => {
       expect(campo('potencia').value).toBe('7,5');
       expect((el('[data-testid="energia-PNEUMATIC"] input') as HTMLInputElement).checked).toBe(true);
       clicar('passo-porte');
-      expect(campo('altura').value).toBe('2400');
+      expect(campo('altura').value).toBe('2.400');
+      expect(campo('fabricante-cnpj').value).toBe('11.222.333/0001-81');
 
       // Na edição o cadastro já está completo: salvar vale de qualquer etapa.
       clicar('passo-identificacao');

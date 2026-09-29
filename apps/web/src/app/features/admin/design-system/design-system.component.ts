@@ -14,7 +14,19 @@ import {
   lucideTrendingUp,
   lucideFileText,
   lucideActivity,
+  lucideSearch,
+  lucideX,
 } from '@ng-icons/lucide';
+import { ENERGY_SOURCES, ENERGY_SOURCE_LABEL, type EnergySource } from '@normatiza/shared';
+import { DatePicker } from 'primeng/datepicker';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { MultiSelect } from 'primeng/multiselect';
+
+import { CampoComponent } from '../../../shared/components/form/campo.component';
+import { MascaraDirective } from '../../../shared/components/form/mascara.directive';
+import { MoedaComponent } from '../../../shared/components/form/moeda.component';
+import { NumeroComponent } from '../../../shared/components/form/numero.component';
 
 // Importações dos Componentes PrimeNG (v21 Standalone)
 import { Button } from 'primeng/button';
@@ -62,6 +74,14 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     ConfirmDialog,
     Tooltip,
     Toast,
+    CampoComponent,
+    NumeroComponent,
+    MoedaComponent,
+    MascaraDirective,
+    DatePicker,
+    IconField,
+    InputIcon,
+    MultiSelect,
   ],
   providers: [
     ConfirmationService,
@@ -78,6 +98,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
       lucideTrendingUp,
       lucideFileText,
       lucideActivity,
+      lucideSearch,
+      lucideX,
     }),
   ],
   templateUrl: './design-system.component.html',
@@ -105,6 +127,31 @@ export class DesignSystemComponent {
     { label: 'Visualizador', value: 'viewer' },
   ];
   selectedOption = signal<string>('admin');
+
+  // Campos especializados (docs/web/design_system.md §9)
+  altura = signal<number | null>(1200);
+  peso = signal<number | null>(4200);
+  potencia = signal<number | null>(0.55);
+  valor = signal<number | null>(15850);
+  cnpj = signal('11222333000181');
+  cpf = signal('');
+  cep = signal('89700000');
+  telefone = signal('');
+  busca = signal('');
+  data = signal<Date | null>(null);
+  setores = signal<string[]>(['usinagem']);
+  energias = signal<EnergySource[]>(['ELECTRIC']);
+  readonly fontesDeEnergia = ENERGY_SOURCES;
+  readonly opcoesDeSetor = [
+    { label: 'Usinagem', value: 'usinagem' },
+    { label: 'Caldeiraria', value: 'caldeiraria' },
+    { label: 'Estamparia', value: 'estamparia' },
+    { label: 'Expedição', value: 'expedicao' },
+  ];
+
+  rotuloDaEnergia(fonte: EnergySource): string {
+    return ENERGY_SOURCE_LABEL[fonte];
+  }
 
   // Controle de Modais
   displayNormalModal = signal<boolean>(false);

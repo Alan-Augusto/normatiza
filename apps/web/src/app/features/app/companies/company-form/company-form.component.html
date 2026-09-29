@@ -129,16 +129,20 @@
         @switch (etapaAtual().chave) {
           @case ('identificacao') {
             <div class="grade sm:grid-cols-2">
-              <div class="campo">
-                <label for="empresa-cnpj">CNPJ</label>
+              <app-campo
+                para="empresa-cnpj"
+                rotulo="CNPJ"
+                [erro]="erroDe('cnpj')"
+                [ajuda]="editando() ? null : buscandoCnpj() ? 'Consultando a Receita…' : 'Ao sair do campo, buscamos os dados na Receita.'"
+                mensagemId="erro-cnpj"
+              >
                 <div class="relative">
                   <input
                     pInputText
                     id="empresa-cnpj"
                     data-testid="campo-cnpj"
+                    appMascara="cnpj"
                     class="w-full"
-                    inputmode="numeric"
-                    autocomplete="off"
                     formControlName="cnpj"
                     placeholder="00.000.000/0000-00"
                     (blur)="aoSairDoCnpj()"
@@ -149,22 +153,13 @@
                     <ng-icon data-testid="buscando-cnpj" name="lucideLoaderCircle" class="girando" aria-label="Consultando a Receita" />
                   }
                 </div>
-                <p id="erro-cnpj" class="erro">
-                  <span data-testid="erro-cnpj" role="alert">{{ erroDe('cnpj') }}</span>
-                  @if (!erroDe('cnpj') && !editando()) {
-                    <span class="ajuda">{{ buscandoCnpj() ? 'Consultando a Receita…' : 'Ao sair do campo, buscamos os dados na Receita.' }}</span>
-                  }
-                </p>
-              </div>
+              </app-campo>
 
-              <div class="campo">
-                <label for="empresa-ie">Inscrição estadual <span class="opcional">opcional</span></label>
+              <app-campo para="empresa-ie" rotulo="Inscrição estadual" marca="opcional">
                 <input pInputText id="empresa-ie" data-testid="campo-ie" class="w-full" formControlName="ie" />
-                <p class="erro"></p>
-              </div>
+              </app-campo>
 
-              <div class="campo">
-                <label for="empresa-razao">Razão social</label>
+              <app-campo para="empresa-razao" rotulo="Razão social" [erro]="erroDe('razao')" mensagemId="erro-razao">
                 <input
                   pInputText
                   id="empresa-razao"
@@ -174,11 +169,9 @@
                   [attr.aria-invalid]="erroDe('razao') !== null"
                   aria-describedby="erro-razao"
                 />
-                <p id="erro-razao" data-testid="erro-razao" role="alert" class="erro">{{ erroDe('razao') }}</p>
-              </div>
+              </app-campo>
 
-              <div class="campo">
-                <label for="empresa-fantasia">Nome fantasia</label>
+              <app-campo para="empresa-fantasia" rotulo="Nome fantasia" [erro]="erroDe('fantasia')" mensagemId="erro-fantasia">
                 <input
                   pInputText
                   id="empresa-fantasia"
@@ -188,12 +181,10 @@
                   [attr.aria-invalid]="erroDe('fantasia') !== null"
                   aria-describedby="erro-fantasia"
                 />
-                <p id="erro-fantasia" data-testid="erro-fantasia" role="alert" class="erro">{{ erroDe('fantasia') }}</p>
-              </div>
+              </app-campo>
 
               <!-- O logo mora com a identidade da empresa: é o que vai no cabeçalho do laudo. -->
-              <div class="campo sm:col-span-2">
-                <span class="rotulo">Logo <span class="opcional">opcional · aparece nos laudos</span></span>
+              <app-campo class="sm:col-span-2" para="empresa-logo" rotulo="Logo" marca="opcional" detalhe="aparece nos laudos" [erro]="erroDoLogo()" mensagemId="logo-erro">
                 <div class="relative flex flex-wrap items-center gap-3">
                   @if (logoPrevia()) {
                     <img [src]="logoPrevia()" alt="Logo da empresa" class="logo-previa" />
@@ -215,8 +206,7 @@
                   }
                   <span class="text-xs text-muted-color">PNG, JPG ou WebP, até 2 MB.</span>
                 </div>
-                <p data-testid="logo-erro" role="alert" class="erro">{{ erroDoLogo() }}</p>
-              </div>
+              </app-campo>
             </div>
 
             @if (avisoDoCnpj()) {
@@ -226,15 +216,21 @@
 
           @case ('endereco') {
             <div class="grade sm:grid-cols-6">
-              <div class="campo sm:col-span-2">
-                <label for="empresa-cep">CEP</label>
+              <app-campo
+                class="sm:col-span-2"
+                para="empresa-cep"
+                rotulo="CEP"
+                [erro]="erroDe('cep')"
+                [ajuda]="buscandoCep() ? 'Buscando o endereço…' : null"
+                mensagemId="erro-cep"
+              >
                 <div class="relative">
                   <input
                     pInputText
                     id="empresa-cep"
                     data-testid="campo-cep"
+                    appMascara="cep"
                     class="w-full"
-                    inputmode="numeric"
                     autocomplete="postal-code"
                     formControlName="cep"
                     placeholder="00000-000"
@@ -246,16 +242,9 @@
                     <ng-icon data-testid="buscando-cep" name="lucideLoaderCircle" class="girando" aria-label="Buscando o endereço" />
                   }
                 </div>
-                <p id="erro-cep" class="erro">
-                  <span data-testid="erro-cep" role="alert">{{ erroDe('cep') }}</span>
-                  @if (!erroDe('cep') && buscandoCep()) {
-                    <span class="ajuda" aria-live="polite">Buscando o endereço…</span>
-                  }
-                </p>
-              </div>
+              </app-campo>
 
-              <div class="campo sm:col-span-4">
-                <label for="empresa-logradouro">Logradouro</label>
+              <app-campo class="sm:col-span-4" para="empresa-logradouro" rotulo="Logradouro" [erro]="erroDe('logradouro')" mensagemId="erro-logradouro">
                 <input
                   pInputText
                   id="empresa-logradouro"
@@ -265,11 +254,9 @@
                   [attr.aria-invalid]="erroDe('logradouro') !== null"
                   aria-describedby="erro-logradouro"
                 />
-                <p id="erro-logradouro" data-testid="erro-logradouro" role="alert" class="erro">{{ erroDe('logradouro') }}</p>
-              </div>
+              </app-campo>
 
-              <div class="campo sm:col-span-2">
-                <label for="empresa-numero">Número</label>
+              <app-campo class="sm:col-span-2" para="empresa-numero" rotulo="Número" [erro]="erroDe('numero')" mensagemId="erro-numero">
                 <input
                   pInputText
                   id="empresa-numero"
@@ -279,17 +266,13 @@
                   [attr.aria-invalid]="erroDe('numero') !== null"
                   aria-describedby="erro-numero"
                 />
-                <p id="erro-numero" data-testid="erro-numero" role="alert" class="erro">{{ erroDe('numero') }}</p>
-              </div>
+              </app-campo>
 
-              <div class="campo sm:col-span-4">
-                <label for="empresa-complemento">Complemento <span class="opcional">opcional</span></label>
+              <app-campo class="sm:col-span-4" para="empresa-complemento" rotulo="Complemento" marca="opcional">
                 <input pInputText id="empresa-complemento" data-testid="campo-complemento" class="w-full" formControlName="complemento" />
-                <p class="erro"></p>
-              </div>
+              </app-campo>
 
-              <div class="campo sm:col-span-2">
-                <label for="empresa-bairro">Bairro</label>
+              <app-campo class="sm:col-span-2" para="empresa-bairro" rotulo="Bairro" [erro]="erroDe('bairro')" mensagemId="erro-bairro">
                 <input
                   pInputText
                   id="empresa-bairro"
@@ -299,11 +282,9 @@
                   [attr.aria-invalid]="erroDe('bairro') !== null"
                   aria-describedby="erro-bairro"
                 />
-                <p id="erro-bairro" data-testid="erro-bairro" role="alert" class="erro">{{ erroDe('bairro') }}</p>
-              </div>
+              </app-campo>
 
-              <div class="campo sm:col-span-3">
-                <label for="empresa-cidade">Cidade</label>
+              <app-campo class="sm:col-span-3" para="empresa-cidade" rotulo="Cidade" [erro]="erroDe('cidade')" mensagemId="erro-cidade">
                 <input
                   pInputText
                   id="empresa-cidade"
@@ -313,11 +294,9 @@
                   [attr.aria-invalid]="erroDe('cidade') !== null"
                   aria-describedby="erro-cidade"
                 />
-                <p id="erro-cidade" data-testid="erro-cidade" role="alert" class="erro">{{ erroDe('cidade') }}</p>
-              </div>
+              </app-campo>
 
-              <div class="campo sm:col-span-1">
-                <label for="empresa-uf">UF</label>
+              <app-campo class="sm:col-span-1" para="empresa-uf" rotulo="UF" [erro]="erroDe('uf')" mensagemId="erro-uf">
                 <p-select
                   inputId="empresa-uf"
                   data-testid="campo-uf"
@@ -329,8 +308,7 @@
                   [filter]="true"
                   styleClass="w-full"
                 />
-                <p data-testid="erro-uf" role="alert" class="erro">{{ erroDe('uf') }}</p>
-              </div>
+              </app-campo>
             </div>
 
             @if (avisoDoCep()) {
@@ -353,8 +331,7 @@
             }
 
             <div class="grade sm:grid-cols-2">
-              <div class="campo">
-                <label for="contato-nome">Nome</label>
+              <app-campo para="contato-nome" rotulo="Nome" [erro]="erroDe('contatoNome')" mensagemId="erro-contato-nome">
                 <input
                   pInputText
                   id="contato-nome"
@@ -364,17 +341,13 @@
                   [attr.aria-invalid]="erroDe('contatoNome') !== null"
                   aria-describedby="erro-contato-nome"
                 />
-                <p id="erro-contato-nome" data-testid="erro-contato-nome" role="alert" class="erro">{{ erroDe('contatoNome') }}</p>
-              </div>
+              </app-campo>
 
-              <div class="campo">
-                <label for="contato-cargo">Cargo <span class="opcional">opcional</span></label>
+              <app-campo para="contato-cargo" rotulo="Cargo" marca="opcional">
                 <input pInputText id="contato-cargo" data-testid="campo-contato-cargo" class="w-full" formControlName="contatoCargo" />
-                <p class="erro"></p>
-              </div>
+              </app-campo>
 
-              <div class="campo">
-                <label for="contato-email">E-mail</label>
+              <app-campo para="contato-email" rotulo="E-mail" [erro]="erroDe('contatoEmail')" mensagemId="erro-contato-email">
                 <input
                   pInputText
                   id="contato-email"
@@ -387,20 +360,15 @@
                   [attr.aria-invalid]="erroDe('contatoEmail') !== null"
                   aria-describedby="erro-contato-email"
                 />
-                <p id="erro-contato-email" data-testid="erro-contato-email" role="alert" class="erro">{{ erroDe('contatoEmail') }}</p>
-              </div>
+              </app-campo>
 
               <div class="grid grid-cols-2 gap-x-4">
-                <div class="campo">
-                  <label for="contato-telefone">Telefone <span class="opcional">opcional</span></label>
-                  <input pInputText id="contato-telefone" data-testid="campo-contato-telefone" class="w-full" type="tel" formControlName="contatoTelefone" />
-                  <p class="erro"></p>
-                </div>
-                <div class="campo">
-                  <label for="contato-celular">Celular <span class="opcional">opcional</span></label>
-                  <input pInputText id="contato-celular" data-testid="campo-contato-celular" class="w-full" type="tel" formControlName="contatoCelular" />
-                  <p class="erro"></p>
-                </div>
+                <app-campo para="contato-telefone" rotulo="Telefone" marca="opcional">
+                  <input pInputText id="contato-telefone" data-testid="campo-contato-telefone" appMascara="telefone" class="w-full" type="tel" formControlName="contatoTelefone" />
+                </app-campo>
+                <app-campo para="contato-celular" rotulo="Celular" marca="opcional">
+                  <input pInputText id="contato-celular" data-testid="campo-contato-celular" appMascara="telefone" class="w-full" type="tel" formControlName="contatoCelular" />
+                </app-campo>
               </div>
             </div>
 
@@ -429,13 +397,18 @@
 
           @case ('organizacao') {
             <div class="grade sm:grid-cols-2">
-              <div class="campo">
-                <label for="empresa-grupo">Grupo empresarial <span class="opcional">opcional</span></label>
-                <!--
-                  Texto livre com sugestões: o grupo é resolvido **pelo nome** no
-                  servidor, que reaproveita o existente ou cria. Um nome novo é
-                  dito antes de salvar, não descoberto depois.
-                -->
+              <!--
+                Texto livre com sugestões: o grupo é resolvido **pelo nome** no
+                servidor, que reaproveita o existente ou cria. Um nome novo é
+                dito antes de salvar, não descoberto depois.
+              -->
+              <app-campo
+                para="empresa-grupo"
+                rotulo="Grupo empresarial"
+                marca="opcional"
+                [ajuda]="grupoNovo() ? 'Grupo novo — será criado ao salvar.' : 'Só consolida relatórios; não dá acesso a ninguém.'"
+                mensagemId="ajuda-grupo"
+              >
                 <p-autocomplete
                   inputId="empresa-grupo"
                   data-testid="campo-grupo"
@@ -452,28 +425,23 @@
                   styleClass="w-full"
                   inputStyleClass="w-full"
                 />
-                <p id="ajuda-grupo" class="erro ajuda">
-                  {{ grupoNovo() ? 'Grupo novo — será criado ao salvar.' : 'Só consolida relatórios; não dá acesso a ninguém.' }}
-                </p>
-              </div>
+              </app-campo>
 
-              <div class="campo">
-                <label for="empresa-codigo">Código interno / ERP <span class="opcional">opcional</span></label>
+              <app-campo para="empresa-codigo" rotulo="Código interno / ERP" marca="opcional">
                 <input pInputText id="empresa-codigo" data-testid="campo-codigo" class="w-full" formControlName="codigo" />
-                <p class="erro"></p>
-              </div>
+              </app-campo>
 
-              <div class="campo sm:col-span-2">
-                <label for="empresa-observacoes">Observações <span class="opcional">opcional</span></label>
+              <app-campo class="sm:col-span-2" para="empresa-observacoes" rotulo="Observações" marca="opcional">
                 <textarea
                   pTextarea
                   id="empresa-observacoes"
                   data-testid="campo-observacoes"
                   class="w-full"
                   rows="3"
+                  [autoResize]="true"
                   formControlName="observacoes"
                 ></textarea>
-              </div>
+              </app-campo>
             </div>
 
             <p class="mt-3 text-xs text-muted-color">Nada desta etapa chega ao cliente.</p>
