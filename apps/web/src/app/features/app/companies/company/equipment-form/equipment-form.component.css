@@ -1,5 +1,16 @@
 /* O stepper, o formulário e o rodapé vêm de `shared/styles/cadastro-em-etapas.css`. */
 
+/*
+ * Cinco etapas, uma de título longo ("Dimensões e fabricante"): até a tela ser
+ * larga, só a etapa atual diz o nome — as outras ficam no ícone, e a linha que
+ * as liga continua visível. Abaixo de 640px, o compartilhado já esconde todos.
+ */
+@media (max-width: 1365px) {
+  .etapa:not(.ativa) .etapa-titulo {
+    display: none;
+  }
+}
+
 .descricao-etapa {
   margin-bottom: 1rem;
   font-size: 0.875rem;

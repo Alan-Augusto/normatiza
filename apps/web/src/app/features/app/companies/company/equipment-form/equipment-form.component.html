@@ -3,7 +3,7 @@
   esbarrado no meio do caminho — a mesma regra do cadastro de empresa.
 -->
 <form [formGroup]="form" (keydown.enter)="semEnter($event)" class="formulario" novalidate>
-  <div class="mx-auto w-full max-w-3xl space-y-6">
+  <div class="mx-auto w-full max-w-5xl space-y-6">
     @if (erro()) {
       <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
     }
@@ -364,7 +364,7 @@
 
   <!-- Fixo no rodapé da área de conteúdo: as ações ficam à mão em qualquer etapa. -->
   <footer class="rodape">
-    <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-2">
+    <div class="mx-auto flex w-full max-w-5xl items-center justify-between gap-2">
       <a pButton [text]="true" [routerLink]="rotaDeVolta()">
         <span pButtonLabel>Cancelar</span>
       </a>

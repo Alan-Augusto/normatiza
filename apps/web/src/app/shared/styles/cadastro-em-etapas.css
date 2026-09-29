@@ -89,6 +89,15 @@
   color: var(--p-primary-color);
 }
 
+/*
+ * A linha que liga as etapas é o que o PrimeNG espreme quando falta largura —
+ * com títulos longos ela chega a zero e some, e as etapas viram ícones soltos.
+ * Um mínimo a mantém de pé; o que cede, então, são os títulos (abaixo).
+ */
+:host ::ng-deep .p-stepper-separator {
+  min-width: 1.5rem;
+}
+
 /* Em tela estreita, só os ícones: quatro títulos não cabem numa linha. */
 @media (max-width: 639px) {
   .etapa-titulo {
