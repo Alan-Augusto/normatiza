@@ -248,8 +248,10 @@ interface Analysis {
   accountId: string;
   equipmentId: string;
 
-  revision: number;              // 1, 2, 3... — correção gera nova revisão
+  number: number;                // 1, 2, 3... por equipamento: a análise de 2022, a de 2024
+  revision: number;              // 1, 2, 3... dentro do mesmo número — correção gera nova revisão
   supersedesAnalysisId?: string; // a revisão que esta substitui
+  norm: 'NR-12';                 // sob qual norma a avaliação foi feita
 
   status: 'DRAFT' | 'CONCLUDED';
   startedAt: Date;
@@ -264,9 +266,13 @@ interface Analysis {
 }
 ```
 
+> **Número e revisão são coisas diferentes.** Voltar à mesma máquina dois anos depois é uma **análise nova** (`number + 1`, `revision: 1`). Corrigir uma análise já concluída é uma **revisão** dela (mesmo `number`, `revision + 1`). A análise se identifica por equipamento e número — `EQ-0042 · Análise 2` — e a revisão aparece só quando existe mais de uma.
+>
+> **`norm` reserva o eixo de norma.** Hoje toda análise é NR-12, e o campo não aparece em tela. Existe para que uma análise de outra norma possa conviver no mesmo equipamento sem reescrever a base migrada.
+>
 > **`hrnTableVersionId` é o que torna o laudo histórico reproduzível.** Sem ele, uma alteração futura de peso no catálogo global reescreveria retroativamente o risco de laudos já emitidos.
 >
-> **Congelar não é um `status` decorativo.** Ao concluir: a análise e todos os seus filhos (`RiskPoint`, `PapAssessment`, `PeAssessment`) tornam-se somente leitura, as tarefas do plano de ação são geradas e o cliente é notificado. Correção posterior cria `revision + 1` apontando para a anterior via `supersedesAnalysisId`.
+> **Congelar não é um `status` decorativo.** Ao concluir: a análise e todos os seus filhos (`RiskPoint`, `PapAssessment`, `PeAssessment`) tornam-se somente leitura, o equipamento recalcula o pior HRN e a situação de conformidade, as tarefas do plano de ação são geradas e o cliente é notificado. Correção posterior cria `revision + 1` apontando para a anterior via `supersedesAnalysisId`.
 
 ```typescript
 interface TechnicalSheet {
@@ -322,23 +328,43 @@ interface RiskPoint {
   analysisId: string;
   equipmentId: string;           // desnormalizado: o ponto sobrevive à análise no plano de ação
 
+  number: number;               // 1, 2, 3... na análise
   location: string;              // "Zona de prensagem"
-  hazardOriginId?: string;       // catálogo
-  hazardConsequenceId?: string;  // catálogo
-  existingProtections?: string;
+  hazardOriginIds: string[];     // catálogo, várias por ponto
+  hazardConsequenceIds: string[];// catálogo, várias por ponto
+  existingProtectionIds: string[]; // catálogo de proteções, as que já estão instaladas
   violatedStandardIds: string[]; // itens da NR-12 descumpridos
-  usageCategory?: string;
 
   currentHrn: HrnScore;
+  safetyCategory?: SafetyCategory; // opcional por ponto
   suggestedSolution: string;     // o que o cliente vai ler na execução
   hazardPhotoFileId?: string;    // a foto do "antes"
 
   // Preenchido pela consultoria apenas na etapa 6/7
   residualHrn?: HrnScore;
+
+  // Só em análise migrada: a estimativa que o legado deixava escrever na própria análise
+  estimatedResidualHrn?: HrnScore;
+}
+
+// Categoria de segurança pela NBR 14153, calculada pelas três respostas
+interface SafetyCategory {
+  severity: 1 | 2;               // S1 lesão leve · S2 lesão grave ou morte
+  frequency?: 1 | 2;             // F1 raro a frequente · F2 frequente a contínuo — só com S2
+  possibility?: 1 | 2;           // P1 possível evitar · P2 quase impossível — só com S2
+  category: 1 | 2 | 3 | 4;       // calculada, nunca digitada
 }
 ```
 
+> **A regra da categoria é a do legado, para que o laudo migrado imprima o mesmo:** S1 → categoria 1; S2 com F1 e P1 → 2; S2 com F2 e P2 → 4; qualquer outra combinação com S2 → 3. O laudo imprime "Categoria N" e o gráfico de risco da norma; ponto sem categoria imprime "Não se aplica a categoria". No legado, 16% dos pontos têm categoria.
+>
+> **Origem, consequência e normas são de escolha múltipla** porque é o que a base mostra: 95% dos pontos têm mais de uma origem, 98% mais de uma consequência e 99% mais de uma norma — um ponto chega a 134 itens.
+>
+> **Residual estimado não se preenche na v2.** O legado permitia escrever, já na análise, o risco esperado depois do conserto; 112 de 287.921 pontos usaram. Na v2 o residual é o **verificado** pela consultoria depois da obra (`residualHrn`). A estimativa só existe nos pontos migrados, somente leitura, para que o laudo antigo continue reproduzível.
+
 ### PAP e PE
+
+PAP e PE são **listas** dentro da análise, como os pontos de risco: uma máquina com dois painéis de comando tem dois PAP. No legado, 2.690 máquinas têm mais de um PAP (até 13) e 4.352 mais de um PE (até 19).
 
 ```typescript
 // Cada quesito é avaliado em duas dimensões independentes
@@ -358,14 +384,20 @@ type PapCriterion =
   | 'EXTRA_LOW_VOLTAGE'  // tensão de comando segura (máx. 24V)?
   | 'PORTUGUESE';        // sinalização clara em português?
 
+// Um PAP é um conjunto de comando da máquina — um painel, uma botoeira —,
+// com as três seções avaliadas juntas
 interface PapAssessment {
   id: string;
   accountId: string;
   analysisId: string;
-  section: PapSection;
-  answers: Record<PapCriterion, ChecklistAnswer>;
-  solution?: string;
-  photoFileId?: string;
+  number: number;                  // 1, 2, 3... na análise
+  location?: string;               // "Painel principal", "Botoeira da descarga"
+  sections: Record<PapSection, {
+    answers: Record<PapCriterion, ChecklistAnswer>;
+    photoFileId?: string;          // foto do botão ou painel daquela seção
+  }>;
+  violatedStandardIds: string[];
+  solution?: string;               // uma para o conjunto, como no legado
 }
 
 type PeCriterion =
@@ -377,7 +409,10 @@ interface PeAssessment {
   id: string;
   accountId: string;
   analysisId: string;
+  number: number;                  // 1, 2, 3... na análise
+  location?: string;
   answers: Record<PeCriterion, ChecklistAnswer>;
+  violatedStandardIds: string[];
   solution?: string;
   photoFileId?: string;
 }
@@ -553,22 +588,37 @@ interface PriceItemHistory {
 ### Globais — mantidos pela plataforma, compartilhados por todas as contas
 
 ```typescript
-interface Standard {                 // item da NR-12 e correlatas
+// A norma se organiza em capítulos e anexos: "12.5 Sistemas de segurança",
+// "Anexo VIII - Prensas e similares". São 27 no legado, com 857 itens.
+interface StandardSection {
   id: string;
-  groupCode: string;                 // "NR-12", "NR-10"
+  norm: 'NR-12';
+  name: string;
+  order: number;
+}
+
+interface Standard {                 // item da norma
+  id: string;
+  norm: 'NR-12';
+  sectionId: string;
   itemCode: string;                  // "12.38.1"
-  title: string;
   text: string;
   isActive: boolean;
 }
 
 interface MachineType       { id: string; name: string; normalizedName: string; accountId?: string; }
-interface HazardOrigin      { id: string; name: string; accountId?: string; }
-interface HazardConsequence { id: string; name: string; accountId?: string; }
-interface ProtectionType    { id: string; name: string; accountId?: string; }
+
+// O perigo se organiza por tipo: mecânico, elétrico, térmico...
+interface HazardType        { id: string; name: string; }
+interface HazardOrigin      { id: string; hazardTypeId: string; name: string; accountId?: string; }
+interface HazardConsequence { id: string; hazardTypeId: string; name: string; accountId?: string; }
+
+// A proteção também: "Proteção fixa", "Barreira óptica" são tipos; o dispositivo é o item
+interface ProtectionType    { id: string; name: string; }
+interface Protection        { id: string; protectionTypeId: string; name: string; accountId?: string; }
 ```
 
-> `accountId` **opcional** nos catálogos de tipo de máquina e de perigo: quando nulo, o registro é global; quando preenchido, é uma extensão privada daquela consultoria ("Meus Cadastros"). Consultas devem sempre unir os dois conjuntos.
+> `accountId` **opcional** nos catálogos de tipo de máquina, de perigo e de proteção: quando nulo, o registro é global; quando preenchido, é uma extensão privada daquela consultoria ("Meus Cadastros"). Consultas devem sempre unir os dois conjuntos.
 
 ### Tabelas HRN — versionadas
 
@@ -611,14 +661,16 @@ interface HrnFactorOption {
 
 | Faixa de HRN | `RiskLevel` | Rótulo |
 | :--- | :--- | :--- |
-| ≤ 1,0 | `ACCEPTABLE` | Risco Aceitável |
-| 1,1 – 5,0 | `VERY_LOW` | Risco Muito Baixo |
-| 5,1 – 10,0 | `LOW` | Risco Baixo |
-| 10,1 – 50,0 | `SIGNIFICANT` | Risco Significante |
-| 50,1 – 100,0 | `HIGH` | Risco Alto |
-| 100,1 – 500,0 | `VERY_HIGH` | Risco Muito Alto |
-| 500,1 – 1000,0 | `EXTREME` | Risco Extremo |
-| > 1000,0 | `UNACCEPTABLE` | Risco Inaceitável |
+| até 1 | `ACCEPTABLE` | Risco Aceitável |
+| acima de 1 até 5 | `VERY_LOW` | Risco Muito Baixo |
+| acima de 5 até 10 | `LOW` | Risco Baixo |
+| acima de 10 até 50 | `SIGNIFICANT` | Risco Significante |
+| acima de 50 até 100 | `HIGH` | Risco Alto |
+| acima de 100 até 500 | `VERY_HIGH` | Risco Muito Alto |
+| acima de 500 até 1000 | `EXTREME` | Risco Extremo |
+| acima de 1000 | `UNACCEPTABLE` | Risco Inaceitável |
+
+> **As faixas não têm buraco.** É a regra do laudo do legado (`> 1 e ≤ 5`…). A tela do legado escrevia "de 1,1 a 5", e o único resultado possível entre 1 e 1,1 — **1,08**, uma das 1.680 combinações de pesos — caía em "Inaceitável" na tela e em "Muito Baixo" no laudo. Vale o laudo, que é o documento emitido.
 
 > **`ACCEPTABLE` é o corte operacional do sistema.** Ponto nessa faixa não exige medida de engenharia: não gera `ActionItem`, não entra no plano de ação e não conta no portão do Laudo de Adequação. Todas as demais faixas geram tarefa.
 >
@@ -747,7 +799,7 @@ interface Notification {
 
 1. Josué cadastra a **`Company`** BRF sob sua **`Account`**, e cria o `Membership` do Marcos com `roles: ['MANAGER']`.
 2. Cadastra-se um **`Equipment`** (Prensa Hidráulica) com `complianceStatus: 'NOT_ASSESSED'`.
-3. Fernando abre uma **`Analysis`** (`revision: 1`, `status: 'DRAFT'`) e preenche `TechnicalSheet`, os `RiskPoint` com `currentHrn`, os três `PapAssessment` e o `PeAssessment`.
+3. Fernando abre uma **`Analysis`** (`number: 1`, `revision: 1`, `status: 'DRAFT'`) e preenche `TechnicalSheet`, os `RiskPoint` com `currentHrn`, um `PapAssessment` por conjunto de comando e os `PeAssessment`.
 4. Carla **conclui a análise**: `status: 'CONCLUDED'`, `frozenAt` preenchido, `hrnTableVersionId` fixado. Tudo abaixo vira somente leitura.
 5. O sistema gera um **`ActionItem`** por `RiskPoint` com `currentHrn.level !== 'ACCEPTABLE'`, em `stage: 'STUDYING_ADEQUACY'`, e notifica a BRF. Pontos aceitáveis não geram tarefa e permanecem apenas como registro da análise.
 6. Antonio designa `responsibleUserId`, `dueAt` e monta as **`BudgetLine`** — buscando `PriceItem` da BRF e cadastrando inline o que faltar. Envia: `stage: 'AWAITING_APPROVAL'`.

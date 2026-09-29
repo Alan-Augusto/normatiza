@@ -53,9 +53,9 @@ Formulário por conta: dados da consultoria e status (ativa / suspensa).
 
 ### 2.3. Catálogos Globais
 Bases compartilhadas por todas as contas, mantidas pela plataforma:
-- **Normas NR-12 e correlatas** — código, título, texto do item. Alimentam a seleção de "normas descumpridas".
+- **Itens da NR-12**, organizados pelos capítulos e anexos da norma ("12.5 Sistemas de segurança", "Anexo VIII - Prensas e similares") — código e texto do item. Alimentam a seleção de "normas descumpridas".
 - **Tipos de perigo** e suas **origens** e **consequências**.
-- **Tipos de proteção / dispositivos de segurança.**
+- **Tipos de proteção** e seus **dispositivos**.
 - **Tabelas HRN** — os pesos de FE, PE, MPL e NP e as faixas de classificação de risco.
 
 > ⚠️ **Os valores de HRN são regulados por norma e por consistência histórica.** Editáveis apenas aqui, **com versionamento**: um laudo emitido em 2024 precisa continuar reproduzível com a tabela vigente naquela data.
@@ -360,7 +360,7 @@ Radiografia da máquina.
 
 ### 5.2. Análises de Risco
 
-**Tela principal:** histórico de análises da máquina. Colunas: Nº, Data de início, Data de conclusão, Responsável técnico, Pontos identificados, Pior HRN, Status. Ações: abrir, continuar, duplicar como base para nova análise, imprimir laudo.
+**Tela principal:** histórico de análises da máquina. Cada volta à máquina é uma análise nova, numerada por equipamento (Análise 1, Análise 2); corrigir uma análise concluída gera uma revisão dela, e a lista mostra a revisão vigente com as anteriores acessíveis. Colunas: Nº, Data de início, Data de conclusão, Responsável técnico, Pontos identificados, Pior HRN, Status. Ações: abrir, continuar, duplicar como base para nova análise, imprimir laudo.
 
 > **Imutabilidade:** análise concluída é **congelada**. Correção posterior gera **nova revisão versionada**, nunca edição silenciosa — o laudo comparativo depende disso para ter valor probatório.
 
@@ -385,9 +385,9 @@ Radiografia da máquina.
 Lista dinâmica de pontos identificados. Cada ponto:
 
 - **Local** na máquina
-- **Origem do perigo** e **Consequência** (catálogos)
-- **Proteções existentes** no ponto
-- **Normas descumpridas** — seleção múltipla dos itens da NR-12
+- **Origens do perigo** e **Consequências** — seleção múltipla nos catálogos, agrupada pelo tipo de perigo (mecânico, elétrico, térmico…). Quase todo ponto tem mais de uma
+- **Proteções existentes** no ponto — seleção múltipla no catálogo de dispositivos, agrupada pelo tipo de proteção
+- **Normas descumpridas** — seleção múltipla dos itens da NR-12, com busca por código e texto e agrupada por capítulo e anexo. Um ponto pode descumprir dezenas de itens
 - **Calculadora HRN:**
 
   | Fator | Faixa | Significado |
@@ -399,19 +399,21 @@ Lista dinâmica de pontos identificados. Cada ponto:
 
   `HRN = FE × PE × MPL × NP`
 
-  Classificação automática: Aceitável (≤1) · Muito Baixo (1,1–5) · Baixo (5,1–10) · Significante (10,1–50) · Alto (50,1–100) · Muito Alto (100,1–500) · Extremo (500,1–1000) · Inaceitável (>1000)
+  Classificação automática: Aceitável (até 1) · Muito Baixo (acima de 1 até 5) · Baixo (até 10) · Significante (até 50) · Alto (até 100) · Muito Alto (até 500) · Extremo (até 1000) · Inaceitável (acima de 1000)
 
   > ⚠️ **A fórmula e as tabelas de peso devem ser idênticas às atuais**, para que laudos históricos permaneçam reproduzíveis após a migração. Os valores completos estão em [04 — Modelo de Dados](./04_modelo_de_dados.md).
 
 - **Solução sugerida** — texto do que precisa ser feito. É o que o cliente vai ler na fase de execução, então precisa ser claro e acionável
 - **Foto do ponto de perigo** — a foto do "antes" do laudo comparativo
-- **Categoria de uso**
+- **Categoria NBR 14153**, opcional — uma chave liga a definição, e três perguntas dão a categoria de 1 a 4: *gravidade da lesão* (S1 leve · S2 grave ou morte); com S2, *frequência de exposição* (F1 · F2) e *possibilidade de evitar* (P1 · P2). A categoria é calculada, nunca digitada ([04 §4](./04_modelo_de_dados.md))
+
+> **Não há HRN residual na análise.** O risco depois do conserto é medido pela consultoria quando a obra termina (§5.4), e não estimado de antemão.
 
 **Gatilho:** ponto com HRN **acima** do limite aceitável (`> 1,0`) gera automaticamente uma tarefa no Plano de Ação ao concluir a análise. Ponto na faixa *Aceitável* fica registrado na análise e no Laudo de Apreciação, mas não gera tarefa — não há o que adequar.
 
 **Etapa 3 — PAP (Pontos de Análise de Perigo)**
 
-Três seções — **Acionamento**, **Rearme**, **Parada de Emergência** — cada uma com 6 quesitos, avaliados em duas dimensões: *estado físico* (existe / está assim?) e *conformidade NR-12* (atende?).
+Lista dinâmica, como a dos pontos de risco: **um PAP por conjunto de comando** da máquina — o painel principal, a botoeira da descarga. Cada PAP tem um *local* opcional e três seções — **Acionamento**, **Rearme**, **Parada de Emergência** — cada uma com 6 quesitos, avaliados em duas dimensões: *estado físico* (existe / está assim?) e *conformidade NR-12* (atende?).
 
 1. **Instalação** — o dispositivo existe?
 2. **Prevenção de acionamento involuntário** — tem proteção contra toque acidental?
@@ -420,11 +422,11 @@ Três seções — **Acionamento**, **Rearme**, **Parada de Emergência** — ca
 5. **Extrabaixa tensão** — opera em tensão de comando segura (máx. 24V)?
 6. **Sinalização em português** — identificação clara e legível?
 
-Cada seção: campo de solução e foto do painel/botão auditado.
+Cada seção tem a foto do botão auditado. O PAP tem uma solução e as normas descumpridas, para o conjunto.
 
 **Etapa 4 — PE (Pontos de Entropia)**
 
-Checklist de desgaste, envelhecimento e violação. Cada item avaliado em estado físico e conformidade NR-12:
+Lista dinâmica, como a do PAP: um PE por parte da máquina avaliada. Checklist de desgaste, envelhecimento e violação. Cada item avaliado em estado físico e conformidade NR-12:
 
 - Dispositivo de partida com desgaste
 - Ausência de controle em baixa tensão no circuito exposto
@@ -435,7 +437,7 @@ Checklist de desgaste, envelhecimento e violação. Cada item avaliado em estado
 - Acionamento de um motor disparando outro circuito perigoso
 - Ausência de retenção elétrica de segurança em queda de energia
 
-Campo de solução e foto do painel elétrico ou parte desgastada.
+Local opcional, campo de solução, normas descumpridas e foto do painel elétrico ou parte desgastada.
 
 **Conclusão da análise:** revisão do resumo (pontos identificados, HRN por ponto, não conformidades PAP/PE) → confirmação → **congela a análise, gera as tarefas do plano de ação e notifica o cliente**.
 

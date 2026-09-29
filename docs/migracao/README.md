@@ -27,8 +27,8 @@ Como cada tabela e coluna do sistema legado vira dado no modelo novo. **O docume
 | `sector` | `Sector` | implementado | §4 |
 | `machine` | `Equipment` (implementado) + `Analysis.technicalSheet` (modelado) | em parte | §5 |
 | `photo` | `FileAsset` | implementado | §6 |
-| `analysis`, `risk`, `pap`, `pe` e N:N | `Analysis`, `RiskPoint`, `PapAssessment`, `PeAssessment` | modelado | pendente |
-| `danger_*`, `security*`, `standard*` | catálogos globais ([04 §7](../produto/04_modelo_de_dados.md)) | modelado | pendente |
+| `analysis`, `risk`, `pap`, `pe` e N:N | `Analysis`, `RiskPoint`, `PapAssessment`, `PeAssessment` | modelado | §8, em parte |
+| `danger_*`, `security*`, `standard*` | catálogos globais ([04 §7](../produto/04_modelo_de_dados.md)) | modelado | §7 |
 | `studies` | `SafetyStudy` | modelado | pendente |
 | `technicalReport` | `Report` | modelado | pendente, e texto a interpretar (§2) |
 | `userDocs` | `FileAsset` da empresa | implementado | pendente |
@@ -47,6 +47,8 @@ Medido na base de produção do legado em 2026-09-24, só com consultas de leitu
 | Engenheiros convidados (`GuestEngineer`) | 7 | |
 | Admins | 2 | Nenhum pendurado em engenheiro |
 | Máquinas | 28.743 | **Exatamente o número de análises**: a relação 1:1 se confirma |
+| Pontos de risco (`risk`) | 287.921 | Nenhum peso de HRN fora da tabela: todo laudo se recalcula (§8) |
+| Catálogos | 857 itens de norma em 27 capítulos e anexos · 10 tipos de perigo, 82 origens, 68 consequências · 9 tipos de proteção, 28 dispositivos | §7 |
 | Setores com nome repetido na empresa | 14 nomes, 29 setores | Diferença só de maiúscula ou espaço |
 
 O perfil da base é **agroindustrial**: as utilizações mais comuns são esteira transportadora, climatização de aviário, rosca transportadora, bombeamento, incubação de ovos e desossa.
@@ -68,7 +70,7 @@ Os catálogos globais entram antes de tudo.
 
 ### Identificador de origem
 
-A regra está em 05 §6. **O formato ainda não foi decidido.** Nenhuma tabela da v2 tem coluna para isso ainda. As duas saídas:
+A regra está em 05 §6. **O formato é a tabela única `legacy_refs (entity, legacyId, newId)`**, e os catálogos (§7) são os primeiros a usá-la. As duas saídas consideradas:
 
 - **Coluna `legacyId` em cada tabela migrada.**
   - A favor: consulta direta e índice simples.
@@ -78,7 +80,7 @@ A regra está em 05 §6. **O formato ainda não foi decidido.** Nenhuma tabela d
   - Exemplo: uma linha de `machine` vira **dois** registros, um `Equipment` e uma `TechnicalSheet`.
   - Contra: exige um join a mais para rastrear.
 
-Recomendação: a tabela única. O caso de `machine` mostra que "uma linha de origem → um registro de destino" não se sustenta.
+Ficou a tabela única. O caso de `machine` mostra que "uma linha de origem → um registro de destino" não se sustenta. `(entity, legacyId)` é único: o legado é um banco só, e o id de cada tabela não se repete entre contas.
 
 ---
 
@@ -95,6 +97,9 @@ Conferido no código-fonte do legado. Quando `docs/legado` e o código divergem,
 | A análise seleciona uma máquina já existente no inventário | **Toda análise cria uma máquina nova**; não há como escolher uma existente | A mesma máquina física aparece repetida (§5.3) |
 | O laudo técnico reúne vários equipamentos | É o **upload de um PDF por análise** | `technicalReport` → `Report` 1:1 |
 | `photo.path` é uma URL pública | É o **caminho no Firebase Storage** | É a `storageKey`, e não um link |
+| `standard_title` são normas ("NR 12, NR 10, ABNT NBR ISO 13849") | Os 27 títulos são **capítulos e anexos da NR-12** ("12.5 Sistemas de segurança", "Anexo VIII - Prensas e similares") | Viram `StandardSection`, e todo item é NR-12 (§7) |
+| `risk.hrnMpl` é o "resultado final HRN"; `severityCategory`, `frequencyCategory` e `possibilityCategory` são fatores do HRN | `hrnFe`, `hrnPe`, `hrnMpl` e `hrnNp` são os **quatro pesos**, e o resultado é calculado. As três `*Category` são a **categoria NBR 14153**, ligada por `useCategory` | §8 |
+| Há um PAP e um PE por máquina | São listas: 2.690 máquinas têm mais de um PAP (até 13) e 4.352 mais de um PE (até 19) | Um `PapAssessment`/`PeAssessment` por linha (§8) |
 | Existe o nível `customer_branch` (unidade/filial) | Foi **removido na v1.4.0**; o setor pende direto do cliente | Não há unidade a migrar |
 
 A empresa da máquina, lida pelo setor, bate com a da análise em 28.742 das 28.743 linhas. A única divergente entra no relatório. Nas demais, `sector.customerId` e `analysis.customerId` dizem a mesma coisa.
@@ -162,7 +167,7 @@ Os papéis **Engenheiro do Cliente** e **Executor** não têm origem no legado: 
   - 20 têm raízes em parte repetidas;
   - 19 têm raízes todas diferentes.
 
-  A decisão é de produto e está em [06 — Pendências §6](../produto/06_pendencias.md).
+  A decisão é de produto e está em [06 — Pendências §5](../produto/06_pendencias.md).
 - **Contas sem uso.** Dos 210 engenheiros:
   - 114 nunca cadastraram um cliente;
   - 180 são trial;
@@ -215,11 +220,11 @@ No legado, o `Customer` é ao mesmo tempo o login de leitura e o cadastro da ind
   - 8 têm um valor de outro tamanho;
   - 18 têm o documento vazio.
 
-  Aceitar ou não CPF é a decisão de [06 — Pendências §7](../produto/06_pendencias.md). Os 26 que não são nem CPF nem CNPJ entram no relatório.
+  Aceitar ou não CPF é a decisão de [06 — Pendências §6](../produto/06_pendencias.md). Os 26 que não são nem CPF nem CNPJ entram no relatório.
 - **CNPJ repetido na mesma conta: 20 documentos, 61 empresas.** A v2 recusa (`@@unique([accountId, document])`).
   - Não são cadastros abandonados nem duplicados. São **unidades operacionais** (área da planta, unidade produtiva numerada, bloco), com análise em períodos que se sobrepõem.
   - Três repetições são CPFs em contas de teste (§3.1), com 0 a 9 análises.
-  - A saída depende de o que é uma empresa na v2: [06 — Pendências §8](../produto/06_pendencias.md). Se a empresa for a unidade, cada cliente legado vira uma `Company`, como está, e o CNPJ deixa de ser único.
+  - A saída depende de o que é uma empresa na v2: [06 — Pendências §7](../produto/06_pendencias.md). Se a empresa for a unidade, cada cliente legado vira uma `Company`, como está, e o CNPJ deixa de ser único.
 - **`customerCode` não é único.** Oito clientes de um mesmo CNPJ compartilham o código `YPEAMP`, e o sequencial da análise é por cliente. Logo, o código de exibição `AR-{customerCode}-{sequencial}` **se repete entre clientes**. A referência de origem da análise (§5.4) precisa do id do cliente junto; o código `AR-…` sozinho não identifica.
 - **Endereço quase sempre completo.** No máximo 3 empresas têm algum campo de endereço vazio. Elas migram sem validar e são sinalizadas no relatório para completar o cadastro.
 - **Contato técnico.** 172 das 323 empresas não têm `responsible`. O `contactName` recebe o `name`, como na tabela acima, e o e-mail de login vira o `contactEmail`.
@@ -365,11 +370,46 @@ O front do legado já reduzia as fotos a no máximo 6000 px e as regravava em JP
 | — | `companyId`, `equipmentId` | Pela máquina dona da foto |
 | — | `category` | Pela vista: frontal, esquerda, direita ou posterior |
 
-**Pendência:** manter as referências originais ou copiar o acervo para `accounts/{accountId}/…`. Ver [06 — Pendências §5](../produto/06_pendencias.md). O prefixo por conta é regra da v2 e o caminho legado não o respeita, então manter as referências exige uma exceção explícita a essa regra.
+**Pendência:** manter as referências originais ou copiar o acervo para `accounts/{accountId}/…`. Ver [06 — Pendências §4](../produto/06_pendencias.md). O prefixo por conta é regra da v2 e o caminho legado não o respeita, então manter as referências exige uma exceção explícita a essa regra.
 
 ---
 
-## 7. Relatório da migração
+## 7. Catálogos
+
+**Origem:** `standard_title`, `standard`, `danger_type`, `danger_origin`, `danger_consequence`, `security_type`, `security`. **Destino:** os catálogos globais de [04 §7](../produto/04_modelo_de_dados.md), com `accountId` nulo.
+
+Os catálogos entram **antes** da migração oficial, para que a análise da v2 já nasça com eles: o legado é exportado por `apps/api/scripts/legado/exportar-catalogos.sql` para `apps/api/prisma/catalogos/legado.json`, que fica no repositório, e o importador (`catalogos:importar`) o carrega em qualquer ambiente. O importador é idempotente — acha cada item pelo `legacy_refs` e atualiza o texto, sem duplicar —, então a migração oficial só o roda de novo com uma exportação recente, e os ids que as análises migradas apontam já existem.
+
+| Legado | v2 | Transformação |
+| :--- | :--- | :--- |
+| `standard_title.name` | `StandardSection.name`, `norm: 'NR-12'` | `order` pela numeração: os capítulos 12.1 a 12.18 primeiro, na ordem numérica, e depois os anexos, na ordem romana. "12.18 Disposições finais" não tem item e migra assim mesmo |
+| `standard.code`, `.description`, `.standardTitleId` | `Standard.itemCode`, `.text`, `.sectionId` | Texto aparado; `norm: 'NR-12'` |
+| `danger_type.name` | `HazardType.name` | — |
+| `danger_origin`, `danger_consequence` | `HazardOrigin`, `HazardConsequence` | Com o tipo (`dangerTypeId` → `hazardTypeId`) |
+| `security_type.name` | `ProtectionType.name` | — |
+| `security` | `Protection` | Com o tipo (`securityTypeId` → `protectionTypeId`) |
+
+Item que some do legado entre uma exportação e outra **não é apagado** na v2: pode haver análise apontando para ele. O importador o lista no fim.
+
+As tabelas HRN não vêm do banco: no legado são constantes do código. A versão inicial de `HrnTableVersion` é semeada com os valores de 04 §7, conferidos contra os 287.921 pontos da base — nenhum peso gravado fica fora dela.
+
+---
+
+## 8. Análises (o que já se sabe)
+
+O mapeamento completo sai com a feature da análise. O que os dados já decidiram:
+
+- **Os quatro pesos do HRN** vêm de `risk.hrnFe`, `hrnPe`, `hrnMpl`, `hrnNp` → `currentHrn`. O resultado é recalculado, nunca copiado.
+- **Categoria NBR 14153:** quando `useCategory`, `severityCategory`, `frequencyCategory` e `possibilityCategory` → `safetyCategory`. Usada em 47.008 pontos (16%). Com `useCategory` falso, as três colunas são ignoradas.
+- **Residual estimado:** quando `useHrnResidual`, `hrn*Residual` → `estimatedResidualHrn`, somente leitura. São só **112 pontos**. Não vira `residualHrn`: aquele é o verificado depois da obra, e não houve obra.
+- **Escolha múltipla:** `risk_origin`, `risk_consequence`, `risk_security` e `risk_standard` → `hazardOriginIds`, `hazardConsequenceIds`, `existingProtectionIds`, `violatedStandardIds`, via `legacy_refs` dos catálogos. 95% dos pontos têm várias origens, e há ponto com 134 normas.
+- **PAP:** cada linha de `pap` vira um `PapAssessment`. As colunas `activation*`, `reset*` e `stop*` vão para as três seções, cada par `X`/`XNr12` para `physicalState`/`nr12Compliant`, e `pap_standard` para `violatedStandardIds`. Sem `location` (o legado não tem) e sem `justification` nas respostas.
+- **PE:** cada linha de `pe` vira um `PeAssessment`, pelo mesmo padrão, com `pe_standard`.
+- **Número do ponto, do PAP e do PE:** o `sequencial` do legado, dentro da análise.
+
+---
+
+## 9. Relatório da migração
 
 Toda regra acima que diz "entra no relatório" alimenta **um relatório por conta**, entregue antes de a conta ser liberada. O relatório reúne:
 

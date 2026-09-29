@@ -46,19 +46,7 @@ A matriz de permissões hoje marca `○` (leitura) para o Diretor na tabela de p
 
 ---
 
-## 4. Multi-normas — NR-10 continua no plano?
-
-**Situação.** O documento de reestruturação inicial previa explicitamente o sistema como multi-normas, com um **Módulo NR-10** (segurança elétrica, painéis, arco elétrico, aterramento) como próxima extensão sobre o mesmo inventário de máquinas — e usava isso como argumento comercial de cross-selling. A estrutura consolidada com o dono do produto é **NR-12 pura**, sem menção a NR-10.
-
-**A pergunta.** O multi-normas saiu do plano, ou saiu apenas do horizonte imediato?
-
-**Por que importa agora, e não depois.** É uma decisão de modelagem, não de roadmap. Se NR-10 vier depois, `Analysis` precisa nascer com uma noção de "sob qual norma esta avaliação foi feita", e o `Equipment` precisa comportar múltiplas análises de naturezas diferentes convivendo. Adicionar isso depois, com base migrada e laudos emitidos, é caro. Deixar previsto agora custa um campo.
-
-**Recomendação:** decidir apenas se o modelo deve reservar o eixo de norma, mesmo que só a NR-12 seja implementada. O catálogo `Standard` já tem `groupCode`, o que é meio caminho.
-
----
-
-## 5. Acervo de fotos na migração
+## 4. Acervo de fotos na migração
 
 **Situação.** As fotos do sistema legado estão no Firebase Storage, organizadas por pasta de cliente. Na migração, mantém-se as referências existentes ou reprocessa-se o acervo?
 
@@ -68,7 +56,7 @@ A matriz de permissões hoje marca `○` (leitura) para o Diretor na tabela de p
 
 ---
 
-## 6. Papel do lado cliente em várias empresas
+## 5. Papel do lado cliente em várias empresas
 
 **Situação.** Todo papel do lado cliente vale para **uma empresa só** ([01 §5](./01_papeis_e_permissoes.md)). A base legada contradiz isso em escala. Dos 514 Gestores (`Manager`) vinculados a empresas, **122 estão em mais de uma**: 52 em duas, e há casos de 16, 24, 33, 44 e 46 empresas. Todos ficam dentro de um mesmo engenheiro, ou seja, de uma mesma conta na v2.
 
@@ -90,7 +78,7 @@ A matriz de permissões hoje marca `○` (leitura) para o Diretor na tabela de p
 
 ---
 
-## 7. Empresa com CPF
+## 6. Empresa com CPF
 
 **Situação.** `Company.document` só aceita CNPJ válido. Na base legada:
 - 275 empresas têm CNPJ;
@@ -104,7 +92,7 @@ Numa base agroindustrial (aviário, incubatório), CPF pode ser produtor rural: 
 
 ---
 
-## 8. O que é uma empresa: o CNPJ ou a unidade atendida?
+## 7. O que é uma empresa: o CNPJ ou a unidade atendida?
 
 **Situação.** O CNPJ é único na conta ([03 §3.2](./03_navegacao_e_telas.md)), o que faz da `Company` uma pessoa jurídica. A base legada trata o cliente como **unidade operacional**. Na maior conta há 20 CNPJs repetidos, somando 61 clientes. São unidades ativas, com análise em períodos que se sobrepõem, e não cadastros duplicados:
 
@@ -123,7 +111,7 @@ Numa base agroindustrial (aviário, incubatório), CPF pode ser produtor rural: 
 **Caminhos:**
 - **A empresa é a unidade atendida.** O CNPJ deixa de ser único na conta. Um CNPJ repetido gera aviso, e não recusa ("Já existe *BRF Toledo* com este CNPJ. É outra unidade?"). O nome distingue as unidades. O grupo empresarial, que pode ser montado pela raiz do CNPJ, consolida os relatórios.
   - É o que a base já é, e a migração fica direta.
-  - Combina com o caminho do "Gestor do grupo" da §6.
+  - Combina com o caminho do "Gestor do grupo" da §5.
 - **A empresa é o CNPJ, e as unidades ficam dentro dela** como um nível novo entre empresa e setor. É o caminho que o legado tentou e abandonou.
 - **A empresa é o CNPJ, e as unidades viram setores.** É o mais barato, mas perde o nível de setor e mistura Gestores de áreas diferentes.
 
