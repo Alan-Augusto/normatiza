@@ -81,3 +81,13 @@ dd {
   font-weight: 500;
   color: var(--p-text-color);
 }
+
+/* Texto longo ocupa a linha inteira: descrição de processo não cabe numa coluna. */
+.longo {
+  grid-column: 1 / -1;
+}
+
+.longo dd {
+  font-weight: 400;
+  white-space: pre-line;
+}

@@ -550,6 +550,15 @@ model FileAsset {
 // Regras: docs/produto/03_navegacao_e_telas.md §4.2 e §4.3, 04_modelo_de_dados.md §2, §3 e §7
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// As fontes de energia da máquina — o que se isola antes de uma intervenção.
+enum EnergySource {
+  ELECTRIC
+  PNEUMATIC
+  HYDRAULIC
+  MECHANICAL
+  RADIOACTIVE
+}
+
 /// Organização física da planta. O nome é comparado sem acento, caixa nem
 /// espaço sobrando (`normalizedName`): criar "usinagem " onde já existe
 /// "Usinagem" devolve o existente — o defeito que o legado acumulou.
@@ -621,6 +630,29 @@ model Equipment {
 
   sectorId String?
   sector   Sector? @relation(fields: [sectorId], references: [id])
+
+  // ── Ficha do ativo — características da máquina, não medidas da vistoria ──
+  // docs/produto/04 §3. A análise concluída guarda uma cópia disto.
+  purpose              String?
+  productiveCapacity   String?
+  powerKw              Float?
+  controlStations      Int?
+  exposedOperators     Int?
+  energySources        EnergySource[] @default([])
+  processDescription   String?
+  commonInterventions  String?
+  otherInfo            String?
+  heightMm             Int?
+  widthMm              Int?
+  depthMm              Int?
+  weightKg             Float?
+  /// CNPJ do fabricante, só dígitos. O nome é `manufacturerName`, identidade.
+  manufacturerDocument String?
+  manufacturerRegistry String?
+  manufacturerAddress  String?
+  manufacturerCity     String?
+  /// CEP, só dígitos.
+  manufacturerZipCode  String?
 
   mainPhotoFileId String?     @unique
   mainPhoto       FileAsset?  @relation("EquipmentMainPhoto", fields: [mainPhotoFileId], references: [id])

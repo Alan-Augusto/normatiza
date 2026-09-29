@@ -41,6 +41,27 @@
     </div>
 
     <section class="painel">
+      <h2 class="titulo">Ficha do ativo</h2>
+      @if (ficha().length) {
+        <dl class="identidade">
+          @for (item of ficha(); track item.chave) {
+            <div [class.longo]="item.longo">
+              <dt>{{ item.rotulo }}</dt>
+              <dd [attr.data-testid]="'ficha-' + item.chave">{{ item.valor }}</dd>
+            </div>
+          }
+        </dl>
+      } @else {
+        <p data-testid="ficha-vazia" class="text-sm text-muted-color">
+          Operação, fontes de energia, dimensões e fabricante ainda não foram preenchidos.
+          @if (e.actions.edit) {
+            <a class="font-medium text-primary" [routerLink]="rotaDeEdicao()">Completar o cadastro</a>
+          }
+        </p>
+      }
+    </section>
+
+    <section class="painel">
       <h2 class="titulo">Situação NR-12</h2>
       <!--
         Da análise, não do cadastro: "—" até a primeira. Zero pontos em aberto

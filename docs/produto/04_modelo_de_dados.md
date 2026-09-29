@@ -194,6 +194,9 @@ interface Equipment {
   patrimonyCode?: string;        // número de patrimônio do cliente
   mainPhotoFileId?: string;
 
+  // Ficha do ativo — características da máquina, não medidas da vistoria (03 §4.2)
+  sheet: EquipmentSheet;
+
   // A foto principal é um FileAsset com `thumbnailKey`: a lista em cards lê só a miniatura.
 
   // Estado derivado, recalculado — nunca editado à mão
@@ -208,7 +211,28 @@ interface Equipment {
 }
 ```
 
-> O cadastro inicial é enxuto de propósito — a ficha técnica densa é preenchida durante a análise, não no momento de criar o registro. **A fronteira:** o que identifica a máquina é do `Equipment` e vale para todas as análises dela; o que se mede na vistoria é da `TechnicalSheet`. A análise concluída guarda uma cópia da identidade (`TechnicalSheet.identity`), para que o laudo emitido não mude quando alguém corrigir o cadastro depois.
+```typescript
+interface EquipmentSheet {
+  purpose?: string;              // "utilização": para que a máquina serve
+  productiveCapacity?: string;   // texto: "10 t/h", "115200 ovos", "MIN 5,9 CX/MIN"
+  powerKw?: number;
+  controlStations?: number;      // postos de comando
+  exposedOperators?: number;
+  energySources: ('ELECTRIC' | 'PNEUMATIC' | 'HYDRAULIC' | 'MECHANICAL' | 'RADIOACTIVE')[];
+  processDescription?: string;
+  commonInterventions?: string;  // intervenções comuns do operador
+  otherInfo?: string;
+
+  dimensions: { heightMm?: number; widthMm?: number; depthMm?: number; weightKg?: number };
+  manufacturer: {                // o nome do fabricante é identidade (`manufacturerName`)
+    document?: string;           // CNPJ, só dígitos
+    registry?: string;           // CREA
+    address?: string; city?: string; zipCode?: string;
+  };
+}
+```
+
+> Só o nome é obrigatório — um cadastro que exige o que ninguém tem em mãos não é feito. **A fronteira:** o que é característica da máquina — identidade e ficha do ativo — é do `Equipment` e vale para todas as análises dela; o que se mede ou se observa na vistoria é da `TechnicalSheet`. A análise concluída guarda uma **cópia** do equipamento inteiro (`TechnicalSheet.equipment`), para que o laudo emitido não mude quando alguém corrigir o cadastro depois.
 >
 > `tag` é **opcional e única por empresa** (`@@unique([companyId, tag])`, com nulos livres): muita planta não etiqueta as máquinas, e exigir o campo travaria o cadastro e a migração. `serialNumber` e `patrimonyCode` não são únicos — repetição gera aviso, não recusa.
 >
@@ -246,36 +270,18 @@ interface Analysis {
 
 ```typescript
 interface TechnicalSheet {
-  // Cópia da identidade do equipamento, gravada ao concluir. Enquanto a análise
-  // é rascunho, a identidade lida é a do Equipment.
-  identity?: {
+  // Cópia do equipamento — identidade e ficha do ativo —, gravada ao concluir.
+  // Enquanto a análise é rascunho, lê-se o Equipment, e corrigir aqui corrige lá.
+  equipment?: {
     name: string; machineTypeName?: string; model?: string; manufacturerName?: string;
     serialNumber?: string; manufactureYear?: number; tag?: string; patrimonyCode?: string;
     sectorName?: string;
+    sheet: EquipmentSheet;
   };
 
-  manufacturer?: {
-    document?: string; registry?: string;       // CNPJ e CREA
-    address?: string; city?: string; zipCode?: string;
-  };
-
-  dimensions?: { heightMm?: number; widthMm?: number; depthMm?: number; weightKg?: number };
-
-  production?: {
-    capacity?: string; powerKw?: number;
-    cycleTimeSec?: number; activationTimeSec?: number; emergencyStopTimeSec?: number;
-  };
-
-  operation?: {
-    controlStations?: number; exposedOperators?: number; shiftRegime?: string;
-    purpose?: string;              // "utilização": para que a máquina serve
-    processDescription?: string; commonInterventions?: string; otherInfo?: string;
-  };
-
-  energySources: {
-    electric: boolean; pneumatic: boolean; hydraulic: boolean;
-    mechanical: boolean; radioactive: boolean;
-  };
+  // Medidos na vistoria
+  times?: { cycleTimeSec?: number; activationTimeSec?: number; emergencyStopTimeSec?: number };
+  shiftRegime?: string;          // regime de uso observado (turnos)
 
   // As seis perguntas de 03 §5.2, na mesma ordem e com o mesmo texto do legado
   safetyManagement: {

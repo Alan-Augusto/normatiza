@@ -254,13 +254,13 @@ No legado, `machine` não é um inventário. **Cada análise cria a sua máquina
 A migração de uma linha de `machine` produz:
 
 - **um `Equipment`**, com os campos de identidade. Juntar linhas no mesmo equipamento é exceção, feita à mão (§5.3);
-- **a `TechnicalSheet` da análise dona dela**, com os campos da vistoria e uma cópia da identidade em `identity`.
+- **a `TechnicalSheet` da análise dona dela**, com o que se mediu na vistoria e uma cópia do equipamento — identidade e ficha do ativo — em `equipment`, **como estava naquela linha**.
 
 Quando duas linhas são juntadas, **a identidade vem da análise mais recente**. A ficha de cada análise guarda a identidade como ela estava naquela vistoria.
 
 ### 5.2. Colunas
 
-**Identidade → `Equipment`** (e a cópia em `TechnicalSheet.identity`):
+**Identidade → `Equipment`** (e a cópia em `TechnicalSheet.equipment`):
 
 | Legado | v2 | Transformação |
 | :--- | :--- | :--- |
@@ -277,23 +277,28 @@ Quando duas linhas são juntadas, **a identidade vem da análise mais recente**.
 | `createdAt` | `createdAt` | Quando linhas são juntadas, o da mais antiga |
 | — | `code` | `EQ-0001` em diante, por empresa, na ordem de `createdAt` da máquina, e `Company.equipmentSequence` fica com o último número dado — o cadastro novo continua a sequência. O código do inventário legado (`{customerCode}-{sequencial}`) não é reaproveitado, porque é o sequencial da análise (§5.4) |
 
+**Ficha do ativo → `Equipment.sheet`** (e a cópia em `TechnicalSheet.equipment.sheet`). Quando linhas se juntam num equipamento, a ficha dele vem da análise **mais recente**, como a identidade; cada análise guarda a sua como estava:
+
+| Legado | v2 | Transformação |
+| :--- | :--- | :--- |
+| `manufacturerCnpj`, `manufacturerCrea` | `sheet.manufacturer.document`, `.registry` | Só dígitos no CNPJ, sem validar o dígito verificador (o legado não validava) |
+| `manufacturerAddress`, `manufacturerCity`, `manufacturerPostalCode` | `sheet.manufacturer.address`, `.city`, `.zipCode` | — |
+| `height`, `width`, `depth`, `weight` | `sheet.dimensions.heightMm`, `.widthMm`, `.depthMm`, `.weightKg` | **Texto livre sem unidade no legado.** Converter só o que der para ler com segurança; ver pendência |
+| `capacity` | `sheet.powerKw` ou `sheet.productiveCapacity` | A tela chama de "Capacidade", e o conteúdo mistura potência e capacidade. Ver pendência |
+| `productiveCapacity` | `sheet.productiveCapacity` | Quando `capacity` também for capacidade (não potência), os dois textos se juntam |
+| `commandPositions` | `sheet.controlStations` | Texto no legado, número na v2 |
+| `totalOperators` | `sheet.exposedOperators` | — |
+| `machineUsage` | `sheet.purpose` | **Não é regime de turnos:** é para que a máquina serve ("Esteira transportadora", "Bombeamento de água", "Incubar ovos de aves"), conforme a base real |
+| `processDescription` | `sheet.processDescription` | — |
+| `operatorInterventions` | `sheet.commonInterventions` | — |
+| `otherInfo` | `sheet.otherInfo` | — |
+| `eletricEnergy`, `pneumaticEnergy`, `hydraulicEnergy`, `mechanicalEnergy`, `radioactiveEnergy` | `sheet.energySources` | Cada booleano verdadeiro vira um item da lista (`ELECTRIC`, `PNEUMATIC`…) |
+
 **Vistoria → `TechnicalSheet`:**
 
 | Legado | v2 | Transformação |
 | :--- | :--- | :--- |
-| `manufacturerCnpj`, `manufacturerCrea` | `manufacturer.document`, `manufacturer.registry` | Só dígitos no CNPJ, sem validar o dígito verificador (o legado não validava) |
-| `manufacturerAddress`, `manufacturerCity`, `manufacturerPostalCode` | `manufacturer.address`, `.city`, `.zipCode` | — |
-| `height`, `width`, `depth`, `weight` | `dimensions.heightMm`, `.widthMm`, `.depthMm`, `.weightKg` | **Texto livre sem unidade no legado.** Converter só o que der para ler com segurança; ver pendência |
-| `capacity` | `production.powerKw` ou `production.capacity` | A tela chama de "Capacidade", e o conteúdo mistura potência e capacidade. Ver pendência |
-| `productiveCapacity` | `production.capacity` | — |
-| `cycleTime`, `driveTime`, `emergencyTime` | `production.cycleTimeSec`, `.activationTimeSec`, `.emergencyStopTimeSec` | Texto livre; mesmo tratamento das dimensões |
-| `commandPositions` | `operation.controlStations` | Texto no legado, número na v2 |
-| `totalOperators` | `operation.exposedOperators` | — |
-| `machineUsage` | `operation.purpose` | **Não é regime de turnos:** é para que a máquina serve ("Esteira transportadora", "Bombeamento de água", "Incubar ovos de aves"), conforme a base real |
-| `processDescription` | `operation.processDescription` | — |
-| `operatorInterventions` | `operation.commonInterventions` | — |
-| `otherInfo` | `operation.otherInfo` | — |
-| `eletricEnergy`, `pneumaticEnergy`, `hydraulicEnergy`, `mechanicalEnergy`, `radioactiveEnergy` | `energySources.electric`, `.pneumatic`, `.hydraulic`, `.mechanical`, `.radioactive` | — |
+| `cycleTime`, `driveTime`, `emergencyTime` | `times.cycleTimeSec`, `.activationTimeSec`, `.emergencyStopTimeSec` | Texto livre; mesmo tratamento das dimensões |
 | `intendedPreventiveMaintenance` | `safetyManagement.maintenancePlannedByQualifiedProfessional` | Pergunta 1 de [03 §5.2](../produto/03_navegacao_e_telas.md) |
 | `registeredPreventiveMaintenance` | `safetyManagement.maintenanceRecorded` | Pergunta 2 |
 | `maintenanceRecordAvailable` | `safetyManagement.maintenanceRecordsAvailable` | Pergunta 3 |
@@ -334,9 +339,9 @@ Laudos emitidos e documentos citam esses códigos. A análise migrada guarda o c
 
 ### 5.5. Pendências
 
-- **Dimensões, tempos e capacidade em texto livre.** Amostrados na base, com os conversores a seguir. Em todos eles vale a mesma regra: **o que não se lê com segurança fica nulo, e o texto original vai para `operation.otherInfo`, prefixado pelo nome do campo, para não se perder.**
+- **Dimensões, tempos e capacidade em texto livre.** Amostrados na base, com os conversores a seguir. Em todos eles vale a mesma regra: **o que não se lê com segurança fica nulo, e o texto original vai para `sheet.otherInfo`, prefixado pelo nome do campo, para não se perder.**
   - **Altura, largura, profundidade e peso.** Quase sempre vêm como número e unidade, com a caixa e o espaço variando: "120 Cm", "787mm", "1000 Kg", "4000Kg". Lê-se o número, com vírgula ou ponto decimal, e a unidade `mm`, `cm` ou `m` (convertida para mm) ou `kg` e `t` (convertida para kg). Número sem unidade não é convertido.
-  - **Capacidade.** Mistura potência ("0,55 kW", "0,55KW") com capacidade produtiva ("10 t/h", "115200 ovos", "MIN 5,9 CX/MIN MAX 13CX/MIN", "50878 KCAL/H"). Unidade `kW` vai para `production.powerKw`; `CV` e `HP` são convertidos para kW. Todo o resto vai inteiro, como texto, para `production.capacity`, que já é texto na v2.
+  - **Capacidade.** Mistura potência ("0,55 kW", "0,55KW") com capacidade produtiva ("10 t/h", "115200 ovos", "MIN 5,9 CX/MIN MAX 13CX/MIN", "50878 KCAL/H"). Unidade `kW` vai para `sheet.powerKw`; `CV` e `HP` são convertidos para kW. Todo o resto vai inteiro, como texto, para `sheet.productiveCapacity`, que já é texto na v2.
   - **Tempos de ciclo, acionamento e parada de emergência.** Quase nunca são preenchidos (o valor mais comum de ciclo aparece 8 vezes em 28.743), e o conteúdo é heterogêneo: "Imediato", "Contínuo", "10 a 15 rpm", "adhgdaha", "000000000000000000000000". Converte-se só número com unidade de tempo explícita ("15 segundos", "1,4 SEGUNDOS", "1s", "20 min"). "Imediato" e "Instantâneo" **não** viram zero: não são medição.
 - **Situação do equipamento.** `complianceStatus`, `worstCurrentHrn`, `openPointsCount` e `lastAnalysisAt` são calculados a partir das análises migradas, e não copiados. Sem plano de ação retroativo (05 §6), o equipamento migrado com risco acima do aceitável fica *não conforme*, sem tarefas.
 

@@ -1,6 +1,23 @@
 import { Transform, Type } from 'class-transformer';
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
+import { ENERGY_SOURCES } from '@normatiza/shared';
 import type {
+  EnergySource,
+  EquipmentSheet,
   EquipmentListQuery,
   EquipmentStatus,
   EquipmentUpsertRequest,
@@ -69,6 +86,53 @@ export class SectorMergeDto implements SectorMergeRequest {
   intoSectorId: string;
 }
 
+/** Limites de sanidade, não de engenharia: pegam o zero a mais digitado, não a máquina grande. */
+class EquipmentDimensionsDto {
+  @IsOptional() @IsInt() @Min(1) @Max(100_000) heightMm?: number;
+  @IsOptional() @IsInt() @Min(1) @Max(100_000) widthMm?: number;
+  @IsOptional() @IsInt() @Min(1) @Max(100_000) depthMm?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(1_000_000) weightKg?: number;
+}
+
+class EquipmentManufacturerDto {
+  /** O dígito verificador é conferido no serviço, que responde no campo. */
+  @opcional() @IsOptional() @IsString() @MaxLength(18) document?: string;
+  @opcional() @IsOptional() @IsString() @MaxLength(60) registry?: string;
+  @opcional() @IsOptional() @IsString() @MaxLength(200) address?: string;
+  @opcional() @IsOptional() @IsString() @MaxLength(120) city?: string;
+  @opcional()
+  @IsOptional()
+  @Matches(/^\d{5}-?\d{3}$/, { message: 'O CEP do fabricante precisa ter 8 dígitos.' })
+  zipCode?: string;
+}
+
+class EquipmentSheetDto implements Partial<EquipmentSheet> {
+  @opcional() @IsOptional() @IsString() @MaxLength(200) purpose?: string;
+  @opcional() @IsOptional() @IsString() @MaxLength(200) productiveCapacity?: string;
+  @IsOptional() @IsNumber() @Min(0) @Max(100_000) powerKw?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(1_000) controlStations?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(10_000) exposedOperators?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(ENERGY_SOURCES, { each: true })
+  energySources?: EnergySource[];
+
+  @opcional() @IsOptional() @IsString() @MaxLength(4000) processDescription?: string;
+  @opcional() @IsOptional() @IsString() @MaxLength(4000) commonInterventions?: string;
+  @opcional() @IsOptional() @IsString() @MaxLength(4000) otherInfo?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EquipmentDimensionsDto)
+  dimensions?: EquipmentDimensionsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EquipmentManufacturerDto)
+  manufacturer?: EquipmentManufacturerDto;
+}
+
 export class EquipmentUpsertDto implements EquipmentUpsertRequest {
   @aparado()
   @IsString()
@@ -121,6 +185,11 @@ export class EquipmentUpsertDto implements EquipmentUpsertRequest {
   @ValidateIf((_, v) => v !== null)
   @IsString()
   sectorId?: string | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EquipmentSheetDto)
+  sheet?: EquipmentSheetDto;
 }
 
 export class EquipmentListQueryDto implements EquipmentListQuery {

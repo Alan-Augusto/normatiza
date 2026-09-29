@@ -102,8 +102,7 @@ describe('EquipmentFormComponent', () => {
   const avançar = () => clicar('avancar');
   /** Da identificação até a foto, a etapa em que o cadastro novo salva. */
   const atéOFim = () => {
-    avançar();
-    avançar();
+    while (el('[data-testid="avancar"]')) avançar();
   };
   const etapaAtual = () => el('[data-testid="etapa-atual"]')?.getAttribute('data-etapa');
   const url = () => TestBed.inject(Router).url;
@@ -147,14 +146,17 @@ describe('EquipmentFormComponent', () => {
 
       expect(el('[data-testid="salvar"]')).toBeNull();
       digitar('nome', 'Prensa');
-      avançar();
-      expect(etapaAtual()).toBe('planta');
-      avançar();
-      expect(etapaAtual()).toBe('foto');
-      expect(el('[data-testid="salvar"]')).not.toBeNull();
+      const vistas: (string | null | undefined)[] = [etapaAtual()];
+      atéOFim();
+      clicar('passo-identificacao');
+      for (const _ of [1, 2, 3, 4]) {
+        avançar();
+        vistas.push(etapaAtual());
+      }
 
-      clicar('voltar');
-      clicar('voltar');
+      expect(vistas).toEqual(['identificacao', 'planta', 'operacao', 'porte', 'foto']);
+      expect(el('[data-testid="salvar"]')).not.toBeNull();
+      clicar('passo-identificacao');
       expect(campo('nome').value).toBe('Prensa');
     });
 
@@ -177,7 +179,7 @@ describe('EquipmentFormComponent', () => {
       avançar();
       digitar('setor', ' USINAGEM ');
       expect(el('[data-testid="ajuda-setor"]')?.textContent).not.toContain('novo');
-      avançar();
+      atéOFim();
       salvar();
 
       http.expectNone((r) => r.method === 'POST' && r.url === SETORES_URL);
@@ -194,7 +196,7 @@ describe('EquipmentFormComponent', () => {
       avançar();
       digitar('setor', 'Caldeiraria');
       expect(el('[data-testid="ajuda-setor"]')?.textContent).toContain('Setor novo');
-      avançar();
+      atéOFim();
       salvar();
 
       const novo = http.expectOne((r) => r.method === 'POST' && r.url === SETORES_URL);
@@ -241,7 +243,7 @@ describe('EquipmentFormComponent', () => {
       digitar('nome', 'Prensa 2');
       avançar();
       digitar('tag', 'PR-01');
-      avançar();
+      atéOFim();
       salvar();
       http.expectOne(EQUIPAMENTOS).flush(
         { statusCode: 409, field: 'tag', message: 'A TAG PR-01 já é de "Prensa 1" (EQ-0001), nesta empresa.' },
@@ -268,6 +270,54 @@ describe('EquipmentFormComponent', () => {
       atéOFim();
       salvar();
       http.expectOne(EQUIPAMENTOS).flush(detalheDeEquipamento());
+    });
+
+    it('deve enviar a ficha do ativo junto: operação, energia, dimensões e fabricante', async () => {
+      await comoFernando();
+      await abrir();
+
+      digitar('nome', 'Esteira de ração');
+      avançar();
+      avançar();
+      digitar('utilizacao', 'Transporte de ração');
+      digitar('capacidade', '10 t/h');
+      digitar('potencia', '0,55');
+      digitar('operadores', '3');
+      (el('[data-testid="energia-ELECTRIC"] input') as HTMLInputElement).click();
+      (el('[data-testid="energia-PNEUMATIC"] input') as HTMLInputElement).click();
+      harness.detectChanges();
+      avançar();
+      digitar('altura', '1200');
+      digitar('peso', '450,5');
+      digitar('fabricante-cnpj', '11.222.333/0001-81');
+      atéOFim();
+      salvar();
+
+      const req = http.expectOne(EQUIPAMENTOS);
+      expect(req.request.body.sheet).toEqual({
+        purpose: 'Transporte de ração',
+        productiveCapacity: '10 t/h',
+        powerKw: 0.55,
+        exposedOperators: 3,
+        energySources: ['ELECTRIC', 'PNEUMATIC'],
+        dimensions: { heightMm: 1200, weightKg: 450.5 },
+        manufacturer: { document: '11.222.333/0001-81' },
+      });
+      req.flush(detalheDeEquipamento());
+    });
+
+    it('não deve passar da operação com número que não é número', async () => {
+      await comoFernando();
+      await abrir();
+
+      digitar('nome', 'Esteira');
+      avançar();
+      avançar();
+      digitar('operadores', 'três');
+      avançar();
+
+      expect(etapaAtual()).toBe('operacao');
+      expect(el('[data-testid="erro-operadores"]')?.textContent).toContain('número');
     });
 
     it('deve enviar a foto depois de criar o equipamento', async () => {
@@ -326,6 +376,13 @@ describe('EquipmentFormComponent', () => {
       expect(campo('serie').value).toBe('SN-1234');
       clicar('passo-planta');
       expect(campo('setor').value).toBe('Usinagem');
+      clicar('passo-operacao');
+      await assentar();
+      expect(campo('utilizacao').value).toBe('Estampagem de chapas');
+      expect(campo('potencia').value).toBe('7,5');
+      expect((el('[data-testid="energia-PNEUMATIC"] input') as HTMLInputElement).checked).toBe(true);
+      clicar('passo-porte');
+      expect(campo('altura').value).toBe('2400');
 
       // Na edição o cadastro já está completo: salvar vale de qualquer etapa.
       clicar('passo-identificacao');
@@ -333,7 +390,12 @@ describe('EquipmentFormComponent', () => {
       salvar();
       const req = http.expectOne(`${EQUIPAMENTOS}/EQ-0001`);
       expect(req.request.method).toBe('PATCH');
-      expect(req.request.body).toMatchObject({ name: 'Prensa 60t', sectorId: 'sec-usinagem', manufactureYear: 2012 });
+      expect(req.request.body).toMatchObject({
+        name: 'Prensa 60t',
+        sectorId: 'sec-usinagem',
+        manufactureYear: 2012,
+        sheet: { purpose: 'Estampagem de chapas', powerKw: 7.5, energySources: ['ELECTRIC', 'PNEUMATIC'] },
+      });
       req.flush(detalheDeEquipamento({ name: 'Prensa 60t' }));
       await assentar();
 

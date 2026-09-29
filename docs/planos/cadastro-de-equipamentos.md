@@ -44,6 +44,7 @@ Trocar as três máquinas inventadas (`maquinas-provisorias.ts`) pelo inventári
 | D9 | **Rotas do painel** | `empresas/:companySlug/equipamentos` (lista), `…/equipamentos/novo`, `…/equipamentos/:equipmentCode/editar` (Contexto 2, declaradas antes do Contexto 3) e `…/equipamentos/:equipmentCode` (Contexto 3). `…/setores` entra no menu do Contexto 2. |
 | D10 | **API sob `/companies/:companyId/…`** | `equipments` e `sectors` moram sob a empresa. Não precisam de prefixo novo no nginx, e o escopo é o da empresa. Só o catálogo é raiz, `/machine-types`, e ganha prefixo no `nginx.conf`. |
 | D11 | **A lista reusa o padrão das empresas** | Busca e filtro no servidor (`q`, `sectorId`, `status`), estado na URL, `app-data-table`, `actions` por linha, "—" nas colunas de análise. Alternar entre tabela e cartões fica na URL (`?vista=cartoes`). |
+| D13 | **A ficha do ativo mora no equipamento** | Utilização, capacidade, potência, postos de comando, operadores, fontes de energia, descrição do processo, intervenções, outras informações, dimensões e o cadastro do fabricante são características da máquina, e não medidas da vistoria. Viram colunas de `Equipment` e trafegam como `sheet`. O cadastro ganha as etapas Operação e Dimensões e fabricante. A análise fica com os tempos, o regime de uso, a gestão de segurança e as 4 fotos, e guarda uma cópia do equipamento ao concluir. Regra em 03 §4.2 e 04 §3. |
 | D12 | **Uma resposta de erro por campo** | TAG repetida e nome vazio voltam com `field`, como o CNPJ da empresa. |
 
 ## 4. Passos

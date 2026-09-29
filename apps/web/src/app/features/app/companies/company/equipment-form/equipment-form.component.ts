@@ -1,21 +1,35 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormsModule,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideBox, lucideCamera, lucideCheck, lucideMapPin } from '@ng-icons/lucide';
+import { lucideBox, lucideCamera, lucideCheck, lucideCog, lucideMapPin, lucideRuler } from '@ng-icons/lucide';
 import { AutoComplete, type AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { Textarea } from 'primeng/textarea';
 import { Step, StepList, Stepper } from 'primeng/stepper';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Observable, TimeoutError, catchError, map, of, switchMap, timeout } from 'rxjs';
 
 import {
+  ENERGY_SOURCES,
+  ENERGY_SOURCE_LABEL,
   MACHINE_TYPE_CREATOR_ROLES,
   equipmentCodeForUrl,
+  isValidCnpj,
   normalizeForSearch,
+  type EnergySource,
+  type EquipmentSheet,
   type EquipmentDetail,
   type EquipmentRef,
   type EquipmentUpsertRequest,
@@ -37,11 +51,11 @@ const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
 /** Quanto cada etapa do salvar espera o servidor — a mesma regra do cadastro de empresa. */
 const LIMITE_DE_ESPERA_MS = 20_000;
 
-type Campo = 'nome' | 'tipo' | 'modelo' | 'fabricante' | 'serie' | 'ano' | 'tag' | 'patrimonio' | 'setor';
+type Campo = keyof EquipmentFormComponent['form']['controls'];
 
 interface Etapa {
   valor: number;
-  chave: 'identificacao' | 'planta' | 'foto';
+  chave: 'identificacao' | 'planta' | 'operacao' | 'porte' | 'foto';
   titulo: string;
   icone: string;
   /** Os campos que esta etapa confere antes de deixar avançar. */
@@ -49,15 +63,50 @@ interface Etapa {
 }
 
 /**
- * As três etapas, na ordem em que a pessoa tem a informação diante da máquina:
- * o que ela é (a plaqueta do fabricante), onde ela está e como a planta a
- * chama, e por fim a foto — a última coisa que se faz, com o celular na mão.
+ * As cinco etapas, na ordem em que a pessoa tem a informação diante da máquina:
+ * o que ela é (a plaqueta), onde está e como a planta a chama, como ela
+ * trabalha, o porte e quem a fabricou, e por fim a foto — a última coisa que se
+ * faz, com o celular na mão. Da terceira em diante, a ficha do ativo
+ * (docs/produto/03 §4.2): tudo opcional.
  */
 const ETAPAS: readonly Etapa[] = [
   { valor: 1, chave: 'identificacao', titulo: 'Identificação', icone: 'lucideBox', campos: ['nome', 'tipo', 'modelo', 'fabricante', 'ano', 'serie'] },
   { valor: 2, chave: 'planta', titulo: 'Na planta', icone: 'lucideMapPin', campos: ['setor', 'tag', 'patrimonio'] },
-  { valor: 3, chave: 'foto', titulo: 'Foto', icone: 'lucideCamera', campos: [] },
+  {
+    valor: 3,
+    chave: 'operacao',
+    titulo: 'Operação',
+    icone: 'lucideCog',
+    campos: ['utilizacao', 'capacidade', 'potencia', 'postos', 'operadores', 'energias', 'processo', 'intervencoes', 'outras'],
+  },
+  {
+    valor: 4,
+    chave: 'porte',
+    titulo: 'Dimensões e fabricante',
+    icone: 'lucideRuler',
+    campos: ['altura', 'largura', 'profundidade', 'peso', 'fabricanteCnpj', 'fabricanteCrea', 'fabricanteEndereco', 'fabricanteCidade', 'fabricanteCep'],
+  },
+  { valor: 5, chave: 'foto', titulo: 'Foto', icone: 'lucideCamera', campos: [] },
 ];
+
+/** Inteiro, como "3" operadores. Vazio é válido: tudo na ficha é opcional. */
+const INTEIRO = Validators.pattern(/^\s*\d+\s*$/);
+/** Decimal com vírgula ou ponto, como "0,55" kW — é como se escreve aqui. */
+const DECIMAL = Validators.pattern(/^\s*\d+([.,]\d+)?\s*$/);
+
+const cnpjValido = (c: AbstractControl<string>): ValidationErrors | null =>
+  !c.value.trim() || isValidCnpj(c.value) ? null : { cnpj: true };
+
+/** "0,55" → 0.55; vazio → ausente. */
+function número(texto: string): number | undefined {
+  const limpo = texto.trim().replace(',', '.');
+  return limpo ? Number(limpo) : undefined;
+}
+
+/** 0.55 → "0,55", como a pessoa digitou. */
+function texto(n: number | undefined): string {
+  return n === undefined ? '' : String(n).replace('.', ',');
+}
 
 /**
  * Cadastro e edição do equipamento — Contexto 2 (docs/produto/03 §4.2).
@@ -75,6 +124,9 @@ const ETAPAS: readonly Etapa[] = [
   selector: 'app-equipment-form',
   standalone: true,
   imports: [
+    FormsModule,
+    Checkbox,
+    Textarea,
     ReactiveFormsModule,
     RouterLink,
     NgIconComponent,
@@ -88,7 +140,7 @@ const ETAPAS: readonly Etapa[] = [
     StepList,
     Step,
   ],
-  providers: [provideIcons({ lucideBox, lucideMapPin, lucideCamera, lucideCheck })],
+  providers: [provideIcons({ lucideBox, lucideMapPin, lucideCog, lucideRuler, lucideCamera, lucideCheck })],
   templateUrl: './equipment-form.component.html',
   styleUrls: ['../../../../../shared/styles/cadastro-em-etapas.css', './equipment-form.component.css'],
 })
@@ -113,7 +165,29 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     tag: this.fb.control(''),
     patrimonio: this.fb.control(''),
     setor: this.fb.control(''),
+
+    // Ficha do ativo
+    utilizacao: this.fb.control(''),
+    capacidade: this.fb.control(''),
+    potencia: this.fb.control('', DECIMAL),
+    postos: this.fb.control('', INTEIRO),
+    operadores: this.fb.control('', INTEIRO),
+    energias: this.fb.control<EnergySource[]>([]),
+    processo: this.fb.control(''),
+    intervencoes: this.fb.control(''),
+    outras: this.fb.control(''),
+    altura: this.fb.control('', INTEIRO),
+    largura: this.fb.control('', INTEIRO),
+    profundidade: this.fb.control('', INTEIRO),
+    peso: this.fb.control('', DECIMAL),
+    fabricanteCnpj: this.fb.control('', cnpjValido),
+    fabricanteCrea: this.fb.control(''),
+    fabricanteEndereco: this.fb.control(''),
+    fabricanteCidade: this.fb.control(''),
+    fabricanteCep: this.fb.control('', Validators.pattern(/^\s*\d{5}-?\d{3}\s*$|^\s*$/)),
   });
+
+  readonly fontesDeEnergia = ENERGY_SOURCES.map((valor) => ({ valor, rotulo: ENERGY_SOURCE_LABEL[valor] }));
 
   private readonly valores = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
 
@@ -128,7 +202,7 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
   readonly carregando = signal(false);
   readonly salvando = signal(false);
   readonly erro = signal<string | null>(null);
-  readonly erros = signal<Partial<Record<'nome' | 'tag' | 'ano', string>>>({});
+  readonly erros = signal<Partial<Record<Campo, string>>>({});
 
   readonly repetidosNaSerie = signal<EquipmentRef[]>([]);
   readonly repetidosNoPatrimonio = signal<EquipmentRef[]>([]);
@@ -205,6 +279,7 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
           tag: equipamento.tag ?? '',
           patrimonio: equipamento.patrimonyCode ?? '',
           setor: equipamento.sector?.name ?? '',
+          ...this.camposDaFicha(equipamento.sheet),
         });
         this.fotoPrevia.set(equipamento.photoUrl ?? null);
         // Na edição o cadastro já está completo: qualquer etapa é um clique.
@@ -326,14 +401,36 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
 
   // ── Salvar ───────────────────────────────────────────────────────────────
 
-  erroDe(campo: 'nome' | 'tag' | 'ano'): string | null {
+  erroDe(campo: Campo): string | null {
     const doServidor = this.erros()[campo];
     if (doServidor) return doServidor;
     const controle = this.form.controls[campo];
     if (!controle.touched || controle.valid) return null;
-    return campo === 'nome'
-      ? 'Informe o nome do equipamento.'
-      : 'O ano de fabricação é um número de quatro dígitos, como 2012.';
+    switch (campo) {
+      case 'nome':
+        return 'Informe o nome do equipamento.';
+      case 'ano':
+        return 'O ano de fabricação é um número de quatro dígitos, como 2012.';
+      case 'fabricanteCnpj':
+        return 'Esse CNPJ não é válido. Confira os dígitos, ou deixe em branco.';
+      case 'fabricanteCep':
+        return 'O CEP tem 8 dígitos.';
+      case 'potencia':
+      case 'peso':
+        return 'Informe um número, como 0,55.';
+      default:
+        return 'Informe um número inteiro.';
+    }
+  }
+
+  alternarEnergia(fonte: EnergySource, marcada: boolean): void {
+    const atuais = this.form.controls.energias.value;
+    this.form.controls.energias.setValue(marcada ? [...atuais, fonte] : atuais.filter((f) => f !== fonte));
+    this.form.markAsDirty();
+  }
+
+  temEnergia(fonte: EnergySource): boolean {
+    return this.form.controls.energias.value.includes(fonte);
   }
 
   temAlteracoesNaoSalvas(): boolean {
@@ -430,6 +527,53 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
       tag: v.tag,
       patrimonyCode: v.patrimonio,
       sectorId,
+      sheet: {
+        purpose: v.utilizacao.trim() || undefined,
+        productiveCapacity: v.capacidade.trim() || undefined,
+        powerKw: número(v.potencia),
+        controlStations: número(v.postos),
+        exposedOperators: número(v.operadores),
+        energySources: ENERGY_SOURCES.filter((f) => v.energias.includes(f)),
+        processDescription: v.processo.trim() || undefined,
+        commonInterventions: v.intervencoes.trim() || undefined,
+        otherInfo: v.outras.trim() || undefined,
+        dimensions: {
+          heightMm: número(v.altura),
+          widthMm: número(v.largura),
+          depthMm: número(v.profundidade),
+          weightKg: número(v.peso),
+        },
+        manufacturer: {
+          document: v.fabricanteCnpj.trim() || undefined,
+          registry: v.fabricanteCrea.trim() || undefined,
+          address: v.fabricanteEndereco.trim() || undefined,
+          city: v.fabricanteCidade.trim() || undefined,
+          zipCode: v.fabricanteCep.trim() || undefined,
+        },
+      },
+    };
+  }
+
+  private camposDaFicha(ficha: EquipmentSheet) {
+    return {
+      utilizacao: ficha.purpose ?? '',
+      capacidade: ficha.productiveCapacity ?? '',
+      potencia: texto(ficha.powerKw),
+      postos: texto(ficha.controlStations),
+      operadores: texto(ficha.exposedOperators),
+      energias: [...ficha.energySources],
+      processo: ficha.processDescription ?? '',
+      intervencoes: ficha.commonInterventions ?? '',
+      outras: ficha.otherInfo ?? '',
+      altura: texto(ficha.dimensions.heightMm),
+      largura: texto(ficha.dimensions.widthMm),
+      profundidade: texto(ficha.dimensions.depthMm),
+      peso: texto(ficha.dimensions.weightKg),
+      fabricanteCnpj: ficha.manufacturer.document ?? '',
+      fabricanteCrea: ficha.manufacturer.registry ?? '',
+      fabricanteEndereco: ficha.manufacturer.address ?? '',
+      fabricanteCidade: ficha.manufacturer.city ?? '',
+      fabricanteCep: ficha.manufacturer.zipCode ?? '',
     };
   }
 
@@ -460,7 +604,12 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     }
     const campo = erro instanceof HttpErrorResponse ? (erro.error as { field?: string })?.field : undefined;
     const mensagem = mensagemDoServidor(erro, 'Não foi possível salvar o equipamento.');
-    const doCampo = { name: 'nome', tag: 'tag', manufactureYear: 'ano' } as const;
+    const doCampo = {
+      name: 'nome',
+      tag: 'tag',
+      manufactureYear: 'ano',
+      'sheet.manufacturer.document': 'fabricanteCnpj',
+    } as const;
     const alvo = campo ? doCampo[campo as keyof typeof doCampo] : undefined;
     if (alvo) {
       this.erros.set({ [alvo]: mensagem });

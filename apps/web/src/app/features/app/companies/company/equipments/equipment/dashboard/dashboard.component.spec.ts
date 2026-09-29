@@ -56,6 +56,20 @@ describe('EquipmentDashboardComponent', () => {
     }
   });
 
+  it('deve mostrar a ficha do ativo: operação, energia, dimensões e fabricante', async () => {
+    const tela = await abrir(detalheDeEquipamento());
+
+    for (const trecho of ['Estampagem de chapas', '30 golpes/min', '7,5 kW', 'Elétrica · Pneumática', '2400 mm', '4200 kg', '11.222.333/0001-81', 'Joinville']) {
+      expect(tela.textContent).toContain(trecho);
+    }
+  });
+
+  it('deve dizer que a ficha está vazia, em vez de uma parede de "—", para a máquina cadastrada só com o nome', async () => {
+    const tela = await abrir(detalheDeEquipamento({ sheet: { energySources: [], dimensions: {}, manufacturer: {} } }));
+
+    expect(tela.querySelector('[data-testid="ficha-vazia"]')).not.toBeNull();
+  });
+
   it('deve mostrar "—" nos indicadores que são da análise, e dizer que ainda não houve análise', async () => {
     const tela = await abrir(detalheDeEquipamento());
 

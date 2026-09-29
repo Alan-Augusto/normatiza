@@ -29,6 +29,16 @@ export function detalheDeEquipamento(over: Partial<EquipmentDetail> = {}): Equip
     serialNumber: 'SN-1234',
     manufactureYear: 2012,
     patrimonyCode: 'PAT-77',
+    sheet: {
+      purpose: 'Estampagem de chapas',
+      productiveCapacity: '30 golpes/min',
+      powerKw: 7.5,
+      controlStations: 1,
+      exposedOperators: 2,
+      energySources: ['ELECTRIC', 'PNEUMATIC'],
+      dimensions: { heightMm: 2400, widthMm: 1200, depthMm: 1500, weightKg: 4200 },
+      manufacturer: { document: '11222333000181', city: 'Joinville' },
+    },
     createdAt: '2026-09-28T12:00:00.000Z',
     ...over,
   };

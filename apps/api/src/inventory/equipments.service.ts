@@ -7,13 +7,16 @@ import {
 import { Prisma } from '@prisma/client';
 import {
   formatEquipmentCode,
+  isValidCnpj,
   normalizeForSearch,
+  onlyDigits,
   parseEquipmentCode,
   type EquipmentActions,
   type EquipmentDetail,
   type EquipmentDuplicates,
   type EquipmentListItem,
   type EquipmentListQuery,
+  type EquipmentSheet,
   type EquipmentUpsertRequest,
 } from '@normatiza/shared';
 
@@ -320,6 +323,7 @@ export class EquipmentsService {
       tag,
       patrimonyCode: opcional(dto.patrimonyCode),
       sectorId,
+      ...colunasDaFicha(dto.sheet ?? {}),
     };
   }
 
@@ -373,6 +377,7 @@ export class EquipmentsService {
       ...(await this.linha(m, edita)),
       id: m.id,
       ...(m.manufactureYear ? { manufactureYear: m.manufactureYear } : {}),
+      sheet: fichaDe(m),
       ...(photoUrl ? { photoUrl } : {}),
       createdAt: m.createdAt.toISOString(),
     };
@@ -395,6 +400,79 @@ export class EquipmentsService {
       ...(after ? { after: { ...after, companyId: máquina.companyId } } : { after: { companyId: máquina.companyId } }),
     });
   }
+}
+
+/**
+ * A ficha que chega vira colunas. Como a identidade, a edição é **inteira**: o
+ * que não vier, ou vier vazio, é limpo. O CNPJ do fabricante é conferido aqui
+ * para responder no campo, que o DTO não sabe nomear com o caminho inteiro.
+ */
+function colunasDaFicha(ficha: Partial<EquipmentSheet>) {
+  const dimensões = ficha.dimensions ?? {};
+  const fabricante = ficha.manufacturer ?? {};
+
+  const cnpj = opcional(fabricante.document);
+  const documento = cnpj ? onlyDigits(cnpj) : null;
+  if (documento && !isValidCnpj(documento)) {
+    throw new BadRequestException({
+      statusCode: 400,
+      field: 'sheet.manufacturer.document',
+      message: 'O CNPJ do fabricante não é válido. Confira os dígitos, ou deixe em branco.',
+    });
+  }
+  const cep = opcional(fabricante.zipCode);
+
+  return {
+    purpose: opcional(ficha.purpose),
+    productiveCapacity: opcional(ficha.productiveCapacity),
+    powerKw: ficha.powerKw ?? null,
+    controlStations: ficha.controlStations ?? null,
+    exposedOperators: ficha.exposedOperators ?? null,
+    // Sem repetição: marcar "Elétrica" duas vezes não é ter duas fontes.
+    energySources: [...new Set(ficha.energySources ?? [])],
+    processDescription: opcional(ficha.processDescription),
+    commonInterventions: opcional(ficha.commonInterventions),
+    otherInfo: opcional(ficha.otherInfo),
+    heightMm: dimensões.heightMm ?? null,
+    widthMm: dimensões.widthMm ?? null,
+    depthMm: dimensões.depthMm ?? null,
+    weightKg: dimensões.weightKg ?? null,
+    manufacturerDocument: documento,
+    manufacturerRegistry: opcional(fabricante.registry),
+    manufacturerAddress: opcional(fabricante.address),
+    manufacturerCity: opcional(fabricante.city),
+    manufacturerZipCode: cep ? onlyDigits(cep) : null,
+  };
+}
+
+/** As colunas voltam como a ficha: só o que foi preenchido, e as listas sempre presentes. */
+function fichaDe(m: EquipamentoCompleto): EquipmentSheet {
+  const presente = <T extends Record<string, unknown>>(obj: T) =>
+    Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== null && v !== undefined)) as {
+      [K in keyof T]?: NonNullable<T[K]>;
+    };
+
+  return {
+    ...presente({
+      purpose: m.purpose,
+      productiveCapacity: m.productiveCapacity,
+      powerKw: m.powerKw,
+      controlStations: m.controlStations,
+      exposedOperators: m.exposedOperators,
+      processDescription: m.processDescription,
+      commonInterventions: m.commonInterventions,
+      otherInfo: m.otherInfo,
+    }),
+    energySources: m.energySources,
+    dimensions: presente({ heightMm: m.heightMm, widthMm: m.widthMm, depthMm: m.depthMm, weightKg: m.weightKg }),
+    manufacturer: presente({
+      document: m.manufacturerDocument,
+      registry: m.manufacturerRegistry,
+      address: m.manufacturerAddress,
+      city: m.manufacturerCity,
+      zipCode: m.manufacturerZipCode,
+    }),
+  };
 }
 
 function ações(m: { deactivatedAt: Date | null }, edita: boolean): EquipmentActions {

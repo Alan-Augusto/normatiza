@@ -55,6 +55,43 @@ export interface SectorMergeRequest {
   intoSectorId: string;
 }
 
+/** As fontes de energia da máquina — o que se isola antes de uma intervenção. */
+export type EnergySource = 'ELECTRIC' | 'PNEUMATIC' | 'HYDRAULIC' | 'MECHANICAL' | 'RADIOACTIVE';
+
+export const ENERGY_SOURCES: readonly EnergySource[] = ['ELECTRIC', 'PNEUMATIC', 'HYDRAULIC', 'MECHANICAL', 'RADIOACTIVE'];
+
+export const ENERGY_SOURCE_LABEL: Readonly<Record<EnergySource, string>> = {
+  ELECTRIC: 'Elétrica',
+  PNEUMATIC: 'Pneumática',
+  HYDRAULIC: 'Hidráulica',
+  MECHANICAL: 'Mecânica',
+  RADIOACTIVE: 'Radioativa',
+};
+
+/**
+ * A ficha do ativo: características da máquina, não medidas da vistoria
+ * (docs/produto/03 §4.2, 04 §3). Tudo opcional — só o nome do equipamento é
+ * obrigatório. Os tempos, o regime de uso e a gestão de segurança são da análise.
+ */
+export interface EquipmentSheet {
+  /** "Utilização": para que a máquina serve. */
+  purpose?: string;
+  /** Texto: "10 t/h", "115200 ovos", "MIN 5,9 CX/MIN". */
+  productiveCapacity?: string;
+  powerKw?: number;
+  /** Postos de comando. */
+  controlStations?: number;
+  exposedOperators?: number;
+  energySources: EnergySource[];
+  processDescription?: string;
+  /** Intervenções comuns do operador. */
+  commonInterventions?: string;
+  otherInfo?: string;
+  dimensions: { heightMm?: number; widthMm?: number; depthMm?: number; weightKg?: number };
+  /** O nome do fabricante é identidade (`manufacturerName`); aqui, o resto do cadastro dele. */
+  manufacturer: { document?: string; registry?: string; address?: string; city?: string; zipCode?: string };
+}
+
 /** Fora do inventário ou não. Conformidade e risco são das análises, não disto. */
 export type EquipmentStatus = 'ACTIVE' | 'INACTIVE';
 
@@ -112,6 +149,7 @@ export interface EquipmentListItem extends EquipmentRef {
 export interface EquipmentDetail extends EquipmentListItem {
   id: string;
   manufactureYear?: number;
+  sheet: EquipmentSheet;
   /** O original, para o painel do equipamento. */
   photoUrl?: string;
   createdAt: string;
@@ -138,6 +176,8 @@ export interface EquipmentUpsertRequest {
   tag?: string;
   patrimonyCode?: string;
   sectorId?: string | null;
+  /** Ausente = ficha vazia. Como a identidade, o que vier vazio é limpo. */
+  sheet?: Partial<EquipmentSheet>;
 }
 
 /** `GET …/equipments/duplicates`: quem já usa a série ou o patrimônio informados. */

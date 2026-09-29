@@ -292,6 +292,67 @@ describe('Inventário da planta (e2e)', () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────────
+  describe('a ficha do ativo', () => {
+    const ficha = {
+      purpose: 'Transporte de ração',
+      productiveCapacity: '10 t/h',
+      powerKw: 0.55,
+      controlStations: 2,
+      exposedOperators: 3,
+      energySources: ['ELECTRIC', 'PNEUMATIC'] as const,
+      processDescription: 'Recebe a ração do silo e leva à ensacadeira.',
+      commonInterventions: 'Limpeza da correia',
+      otherInfo: 'Instalada em 2019',
+      dimensions: { heightMm: 1200, widthMm: 800, depthMm: 5400, weightKg: 450.5 },
+      manufacturer: {
+        document: '11.222.333/0001-81',
+        registry: 'CREA-SC 12345',
+        address: 'Rua das Máquinas, 10',
+        city: 'Joinville',
+        zipCode: '89201-000',
+      },
+    };
+
+    it('deve guardar a ficha no equipamento e devolvê-la no detalhe', async () => {
+      const fernando = await escopo(elenco.fernando.id);
+
+      const criada = await equipments.create(fernando, elenco.brf.id, máquina({ sheet: { ...ficha, energySources: [...ficha.energySources] } }));
+      const aberta = await equipments.get(fernando, elenco.brf.id, criada.code);
+
+      expect(aberta.sheet).toEqual({
+        ...ficha,
+        energySources: ['ELECTRIC', 'PNEUMATIC'],
+        manufacturer: { ...ficha.manufacturer, document: '11222333000181', zipCode: '89201000' },
+      });
+    });
+
+    it('deve devolver a ficha vazia, e não ausente, para a máquina cadastrada só com o nome', async () => {
+      const criada = await equipments.create(await escopo(elenco.josué.id), elenco.brf.id, máquina());
+
+      expect(criada.sheet).toEqual({ energySources: [], dimensions: {}, manufacturer: {} });
+    });
+
+    it('deve limpar na edição o que vier vazio, como a identidade', async () => {
+      const josué = await escopo(elenco.josué.id);
+      const criada = await equipments.create(josué, elenco.brf.id, máquina({ sheet: { ...ficha, energySources: ['ELECTRIC'] } }));
+
+      const editada = await equipments.update(josué, elenco.brf.id, criada.code, máquina({ sheet: { purpose: 'Outra', energySources: [] } }));
+
+      expect(editada.sheet).toEqual({ purpose: 'Outra', energySources: [], dimensions: {}, manufacturer: {} });
+    });
+
+    it('deve recusar o CNPJ do fabricante que não é CNPJ, no campo dele', async () => {
+      await expect(
+        equipments.create(
+          await escopo(elenco.josué.id),
+          elenco.brf.id,
+          máquina({ sheet: { energySources: [], manufacturer: { document: '11.222.333/0001-82' } } }),
+        ),
+      ).rejects.toMatchObject({ response: { field: 'sheet.manufacturer.document' } });
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
   describe('a foto', () => {
     it('deve devolver a miniatura na lista e o original no detalhe', async () => {
       const fernando = await escopo(elenco.fernando.id);

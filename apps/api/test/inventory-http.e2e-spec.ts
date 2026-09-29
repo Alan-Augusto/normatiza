@@ -69,6 +69,24 @@ describe('Inventário — HTTP (e2e)', () => {
     await http().get(`${base()}?status=QUEBRADO`).set('Authorization', token).expect(400);
   });
 
+  it('deve validar a ficha do ativo no corpo: número onde é número, fonte de energia que existe', async () => {
+    const token = await como(elenco.josué);
+
+    for (const sheet of [
+      { energySources: ['NUCLEAR'] },
+      { energySources: [], powerKw: 'muita' },
+      { energySources: [], dimensions: { heightMm: -1 } },
+      { energySources: [], manufacturer: { zipCode: '123' } },
+    ]) {
+      await http().post(base()).set('Authorization', token).send({ name: 'X', sheet }).expect(400);
+    }
+    await http()
+      .post(base())
+      .set('Authorization', token)
+      .send({ name: 'X', sheet: { energySources: ['ELECTRIC'], powerKw: 0.75, dimensions: { heightMm: 1200 } } })
+      .expect(201);
+  });
+
   it('deve atender "duplicates" pela rota própria, e não como um código', async () => {
     const token = await como(elenco.josué);
     await http().post(base()).set('Authorization', token).send({ name: 'Esteira', serialNumber: 'S1' }).expect(201);

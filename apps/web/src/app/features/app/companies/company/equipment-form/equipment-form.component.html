@@ -189,6 +189,140 @@
           </div>
         }
 
+        @case ('operacao') {
+          <p class="descricao-etapa">
+            Como a máquina trabalha. É a ficha do ativo: não muda de uma vistoria para outra, e aparece no painel
+            desde já. Tudo opcional.
+          </p>
+
+          <div class="grade sm:grid-cols-2">
+            <div class="campo sm:col-span-2">
+              <label for="eq-utilizacao">Utilização <span class="opcional">para que a máquina serve</span></label>
+              <input pInputText id="eq-utilizacao" data-testid="campo-utilizacao" class="w-full" formControlName="utilizacao" placeholder="Ex.: Transporte de ração" />
+              <p class="erro"></p>
+            </div>
+
+            <div class="campo">
+              <label for="eq-capacidade">Capacidade produtiva</label>
+              <input pInputText id="eq-capacidade" data-testid="campo-capacidade" class="w-full" formControlName="capacidade" placeholder="Ex.: 10 t/h" />
+              <p class="erro"></p>
+            </div>
+
+            <div class="campo">
+              <label for="eq-potencia">Potência <span class="opcional">kW</span></label>
+              <input pInputText id="eq-potencia" data-testid="campo-potencia" class="w-full" inputmode="decimal" formControlName="potencia" placeholder="Ex.: 0,55" />
+              <p data-testid="erro-potencia" role="alert" class="erro">{{ erroDe('potencia') }}</p>
+            </div>
+
+            <div class="campo">
+              <label for="eq-postos">Postos de comando</label>
+              <input pInputText id="eq-postos" data-testid="campo-postos" class="w-full" inputmode="numeric" formControlName="postos" />
+              <p data-testid="erro-postos" role="alert" class="erro">{{ erroDe('postos') }}</p>
+            </div>
+
+            <div class="campo">
+              <label for="eq-operadores">Operadores expostos</label>
+              <input pInputText id="eq-operadores" data-testid="campo-operadores" class="w-full" inputmode="numeric" formControlName="operadores" />
+              <p data-testid="erro-operadores" role="alert" class="erro">{{ erroDe('operadores') }}</p>
+            </div>
+
+            <div class="campo sm:col-span-2">
+              <span class="rotulo">Fontes de energia</span>
+              <div class="flex flex-wrap gap-x-5 gap-y-2" role="group" aria-label="Fontes de energia">
+                @for (fonte of fontesDeEnergia; track fonte.valor) {
+                  <div class="flex items-center gap-2" [attr.data-testid]="'energia-' + fonte.valor">
+                    <p-checkbox
+                      [inputId]="'energia-' + fonte.valor"
+                      [binary]="true"
+                      [ngModel]="temEnergia(fonte.valor)"
+                      [ngModelOptions]="{ standalone: true }"
+                      [disabled]="bloqueado()"
+                      (ngModelChange)="alternarEnergia(fonte.valor, $event)"
+                    />
+                    <label [for]="'energia-' + fonte.valor" class="text-sm">{{ fonte.rotulo }}</label>
+                  </div>
+                }
+              </div>
+              <p class="erro"></p>
+            </div>
+
+            <div class="campo sm:col-span-2">
+              <label for="eq-processo">Descrição do processo</label>
+              <textarea pTextarea id="eq-processo" data-testid="campo-processo" rows="3" class="w-full" formControlName="processo"></textarea>
+              <p class="erro"></p>
+            </div>
+
+            <div class="campo sm:col-span-2">
+              <label for="eq-intervencoes">Intervenções comuns do operador</label>
+              <textarea pTextarea id="eq-intervencoes" data-testid="campo-intervencoes" rows="2" class="w-full" formControlName="intervencoes"></textarea>
+              <p class="erro"></p>
+            </div>
+
+            <div class="campo sm:col-span-2">
+              <label for="eq-outras">Outras informações</label>
+              <textarea pTextarea id="eq-outras" data-testid="campo-outras" rows="2" class="w-full" formControlName="outras"></textarea>
+              <p class="erro"></p>
+            </div>
+          </div>
+        }
+
+        @case ('porte') {
+          <p class="descricao-etapa">O porte da máquina e o cadastro de quem a fabricou — o que vai no laudo. Tudo opcional.</p>
+
+          <h3 class="subtitulo">Dimensões</h3>
+          <div class="grade sm:grid-cols-4">
+            <div class="campo">
+              <label for="eq-altura">Altura <span class="opcional">mm</span></label>
+              <input pInputText id="eq-altura" data-testid="campo-altura" class="w-full" inputmode="numeric" formControlName="altura" />
+              <p data-testid="erro-altura" role="alert" class="erro">{{ erroDe('altura') }}</p>
+            </div>
+            <div class="campo">
+              <label for="eq-largura">Largura <span class="opcional">mm</span></label>
+              <input pInputText id="eq-largura" data-testid="campo-largura" class="w-full" inputmode="numeric" formControlName="largura" />
+              <p data-testid="erro-largura" role="alert" class="erro">{{ erroDe('largura') }}</p>
+            </div>
+            <div class="campo">
+              <label for="eq-profundidade">Profundidade <span class="opcional">mm</span></label>
+              <input pInputText id="eq-profundidade" data-testid="campo-profundidade" class="w-full" inputmode="numeric" formControlName="profundidade" />
+              <p data-testid="erro-profundidade" role="alert" class="erro">{{ erroDe('profundidade') }}</p>
+            </div>
+            <div class="campo">
+              <label for="eq-peso">Peso <span class="opcional">kg</span></label>
+              <input pInputText id="eq-peso" data-testid="campo-peso" class="w-full" inputmode="decimal" formControlName="peso" />
+              <p data-testid="erro-peso" role="alert" class="erro">{{ erroDe('peso') }}</p>
+            </div>
+          </div>
+
+          <h3 class="subtitulo">Fabricante</h3>
+          <div class="grade sm:grid-cols-2">
+            <div class="campo">
+              <label for="eq-fabricante-cnpj">CNPJ</label>
+              <input pInputText id="eq-fabricante-cnpj" data-testid="campo-fabricante-cnpj" class="w-full" inputmode="numeric" formControlName="fabricanteCnpj" />
+              <p data-testid="erro-fabricante-cnpj" role="alert" class="erro">{{ erroDe('fabricanteCnpj') }}</p>
+            </div>
+            <div class="campo">
+              <label for="eq-fabricante-crea">Registro CREA</label>
+              <input pInputText id="eq-fabricante-crea" data-testid="campo-fabricante-crea" class="w-full" formControlName="fabricanteCrea" />
+              <p class="erro"></p>
+            </div>
+            <div class="campo sm:col-span-2">
+              <label for="eq-fabricante-endereco">Endereço</label>
+              <input pInputText id="eq-fabricante-endereco" data-testid="campo-fabricante-endereco" class="w-full" formControlName="fabricanteEndereco" />
+              <p class="erro"></p>
+            </div>
+            <div class="campo">
+              <label for="eq-fabricante-cidade">Cidade</label>
+              <input pInputText id="eq-fabricante-cidade" data-testid="campo-fabricante-cidade" class="w-full" formControlName="fabricanteCidade" />
+              <p class="erro"></p>
+            </div>
+            <div class="campo">
+              <label for="eq-fabricante-cep">CEP</label>
+              <input pInputText id="eq-fabricante-cep" data-testid="campo-fabricante-cep" class="w-full" inputmode="numeric" formControlName="fabricanteCep" />
+              <p data-testid="erro-fabricante-cep" role="alert" class="erro">{{ erroDe('fabricanteCep') }}</p>
+            </div>
+          </div>
+        }
+
         @case ('foto') {
           <p class="descricao-etapa">
             A foto que reconhece a máquina na lista. As quatro vistas de reconhecimento são da análise.

@@ -255,14 +255,17 @@ As colunas de análise mostram **"—"** enquanto a máquina não tem análise, 
 
 **O código do equipamento.** Todo equipamento recebe, ao ser cadastrado, um código curto e sequencial **por empresa**: `EQ-0001`, `EQ-0002`… É o que identifica a máquina na URL (`/app/empresas/brf-toledo/equipamentos/eq-0042`), na lista e, adiante, na etiqueta. O nome não serve para isso, porque a planta tem dezenas de "Esteira transportadora" iguais. A TAG também não, porque é opcional e é do cliente. O código não é editável e não é reaproveitado: um equipamento desativado mantém o seu, e o próximo cadastro segue a sequência.
 
-**Formulário de cadastro inicial** — *a ficha técnica densa é preenchida durante a análise; aqui é só criar o registro*. Em página própria e **em três etapas**, como o cadastro de empresa — Identificação, Na planta, Foto —, na ordem em que a pessoa tem a informação diante da máquina: a plaqueta, o lugar, e por fim a foto, com o celular na mão. Avançar confere a etapa; no cadastro, salvar fica na última; na edição, em qualquer uma:
-- Nome do equipamento, Tipo de máquina, Modelo, Fabricante
-- Número de série, Ano de fabricação
-- TAG de identificação, Número de patrimônio
-- Setor — escolhido da lista, ou **criado ali mesmo**, digitando o nome (§4.3)
-- Foto principal
+**Formulário de cadastro** — em página própria e **em cinco etapas**, como o cadastro de empresa, na ordem em que a pessoa tem a informação diante da máquina: a plaqueta, o lugar, como ela trabalha, o porte, e por fim a foto, com o celular na mão. Avançar confere a etapa; no cadastro, salvar fica na última; na edição, em qualquer uma.
 
-**Obrigatório é só o nome.** O resto se completa na análise, e um cadastro que exige o que ninguém tem em mãos no chão da fábrica não é feito.
+1. *Identificação:* Nome do equipamento, Tipo de máquina, Modelo, Fabricante, Ano de fabricação, Número de série
+2. *Na planta:* Setor — escolhido da lista, ou **criado ali mesmo**, digitando o nome (§4.3) —, TAG de identificação, Número de patrimônio
+3. *Operação:* Utilização (para que a máquina serve — "Transporte de ração", "Incubação de ovos"), Capacidade produtiva, Potência (kW), Postos de comando, Operadores expostos, Fontes de energia (Elétrica · Pneumática · Hidráulica · Mecânica · Radioativa). Textos longos: Descrição do processo, Intervenções comuns do operador, Outras informações
+4. *Dimensões e fabricante:* Altura, Largura, Profundidade (mm), Peso (kg); CNPJ, CREA, Endereço, Cidade e CEP do fabricante
+5. *Foto:* a foto principal
+
+**Obrigatório é só o nome.** Um cadastro que exige o que ninguém tem em mãos no chão da fábrica não é feito. O que ficar vazio se completa depois, pela edição ou durante a análise.
+
+**O equipamento guarda a ficha do ativo; a análise guarda o que se mede na vistoria.** Identidade, operação, dimensões, fontes de energia e fabricante são **características da máquina**: uma prensa de 60 toneladas continua sendo de 60 toneladas na próxima vistoria. Morando no equipamento, aparecem no painel desde o primeiro dia e não são redigitados a cada nova análise. O que só existe no momento da vistoria — os tempos medidos, o regime de uso observado, as perguntas de gestão de segurança e as quatro fotos de reconhecimento — é da análise (§5.2).
 
 **Tipo de máquina** vem de um catálogo (prensa, esteira transportadora, injetora…) com sugestão enquanto se digita, e não de texto livre — é o tipo que vai escolher o modelo de checklist da análise ([04 §7](./04_modelo_de_dados.md)), e "Prensa" e "prensa hidraulica " como dois tipos quebrariam isso. O catálogo é o global da plataforma mais os tipos que a consultoria acrescentou. **A consultoria cria um tipo novo ali mesmo**, digitando; o lado cliente escolhe da lista ou deixa em branco, para a consultoria classificar — o catálogo é da consultoria, e o que um cliente digitasse apareceria para todos os outros.
 
@@ -349,6 +352,7 @@ Linha do tempo de tudo que aconteceu nesta empresa: equipamentos cadastrados, an
 Radiografia da máquina.
 - Foto principal e galeria das 4 vistas
 - Identificação: Nome, Tipo de máquina, TAG, Modelo, Fabricante, Número de série, Ano, Setor, Patrimônio
+- Ficha do ativo: operação, fontes de energia, dimensões e fabricante (§4.2) — "—" no que ainda não foi preenchido
 - **Selo de conformidade NR-12** com cor baseada no pior HRN atual
 - Indicadores: Pontos de risco mapeados · Pontos em aberto · Pontos conformados · Investimento previsto vs. realizado · Data da última análise · Próxima revisão prevista
 - **Barra de progresso da adequação** — quantos pontos faltam para liberar o Laudo de Adequação. O denominador são os pontos que geraram tarefa; pontos aceitáveis ficam de fora
@@ -362,14 +366,11 @@ Radiografia da máquina.
 
 #### Assistente de Análise — 4 Etapas
 
-**Etapa 1 — Ficha Técnica**
+**Etapa 1 — Ficha técnica**
 
-- *Identidade:* os dados do equipamento (§4.2) — Nome, Tipo de máquina, Modelo, Fabricante, Número de série, Ano de fabricação, TAG, Patrimônio e Setor. A etapa os mostra e permite corrigi-los; a correção vale para o equipamento. Ao concluir, a análise guarda uma **cópia** deles, e o laudo emitido continua mostrando a máquina como ela estava identificada naquela data
-- *Fabricante:* CNPJ, CREA, Endereço, Cidade, CEP
-- *Características físicas:* Altura, Largura, Profundidade, Peso
-- *Produtividade e tempos:* Capacidade produtiva, Potência, Tempo de ciclo, Tempo de acionamento, Tempo de parada de emergência
-- *Operação:* Utilização (para que a máquina serve — "Transporte de ração", "Incubação de ovos"), Postos de comando, Total de operadores expostos, Regime de uso (turnos). Textos longos: Descrição do processo, Intervenções comuns do operador, Outras informações
-- *Fontes de energia:* Elétrica · Pneumática · Hidráulica · Mecânica · Radioativa
+- *A ficha do ativo:* os dados do equipamento (§4.2) — identidade, operação, fontes de energia, dimensões e fabricante. A etapa os mostra já preenchidos e permite corrigi-los; **a correção vale para o equipamento**, e a próxima análise já a encontra. Ao concluir, a análise guarda uma **cópia** de tudo, e o laudo emitido continua mostrando a máquina como ela estava naquela data, mesmo que o cadastro mude depois
+- *Tempos, medidos na vistoria:* Tempo de ciclo, Tempo de acionamento, Tempo de parada de emergência
+- *Regime de uso* observado (turnos)
 - *Gestão de segurança* — seis perguntas de Sim/Não, com o texto dos requisitos da NR-12, idêntico ao do sistema legado para que as respostas migradas signifiquem o mesmo:
   1. As manutenções preventivas com potencial de causar acidentes do trabalho são objeto de planejamento e gerenciamento efetuado por profissional legalmente habilitado?
   2. As manutenções preventivas e corretivas são registradas em livro próprio, ficha ou sistema informatizado — cronograma, intervenções realizadas, data de cada intervenção, serviço realizado, peças reparadas ou substituídas, condições de segurança do equipamento, indicação conclusiva quanto às condições de segurança da máquina e nome do responsável pelas intervenções?
