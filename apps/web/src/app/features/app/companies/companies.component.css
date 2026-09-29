@@ -1,3 +1,11 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  width: 100%;
+}
+
 /*
  * O selo de situação. Uma cor por etapa do ciclo, lida dos tokens semânticos:
  * ativa é o estado bom, aguardando Gestor pede ação, implantação é informação,

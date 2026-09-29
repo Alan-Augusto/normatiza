@@ -1,0 +1,21 @@
+.filtro-chip {
+  height: 1.25rem; /* 20px */
+  padding: 0 0.25rem 0 0.5rem;
+  font-size: var(--text-xs);
+  line-height: 1;
+  border-color: var(--p-content-border-color);
+  background: var(--p-content-hover-background);
+  color: var(--p-text-color);
+}
+
+.remover-btn {
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 9999px;
+  color: var(--p-text-muted-color);
+}
+
+.remover-btn:hover {
+  color: var(--p-red-500);
+  background: color-mix(in srgb, var(--p-red-500) 15%, transparent);
+}

@@ -1,0 +1,180 @@
+<div class="relative inline-block" #container>
+  <!-- Botão Disparador Minimalista (28×28px - estilo Linear / shadcn / Certidões) -->
+  <button
+    type="button"
+    data-testid="filtro-trigger"
+    class="filtro-trigger-btn relative inline-flex items-center justify-center rounded-lg border transition-all cursor-pointer select-none"
+    [class.ativo]="totalAtivos() > 0 || menuAberto()"
+    [attr.aria-expanded]="menuAberto()"
+    [attr.aria-label]="label()"
+    [pTooltip]="menuAberto() ? '' : label()"
+    tooltipPosition="top"
+    (click)="alternarMenu()"
+  >
+    <ng-icon name="lucideSlidersHorizontal" class="text-xs" aria-hidden="true" />
+
+    @if (totalAtivos() > 0) {
+      <span class="micro-badge" data-testid="filtro-badge">
+        {{ totalAtivos() }}
+      </span>
+    }
+  </button>
+
+  <!-- Menu Flutuante Principal (Abre abaixo do botão, alinhado à direita) -->
+  <div
+    class="menu-flutuante absolute right-0 top-full mt-1.5 w-48 rounded-xl border border-surface-200 bg-surface-0 p-1 text-xs shadow-xl z-50 select-none dark:border-surface-800 dark:bg-surface-900"
+    [class.hidden]="!menuAberto()"
+    data-testid="menu-flutuante"
+  >
+    <!-- Cabeçalho do menu ultra compacto -->
+    <div class="flex items-center justify-between border-b border-surface-100 px-2 py-1.5 dark:border-surface-800">
+      <span class="text-[10px] font-bold uppercase tracking-wider text-surface-400 dark:text-surface-500">
+        {{ label() }}
+      </span>
+      @if (totalAtivos() > 0) {
+        <button
+          type="button"
+          data-testid="limpar-filtros"
+          class="text-[10px] font-semibold text-primary hover:underline cursor-pointer"
+          (click)="limparTudo()"
+        >
+          Limpar ({{ totalAtivos() }})
+        </button>
+      }
+    </div>
+
+    <!-- Lista de Categorias / Grupos -->
+    <div class="py-1 space-y-0.5">
+      @for (group of groups(); track group.id) {
+        <div
+          class="relative group-item"
+          (mouseenter)="abrirSubmenu(group.id)"
+        >
+          <button
+            type="button"
+            [attr.data-testid]="'filtro-' + group.id"
+            (click)="alternarSubmenu(group.id)"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer select-none"
+            [class.bg-surface-100]="submenuAberto() === group.id || temAtivoNoGrupo(group)"
+            [class.dark:bg-surface-800]="submenuAberto() === group.id || temAtivoNoGrupo(group)"
+            [class.text-surface-900]="submenuAberto() === group.id || temAtivoNoGrupo(group)"
+            [class.dark:text-surface-100]="submenuAberto() === group.id || temAtivoNoGrupo(group)"
+            [class.text-surface-700]="submenuAberto() !== group.id && !temAtivoNoGrupo(group)"
+            [class.dark:text-surface-300]="submenuAberto() !== group.id && !temAtivoNoGrupo(group)"
+          >
+            <div class="flex items-center gap-1.5 truncate">
+              <span class="truncate">{{ group.label }}</span>
+              @if (temAtivoNoGrupo(group)) {
+                <span class="h-1.5 w-1.5 rounded-full bg-primary shrink-0"></span>
+              }
+            </div>
+
+            <div class="flex items-center gap-1 shrink-0 text-muted-color">
+              @if (rotuloAtivoNoGrupo(group); as rotulo) {
+                <span class="max-w-[70px] truncate text-[10px] font-semibold text-primary">
+                  {{ rotulo }}
+                </span>
+              }
+              <ng-icon name="lucideChevronRight" class="text-xs" />
+            </div>
+          </button>
+
+          <!-- Submenu Flutuante (abre à ESQUERDA da categoria para não estourar a tela) -->
+          @if (submenuAberto() === group.id) {
+            <div
+              class="submenu-flutuante absolute right-full top-0 mr-1.5 w-56 rounded-xl border border-surface-200 bg-surface-0 p-1 text-xs shadow-xl z-50 flex flex-col select-none dark:border-surface-800 dark:bg-surface-900"
+              [attr.data-testid]="'submenu-' + group.id"
+            >
+            <!-- Cabeçalho do Submenu -->
+            <div class="flex items-center justify-between border-b border-surface-100 px-2 py-1.5 dark:border-surface-800 shrink-0">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-surface-400 dark:text-surface-500">
+                {{ group.label }}
+              </span>
+              @if (temAtivoNoGrupo(group)) {
+                <button
+                  type="button"
+                  class="text-[10px] font-semibold text-primary hover:underline cursor-pointer"
+                  (click)="limparGrupo(group.id)"
+                >
+                  Limpar
+                </button>
+              }
+            </div>
+
+            <!-- Lista de Opções -->
+            <div class="max-h-64 overflow-y-auto py-1 space-y-0.5">
+              <ul role="listbox" class="space-y-0.5 list-none m-0 p-0">
+                @for (opt of group.options; track opt.label) {
+                  <li
+                    role="option"
+                    [attr.aria-label]="opt.label"
+                    [attr.aria-selected]="estaSelecionado(group, opt)"
+                    [attr.data-opcao]="opt.label"
+                    (click)="selecionarOpcao(group.id, opt)"
+                    class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer transition-colors"
+                    [class.bg-primary-50]="estaSelecionado(group, opt)"
+                    [class.dark:bg-primary-950/40]="estaSelecionado(group, opt)"
+                    [class.text-primary-900]="estaSelecionado(group, opt)"
+                    [class.dark:text-primary-200]="estaSelecionado(group, opt)"
+                    [class.font-semibold]="estaSelecionado(group, opt)"
+                    [class.hover:bg-surface-100]="!estaSelecionado(group, opt)"
+                    [class.dark:hover:bg-surface-800]="!estaSelecionado(group, opt)"
+                  >
+                    @if (group.tipo === 'checkbox') {
+                      <!-- Checkbox para seleção múltipla -->
+                      <div
+                        class="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-all"
+                        [class.bg-primary]="estaSelecionado(group, opt)"
+                        [class.border-primary]="estaSelecionado(group, opt)"
+                        [class.text-white]="estaSelecionado(group, opt)"
+                        [class.border-surface-300]="!estaSelecionado(group, opt)"
+                        [class.dark:border-surface-600]="!estaSelecionado(group, opt)"
+                        [class.bg-surface-0]="!estaSelecionado(group, opt)"
+                        [class.dark:bg-surface-800]="!estaSelecionado(group, opt)"
+                      >
+                        @if (estaSelecionado(group, opt)) {
+                          <ng-icon name="lucideCheck" class="text-[10px] stroke-[3]" />
+                        }
+                      </div>
+                    } @else {
+                      <!-- Radio button para seleção única -->
+                      <div
+                        class="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border transition-all"
+                        [class.border-primary]="estaSelecionado(group, opt)"
+                        [class.border-surface-300]="!estaSelecionado(group, opt)"
+                        [class.dark:border-surface-600]="!estaSelecionado(group, opt)"
+                        [class.bg-surface-0]="!estaSelecionado(group, opt)"
+                        [class.dark:bg-surface-800]="!estaSelecionado(group, opt)"
+                      >
+                        @if (estaSelecionado(group, opt)) {
+                          <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                        }
+                      </div>
+                    }
+
+                    @if (opt.dotColor) {
+                      <span class="h-2 w-2 rounded-full shrink-0" [style.background-color]="opt.dotColor"></span>
+                    }
+
+                    <span class="truncate flex-1">{{ opt.label }}</span>
+
+                    @if (opt.count !== undefined) {
+                      <span class="rounded-full bg-surface-100 px-1.5 py-0.2 text-[9px] font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-400 shrink-0">
+                        {{ opt.count }}
+                      </span>
+                    }
+                  </li>
+                } @empty {
+                  <li class="px-2 py-2 text-center text-muted-color text-xs">
+                    Nenhuma opção disponível
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    </div>
+  </div>
+</div>

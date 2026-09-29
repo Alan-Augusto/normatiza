@@ -1,0 +1,11 @@
+<span class="filtro-chip inline-flex items-center gap-1 rounded-md border text-xs font-medium select-none">
+  <span>{{ label() }}</span>
+  <button
+    type="button"
+    class="remover-btn inline-flex items-center justify-center cursor-pointer transition-colors"
+    [attr.aria-label]="'Remover filtro ' + label()"
+    (click)="remover.emit()"
+  >
+    <ng-icon name="lucideX" class="text-[10px]" />
+  </button>
+</span>

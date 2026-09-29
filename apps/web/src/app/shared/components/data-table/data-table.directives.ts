@@ -59,3 +59,41 @@ export class TituloDeGrupo<T> {
     return true;
   }
 }
+
+/** Filtros rápidos (botões compactos de 1 clique com badges). */
+@Directive({ selector: 'ng-template[appFiltrosRapidos]', standalone: true })
+export class FiltrosRapidos {
+  readonly template = inject(TemplateRef);
+}
+
+/** Menu de filtros avançados ou popover flutuante. */
+@Directive({ selector: 'ng-template[appFiltrosAvancados]', standalone: true })
+export class FiltrosAvancados {
+  readonly template = inject(TemplateRef);
+}
+
+/** Pílulas/chips de filtros ativos exibidos ao lado do totalizador. */
+@Directive({ selector: 'ng-template[appFiltrosAtivos]', standalone: true })
+export class FiltrosAtivos {
+  readonly template = inject(TemplateRef);
+}
+
+/** Conteúdo adicional à esquerda da toolbar (ex.: alternador de visualização tabela/cartões). */
+@Directive({ selector: 'ng-template[appToolbarEsquerda]', standalone: true })
+export class ToolbarEsquerda {
+  readonly template = inject(TemplateRef);
+}
+
+/** Ação primária da tela integrada à toolbar (ex.: botão de criação). */
+@Directive({ selector: 'ng-template[appAcaoPrimaria]', standalone: true })
+export class AcaoPrimaria {
+  readonly template = inject(TemplateRef);
+}
+
+/** Visualização customizada no lugar da tabela tradicional (ex.: grade de cartões com foto). */
+@Directive({ selector: 'ng-template[appVisualizacaoCustomizada]', standalone: true })
+export class VisualizacaoCustomizada<T = unknown> {
+  readonly template = inject<TemplateRef<{ $implicit: readonly T[] }>>(TemplateRef);
+}
+
+

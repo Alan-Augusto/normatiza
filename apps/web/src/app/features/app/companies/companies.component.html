@@ -1,53 +1,4 @@
-<div class="space-y-4">
-  <div class="flex flex-wrap items-end justify-between gap-3">
-    <div class="flex flex-wrap items-end gap-3">
-      <div class="flex flex-col gap-1">
-        <label for="busca-empresa" class="text-xs font-medium text-muted-color">Buscar</label>
-        <div class="relative">
-          <ng-icon
-            name="lucideSearch"
-            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-color"
-          />
-          <input
-            pInputText
-            id="busca-empresa"
-            data-testid="busca"
-            type="search"
-            class="w-80 max-w-full pl-9"
-            placeholder="Nome, CNPJ, cidade, grupo, Gestor…"
-            [value]="termo()"
-            (input)="aoDigitar($any($event.target).value)"
-          />
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-muted-color">Situação</label>
-        <!--
-          Sem escolha, a lista traz as empresas **em operação** — todas menos as
-          inativas. É a carteira que se trabalha; a inativa se pede.
-        -->
-        <p-select
-          data-testid="filtro-status"
-          [options]="opcoesDeStatus"
-          [ngModel]="filtros().status ?? null"
-          (ngModelChange)="filtrarStatus($event)"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Em operação"
-          [showClear]="true"
-          styleClass="w-56"
-        />
-      </div>
-    </div>
-
-    @if (podeCadastrar()) {
-      <a pButton [routerLink]="rotas.novaEmpresa" data-testid="nova-empresa">
-        <span pButtonLabel>Nova empresa</span>
-      </a>
-    }
-  </div>
-
+<div class="flex-1 min-h-0 flex flex-col gap-4">
   @if (aviso()) {
     <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
   }
@@ -58,9 +9,59 @@
   <app-data-table
     [dados]="empresas()"
     [carregando]="carregando()"
+    entidade="empresas"
+    [termoBusca]="termo()"
+    placeholderBusca="Nome, CNPJ, cidade, Gestor…"
+    (buscaChange)="aoDigitar($event)"
     [vazio]="tituloDoVazio()"
     [vazioDetalhe]="detalheDoVazio()"
   >
+    <!-- Chips de filtros ativos à esquerda -->
+    <ng-template appFiltrosAtivos>
+      @if (filtros().status) {
+        <app-filter-chip
+          [label]="rotuloDoStatus(filtros().status!)"
+          (remover)="filtrarStatus(null)"
+        />
+      }
+    </ng-template>
+
+    <!-- Filtros Rápidos de 1 clique à direita -->
+    <ng-template appFiltrosRapidos>
+      <app-quick-filter
+        icon="lucideClock"
+        label="Aguardando Gestor"
+        [badge]="contagemAguardando()"
+        [ativo]="filtros().status === 'AWAITING_MANAGER'"
+        severity="warning"
+        (acionar)="alternarFiltroStatus('AWAITING_MANAGER')"
+      />
+      <app-quick-filter
+        icon="lucideHammer"
+        label="Em implantação"
+        [badge]="contagemImplantacao()"
+        [ativo]="filtros().status === 'IMPLANTATION'"
+        severity="info"
+        (acionar)="alternarFiltroStatus('IMPLANTATION')"
+      />
+    </ng-template>
+
+    <!-- Menu de Filtros Avançados -->
+    <ng-template appFiltrosAvancados>
+      <app-filter-menu
+        [groups]="gruposDeFiltro()"
+        (change)="aoMudarFiltro($event)"
+      />
+    </ng-template>
+
+    <!-- Ação Primária -->
+    <ng-template appAcaoPrimaria>
+      @if (podeCadastrar()) {
+        <a pButton size="small" [routerLink]="rotas.novaEmpresa" data-testid="nova-empresa">
+          <span pButtonLabel>Nova empresa</span>
+        </a>
+      }
+    </ng-template>
     <ng-template appCabecalho>
       <tr>
         <th>Empresa</th>

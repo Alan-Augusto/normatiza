@@ -1,18 +1,4 @@
-<div class="space-y-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <p class="text-sm text-muted-color">
-      Quem tem acesso a esta empresa — a equipe própria e os terceiros contratados.
-    </p>
-
-    <div class="flex items-center gap-2">
-      <app-role-guide />
-
-      @if (podeConvidar()) {
-        <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
-      }
-    </div>
-  </div>
-
+<div class="flex-1 min-h-0 flex flex-col gap-4">
   @if (aviso()) {
     <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
   }
@@ -20,16 +6,10 @@
     <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
   }
 
-  <!--
-    A consultoria como contexto, não como tabela (D25). O cliente precisa saber
-    quem presta o serviço e com quem falar sobre o laudo; não precisa — e não
-    deve receber — o cadastro da equipe de outra empresa. Nome e registro é o
-    que já vai impresso no laudo assinado.
-  -->
   @if (mostraContextoDaConsultoria()) {
     <div
       data-testid="contexto-consultoria"
-      class="rounded-lg border border-surface-200 bg-surface-50 p-3 text-sm dark:border-surface-700 dark:bg-surface-800"
+      class="shrink-0 rounded-lg border border-surface-200 bg-surface-50 p-3 text-sm dark:border-surface-700 dark:bg-surface-800"
     >
       <p class="text-surface-900 dark:text-surface-0">
         <span class="font-semibold">{{ nomeDaConsultoria() }}</span>
@@ -57,9 +37,59 @@
     [dados]="membrosAgrupados()"
     [carregando]="carregando()"
     agruparPor="origin"
+    entidade="membros"
+    [termoBusca]="termo()"
+    placeholderBusca="Nome ou e-mail…"
+    (buscaChange)="termo.set($event)"
     vazio="Ninguém tem acesso a esta empresa ainda."
     vazioDetalhe="Convide quem precisa trabalhar aqui — o acesso chega por e-mail."
   >
+    <!-- Chips de filtros ativos -->
+    <ng-template appFiltrosAtivos>
+      @if (filtroPapel(); as papel) {
+        <app-filter-chip
+          [label]="rotuloDoPapel(papel)"
+          (remover)="filtroPapel.set(null)"
+        />
+      }
+      @if (filtroStatus(); as st) {
+        <app-filter-chip
+          [label]="rotuloDoStatus(st)"
+          (remover)="filtroStatus.set(null)"
+        />
+      }
+    </ng-template>
+
+    <!-- Filtros Rápidos -->
+    <ng-template appFiltrosRapidos>
+      <app-quick-filter
+        icon="lucideMail"
+        label="Convites pendentes"
+        [badge]="contagemPendentes()"
+        [ativo]="filtroStatus() === 'INVITED'"
+        severity="warning"
+        (acionar)="alternarFiltroStatus('INVITED')"
+      />
+    </ng-template>
+
+    <!-- Menu de Filtros Avançados -->
+    <ng-template appFiltrosAvancados>
+      <app-filter-menu
+        [groups]="gruposDeFiltro()"
+        (change)="aoMudarFiltro($event)"
+      />
+    </ng-template>
+
+    <!-- Ação Primária -->
+    <ng-template appAcaoPrimaria>
+      <div class="flex items-center gap-2">
+        <app-role-guide />
+
+        @if (podeConvidar()) {
+          <p-button data-testid="convidar" size="small" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+        }
+      </div>
+    </ng-template>
     <ng-template appCabecalho>
       <tr>
         <th>Nome</th>

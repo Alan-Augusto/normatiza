@@ -17,13 +17,22 @@ import { AuthService } from '../../../../../core/auth/auth.service';
 import { empresaDaRota } from '../../../../../core/routing/empresa-da-rota';
 import { mensagemDoServidor } from '../../../../../core/http/mensagem-de-erro';
 import { TeamService } from '../../../../../core/services/team.service';
+import { provideIcons } from '@ng-icons/core';
+import { lucideMail } from '@ng-icons/lucide';
 import { DataTable } from '../../../../../shared/components/data-table/data-table.component';
 import {
+  AcaoPrimaria,
   AcaoVazia,
   CabecalhoDaTabela,
+  FiltrosAtivos,
+  FiltrosAvancados,
+  FiltrosRapidos,
   LinhaDaTabela,
   TituloDeGrupo,
 } from '../../../../../shared/components/data-table/data-table.directives';
+import { FilterChip } from '../../../../../shared/components/filter-chip/filter-chip.component';
+import { FilterGroup, FilterMenuComponent } from '../../../../../shared/components/filter-menu/filter-menu.component';
+import { QuickFilter } from '../../../../../shared/components/quick-filter/quick-filter.component';
 import { InviteFormComponent } from '../../../../../shared/components/team/invite-form.component';
 import { RoleGuideComponent } from '../../../../../shared/components/team/role-guide.component';
 import {
@@ -66,11 +75,19 @@ import { RowActionComponent } from '../../../../../shared/components/row-action/
     CabecalhoDaTabela,
     LinhaDaTabela,
     AcaoVazia,
+    AcaoPrimaria,
+    FiltrosAtivos,
+    FiltrosAvancados,
+    FiltrosRapidos,
     TituloDeGrupo,
+    FilterChip,
+    FilterMenuComponent,
+    QuickFilter,
     InviteFormComponent,
     RoleGuideComponent,
     RoleEditorComponent,
   ],
+  providers: [provideIcons({ lucideMail })],
   templateUrl: './company-team.component.html',
   styleUrl: './company-team.component.css',
 })
@@ -93,6 +110,79 @@ export class CompanyTeamComponent {
   readonly convidando = signal(false);
   readonly editando = signal<CompanyMember | null>(null);
   readonly removendo = signal<CompanyMember | null>(null);
+
+  readonly termo = signal('');
+  readonly filtroPapel = signal<Role | null>(null);
+  readonly filtroStatus = signal<string | null>(null);
+
+  readonly contagemPendentes = computed(
+    () => this.membros().filter((m) => m.status === 'INVITED').length,
+  );
+
+  alternarFiltroStatus(status: string): void {
+    if (this.filtroStatus() === status) {
+      this.filtroStatus.set(null);
+    } else {
+      this.filtroStatus.set(status);
+    }
+  }
+
+  readonly opcoesDePapelDisponiveis = computed(() => {
+    const papeis = new Set<Role>();
+    for (const m of this.membros()) {
+      for (const r of m.roles) {
+        papeis.add(r);
+      }
+    }
+    return [...papeis].map((p) => ({
+      label: ROLE_LABEL[p],
+      value: p,
+      count: this.membros().filter((m) => m.roles.includes(p)).length,
+    }));
+  });
+
+  readonly opcoesDeStatusDisponiveis = [
+    { label: 'Ativo', value: 'ACTIVE', dotColor: 'var(--p-green-500)' },
+    { label: 'Convite pendente', value: 'INVITED', dotColor: 'var(--p-amber-500)' },
+    { label: 'Sem acesso', value: 'DISABLED', dotColor: 'var(--p-surface-400)' },
+  ];
+
+  readonly gruposDeFiltro = computed<FilterGroup[]>(() => {
+    const grupos: FilterGroup[] = [];
+
+    if (this.opcoesDePapelDisponiveis().length > 0) {
+      grupos.push({
+        id: 'papel',
+        label: 'Papel',
+        selectedValue: this.filtroPapel(),
+        options: this.opcoesDePapelDisponiveis(),
+      });
+    }
+
+    grupos.push({
+      id: 'status',
+      label: 'Situação',
+      selectedValue: this.filtroStatus(),
+      options: this.opcoesDeStatusDisponiveis.map((s) => ({
+        ...s,
+        count: this.membros().filter((m) => m.status === s.value).length,
+      })),
+    });
+
+    return grupos;
+  });
+
+  aoMudarFiltro(evento: { groupId: string; value: unknown | null }): void {
+    if (evento.groupId === 'papel') {
+      this.filtroPapel.set(evento.value as Role | null);
+    } else if (evento.groupId === 'status') {
+      this.filtroStatus.set(evento.value as string | null);
+    }
+  }
+
+  rotuloDoStatus(status: string): string {
+    return this.opcoesDeStatusDisponiveis.find((s) => s.value === status)?.label ?? status;
+  }
 
   /** Rótulo por método — o template não indexa mapa, e um papel novo quebra aqui. */
   rotuloDoPapel(papel: Role): string {
@@ -163,11 +253,30 @@ export class CompanyTeamComponent {
    * `p-table` abre um grupo a cada troca de valor, então a lista **precisa**
    * chegar ordenada ou o mesmo título apareceria três vezes.
    */
-  readonly membrosAgrupados = computed(() =>
-    [...this.membros()].sort(
+  readonly membrosAgrupados = computed(() => {
+    let lista = this.membros();
+
+    const t = this.termo().toLowerCase().trim();
+    if (t) {
+      lista = lista.filter(
+        (m) => m.name.toLowerCase().includes(t) || m.email.toLowerCase().includes(t),
+      );
+    }
+
+    const papel = this.filtroPapel();
+    if (papel) {
+      lista = lista.filter((m) => m.roles.includes(papel));
+    }
+
+    const st = this.filtroStatus();
+    if (st) {
+      lista = lista.filter((m) => m.status === st);
+    }
+
+    return [...lista].sort(
       (a, b) => this.ordemDaOrigem.indexOf(a.origin) - this.ordemDaOrigem.indexOf(b.origin),
-    ),
-  );
+    );
+  });
 
   /**
    * A linha de contexto aparece para quem **não** tem a consultoria na lista.

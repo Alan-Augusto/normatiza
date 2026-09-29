@@ -270,9 +270,9 @@
     </header>
 
     <!-- Content Router Area -->
-    <main class="flex-1 overflow-y-auto p-6 md:p-4">
+    <main class="flex-1 min-h-0 flex flex-col p-6 md:p-4 overflow-y-auto">
       <!-- Page Title Header -->
-      <div class="mb-6 select-none">
+      <div class="mb-4 select-none shrink-0">
         <h1 class="text-xl font-semibold tracking-tight text-surface-900 dark:text-surface-0">
           {{ activePageTitle() }}
         </h1>
@@ -280,7 +280,9 @@
       </div>
 
       <!-- Projected Router Outlet -->
-      <ng-content></ng-content>
+      <div class="flex-1 min-h-0 flex flex-col">
+        <ng-content></ng-content>
+      </div>
     </main>
   </div>
 </div>

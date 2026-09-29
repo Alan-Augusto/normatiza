@@ -1,68 +1,4 @@
-<div class="space-y-4">
-  <!-- Filtros e a porta de entrada de gente nova -->
-  <div class="flex flex-wrap items-end justify-between gap-3">
-    <div class="flex flex-wrap gap-3">
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-muted-color">Papel</label>
-        <p-select
-          data-testid="filtro-papel"
-          [options]="opcoesDePapel"
-          [ngModel]="filtros().role ?? null"
-          (ngModelChange)="filtrar('role', $event)"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Todos os papéis"
-          [showClear]="true"
-          styleClass="w-48"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-muted-color">Empresa</label>
-        <p-select
-          data-testid="filtro-empresa"
-          [options]="opcoesDeEmpresa()"
-          [ngModel]="filtros().companyId ?? null"
-          (ngModelChange)="filtrar('companyId', $event)"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Todas as empresas"
-          [showClear]="true"
-          styleClass="w-48"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-muted-color">Situação</label>
-        <p-select
-          data-testid="filtro-status"
-          [options]="opcoesDeStatus"
-          [ngModel]="filtros().status ?? null"
-          (ngModelChange)="filtrar('status', $event)"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Todas as situações"
-          [showClear]="true"
-          styleClass="w-48"
-        />
-      </div>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <!--
-        O papel aparece como selo em toda linha e nunca diz o que alcança.
-        O guia é a resposta única a isso, e está aqui para quem **não** convida
-        também: entender o que é um "Engenheiro do Cliente" não é privilégio de
-        quem administra.
-      -->
-      <app-role-guide />
-
-      @if (podeConvidar()) {
-        <p-button data-testid="convidar" label="Convidar pessoa" (onClick)="convidando.set(true)" />
-      }
-    </div>
-  </div>
-
+<div class="flex-1 min-h-0 flex flex-col gap-4">
   @if (aviso()) {
     <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
   }
@@ -71,11 +7,76 @@
   }
 
   <app-data-table
-    [dados]="membros()"
+    [dados]="membrosFiltrados()"
     [carregando]="carregando()"
+    entidade="membros"
+    [termoBusca]="termo()"
+    placeholderBusca="Nome ou e-mail…"
+    (buscaChange)="termo.set($event)"
     [vazio]="tituloDoVazio()"
     [vazioDetalhe]="detalheDoVazio()"
   >
+    <!-- Chips de filtros ativos -->
+    <ng-template appFiltrosAtivos>
+      @if (filtros().role; as role) {
+        <app-filter-chip
+          [label]="rotuloDoPapel(role)"
+          (remover)="filtrar('role', null)"
+        />
+      }
+      @if (filtros().companyId; as companyId) {
+        <app-filter-chip
+          [label]="nomeDaEmpresaFiltro(companyId)"
+          (remover)="filtrar('companyId', null)"
+        />
+      }
+      @if (filtros().status; as status) {
+        <app-filter-chip
+          [label]="rotuloDoStatusFiltro(status)"
+          (remover)="filtrar('status', null)"
+        />
+      }
+    </ng-template>
+
+    <!-- Filtros Rápidos -->
+    <ng-template appFiltrosRapidos>
+      <app-quick-filter
+        icon="lucideMail"
+        label="Convites pendentes"
+        [badge]="contagemPendentes()"
+        [ativo]="filtros().status === 'INVITED'"
+        severity="warning"
+        (acionar)="alternarFiltroStatus('INVITED')"
+      />
+      <app-quick-filter
+        icon="lucideUserX"
+        label="Desligados"
+        [badge]="contagemDesligados()"
+        [ativo]="filtros().status === 'DISABLED'"
+        severity="danger"
+        (acionar)="alternarFiltroStatus('DISABLED')"
+      />
+    </ng-template>
+
+    <!-- Menu de Filtros Avançados -->
+    <ng-template appFiltrosAvancados>
+      <app-filter-menu
+        [groups]="gruposDeFiltro()"
+        (change)="aoMudarFiltro($event)"
+      />
+    </ng-template>
+
+    <!-- Ação Primária -->
+    <ng-template appAcaoPrimaria>
+      <div class="flex items-center gap-2">
+        <app-role-guide />
+
+        @if (podeConvidar()) {
+          <p-button data-testid="convidar" size="small" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+        }
+      </div>
+    </ng-template>
+
     <ng-template appCabecalho>
       <tr>
         <th>Nome</th>

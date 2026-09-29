@@ -1,66 +1,240 @@
-@if (carregando()) {
-  <!--
-    Barras no lugar das linhas, e não um "Carregando…" centralizado: o desenho
-    já mostra que ali vai nascer uma lista, e a tela não salta quando ela chega.
-  -->
-  <div
-    data-testid="tabela-carregando"
-    class="space-y-3 rounded-lg border border-surface-200 bg-surface-0 p-4 dark:border-surface-700 dark:bg-surface-900"
-  >
-    @for (linha of esqueleto(); track linha) {
-      <p-skeleton height="1.75rem" />
-    }
-  </div>
-} @else if (dados().length === 0) {
-  <div
-    data-testid="tabela-vazia"
-    class="rounded-lg border border-dashed border-surface-300 bg-surface-0 px-6 py-12 text-center dark:border-surface-700 dark:bg-surface-900"
-  >
-    <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ vazio() }}</p>
+<div class="tabela-card flex-1 min-h-0 flex flex-col rounded-xl border border-surface-200 bg-surface-0 shadow-2xs dark:border-surface-800 dark:bg-surface-900">
+  <!-- Toolbar Integrada (estilo Linear / shadcn) -->
+  @if (temToolbar()) {
+    <div class="tabela-toolbar flex flex-wrap items-center justify-between gap-2.5 border-b border-surface-200 px-3.5 py-2.5 dark:border-surface-800 shrink-0">
+      <!-- Lado Esquerdo: Contador + Conteúdo extra + Chips Ativos -->
+      <div class="flex items-center gap-2 min-w-0 flex-wrap">
+        @if (entidade() !== undefined || total() !== undefined) {
+          <span class="text-xs font-semibold text-surface-600 dark:text-surface-400 whitespace-nowrap">
+            <span class="tabular-nums font-bold text-surface-900 dark:text-surface-100">{{ totalExibido() }}</span>
+            {{ entidade() ?? 'itens' }}
+          </span>
+        }
 
-    @if (vazioDetalhe(); as detalhe) {
-      <p class="mx-auto mt-1 max-w-md text-sm text-muted-color">{{ detalhe }}</p>
-    }
+        @if (toolbarEsquerda(); as esq) {
+          <ng-container *ngTemplateOutlet="esq.template" />
+        }
 
-    @if (acaoVazia(); as acao) {
-      <div class="mt-5 flex justify-center">
-        <ng-container *ngTemplateOutlet="acao.template" />
+        @if (filtrosAtivos(); as ativos) {
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <ng-container *ngTemplateOutlet="ativos.template" />
+          </div>
+        }
       </div>
-    }
-  </div>
-} @else {
-  <!-- Tabela larga rola dentro da própria caixa; a página nunca rola de lado. -->
-  <div class="overflow-x-auto rounded-lg border border-surface-200 dark:border-surface-700">
-    <p-table
-      [value]="dados()"
-      styleClass="p-datatable-sm"
-      [tableStyle]="{ 'min-width': '100%' }"
-      [rowGroupMode]="agrupando() ? 'subheader' : undefined"
-      [groupRowsBy]="agruparPor()"
-    >
-      <ng-template pTemplate="header">
-        <ng-container *ngTemplateOutlet="cabecalho().template" />
-      </ng-template>
 
-      @if (tituloDeGrupo(); as titulo) {
-        <ng-template pTemplate="groupheader" let-item>
-          <tr data-testid="titulo-de-grupo">
-            <!--
-              `colspan` alto de propósito: o navegador o limita ao número real
-              de colunas, e a alternativa seria a tela informar quantas são —
-              um número que passaria a ter de ser mantido em dia com o
-              cabeçalho, e que ninguém lembraria de mexer ao acrescentar uma.
-            -->
-            <td colspan="99" class="bg-surface-50 dark:bg-surface-800">
-              <ng-container *ngTemplateOutlet="titulo.template; context: { $implicit: item }" />
-            </td>
-          </tr>
-        </ng-template>
+      <!-- Lado Direito: Filtros Rápidos | Filtros Avançados | Busca Expansível | Ação Primária -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        @if (filtrosRapidos(); as rapidos) {
+          <ng-container *ngTemplateOutlet="rapidos.template" />
+        }
+
+        @if (filtrosAvancados(); as avancados) {
+          @if (filtrosRapidos()) {
+            <div class="h-4 w-px bg-surface-200 dark:bg-surface-700 mx-0.5"></div>
+          }
+          <ng-container *ngTemplateOutlet="avancados.template" />
+        }
+
+        @if (termoBusca() !== undefined) {
+          @if (filtrosRapidos() || filtrosAvancados()) {
+            <div class="h-4 w-px bg-surface-200 dark:bg-surface-700 mx-0.5"></div>
+          }
+          <div
+            class="busca-expansivel relative flex items-center h-7 rounded-lg border transition-all overflow-hidden shrink-0 cursor-pointer"
+            [class.expandida]="buscaAtiva()"
+            (click)="!buscaAtiva() && abrirBusca()"
+          >
+            <div
+              class="busca-icone flex items-center justify-center w-7 h-7 shrink-0 text-muted-color"
+              (click)="abrirBusca(); $event.stopPropagation()"
+            >
+              <ng-icon name="lucideSearch" class="text-xs" />
+            </div>
+
+            <input
+              #campoBusca
+              type="text"
+              data-testid="busca"
+              class="busca-input w-full h-full pr-6 text-xs bg-transparent border-0 outline-none text-surface-900 dark:text-surface-100 placeholder:text-muted-color"
+              [placeholder]="placeholderBusca()"
+              [value]="termoBusca() ?? ''"
+              (input)="aoDigitarBusca($any($event.target).value)"
+              (keydown.escape)="fecharOuLimparBusca()"
+              (blur)="aoSairDaBusca()"
+              [tabindex]="buscaAtiva() ? 0 : -1"
+            />
+
+            @if (termoBusca()) {
+              <button
+                type="button"
+                class="busca-limpar absolute right-1.5 flex items-center justify-center w-4 h-4 text-muted-color hover:text-surface-900 dark:hover:text-surface-100 cursor-pointer"
+                (click)="limparBusca($event)"
+                aria-label="Limpar busca"
+              >
+                <ng-icon name="lucideX" class="text-[10px]" />
+              </button>
+            }
+          </div>
+        }
+
+        @if (acaoPrimaria(); as cta) {
+          <div class="ml-1">
+            <ng-container *ngTemplateOutlet="cta.template" />
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Conteúdo da Tabela no Card Unificado -->
+  @if (carregando() && totalRegistros() === 0) {
+    <div data-testid="tabela-carregando" class="space-y-3 p-4">
+      @for (linha of esqueleto(); track linha) {
+        <p-skeleton height="1.75rem" />
+      }
+    </div>
+  } @else if (totalRegistros() === 0) {
+    <div
+      data-testid="tabela-vazia"
+      class="px-6 py-12 text-center my-auto"
+    >
+      <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ vazio() }}</p>
+
+      @if (vazioDetalhe(); as detalhe) {
+        <p class="mx-auto mt-1 max-w-md text-sm text-muted-color">{{ detalhe }}</p>
       }
 
-      <ng-template pTemplate="body" let-item>
-        <ng-container *ngTemplateOutlet="linha().template; context: { $implicit: item }" />
-      </ng-template>
-    </p-table>
-  </div>
-}
+      @if (acaoVazia(); as acao) {
+        <div class="mt-5 flex justify-center">
+          <ng-container *ngTemplateOutlet="acao.template" />
+        </div>
+      }
+    </div>
+  } @else if (visualizacaoCustomizada(); as custom) {
+    <div class="p-3.5 flex-1 min-h-0 overflow-auto">
+      <ng-container *ngTemplateOutlet="custom.template; context: { $implicit: dadosExibidos() }" />
+    </div>
+  } @else {
+    <!-- Corpo da tabela com scroll interno e cabeçalho sticky -->
+    <div class="tabela-corpo flex-1 min-h-0 overflow-auto">
+      <p-table
+        [value]="dadosExibidos()"
+        styleClass="p-datatable-sm"
+        [tableStyle]="{ 'min-width': '100%' }"
+        [rowGroupMode]="agrupando() ? 'subheader' : undefined"
+        [groupRowsBy]="agruparPor()"
+      >
+        <ng-template pTemplate="header">
+          <ng-container *ngTemplateOutlet="cabecalho().template" />
+        </ng-template>
+
+        @if (tituloDeGrupo(); as titulo) {
+          <ng-template pTemplate="groupheader" let-item>
+            <tr data-testid="titulo-de-grupo">
+              <td colspan="99" class="bg-surface-50 dark:bg-surface-800">
+                <ng-container *ngTemplateOutlet="titulo.template; context: { $implicit: item }" />
+              </td>
+            </tr>
+          </ng-template>
+        }
+
+        <ng-template pTemplate="body" let-item>
+          <ng-container *ngTemplateOutlet="linha().template; context: { $implicit: item }" />
+        </ng-template>
+      </p-table>
+    </div>
+  }
+
+  <!-- Rodapé / Paginação (delicado e minimalista estilo Certidões / shadcn) -->
+  @if (paginado() && totalRegistros() > 0) {
+    <div
+      data-testid="tabela-paginacao"
+      class="tabela-paginacao shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 px-3.5 py-2.5 border-t border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900/50"
+    >
+      <!-- Contador de registros -->
+      <div class="text-xs text-muted-color font-medium">
+        Mostrando <span class="font-bold text-surface-900 dark:text-surface-100 tabular-nums">{{ indiceInicial() }}</span> a <span class="font-bold text-surface-900 dark:text-surface-100 tabular-nums">{{ indiceFinal() }}</span> de <span class="font-bold text-surface-900 dark:text-surface-100 tabular-nums">{{ totalRegistros() }}</span> {{ entidade() ?? 'itens' }}
+        @if (totalOriginal() !== undefined && totalOriginal() !== totalRegistros()) {
+          <span class="text-muted-color/70">(de {{ totalOriginal() }} no total)</span>
+        }
+      </div>
+
+      <!-- Controles de paginação e itens por página -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- Seletor de itens por página -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-muted-color font-medium">Exibir:</span>
+          <select
+            data-testid="seletor-itens-por-pagina"
+            class="h-7 text-xs font-semibold bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg px-2 text-surface-700 dark:text-surface-300 focus:outline-hidden focus:border-primary shadow-2xs cursor-pointer"
+            [value]="itensPorPagina()"
+            (change)="mudarItensPorPagina(+$any($event.target).value)"
+            aria-label="Itens por página"
+          >
+            @for (opt of opcoesItensPorPagina(); track opt) {
+              <option [value]="opt">{{ opt }} {{ entidade() ?? 'itens' }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Navegação de páginas: « ‹ [1 / 5] › » -->
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            data-testid="paginacao-primeira"
+            class="w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 disabled:opacity-35 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer"
+            (click)="primeiraPagina()"
+            [disabled]="paginaValida() <= 1"
+            title="Primeira página"
+            aria-label="Primeira página"
+          >
+            <ng-icon name="lucideChevronsLeft" class="text-xs" />
+          </button>
+
+          <button
+            type="button"
+            data-testid="paginacao-anterior"
+            class="w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 disabled:opacity-35 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer"
+            (click)="paginaAnterior()"
+            [disabled]="paginaValida() <= 1"
+            title="Página anterior"
+            aria-label="Página anterior"
+          >
+            <ng-icon name="lucideChevronLeft" class="text-xs" />
+          </button>
+
+          <span
+            data-testid="paginacao-indicador"
+            class="px-2.5 h-7 flex items-center text-xs font-bold text-surface-700 dark:text-surface-300 bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg shadow-2xs tabular-nums"
+          >
+            {{ paginaValida() }} / {{ totalPaginas() }}
+          </span>
+
+          <button
+            type="button"
+            data-testid="paginacao-proxima"
+            class="w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 disabled:opacity-35 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer"
+            (click)="proximaPagina()"
+            [disabled]="paginaValida() >= totalPaginas()"
+            title="Próxima página"
+            aria-label="Próxima página"
+          >
+            <ng-icon name="lucideChevronRight" class="text-xs" />
+          </button>
+
+          <button
+            type="button"
+            data-testid="paginacao-ultima"
+            class="w-7 h-7 flex items-center justify-center rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100 disabled:opacity-35 disabled:cursor-not-allowed transition-colors shadow-2xs cursor-pointer"
+            (click)="ultimaPagina()"
+            [disabled]="paginaValida() >= totalPaginas()"
+            title="Última página"
+            aria-label="Última página"
+          >
+            <ng-icon name="lucideChevronsRight" class="text-xs" />
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

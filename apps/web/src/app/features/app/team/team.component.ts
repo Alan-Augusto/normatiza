@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
+import { provideIcons } from '@ng-icons/core';
+import { lucideMail, lucideUserX } from '@ng-icons/lucide';
 
 import {
   ROLE_LABEL,
@@ -20,10 +21,17 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { TeamService } from '../../../core/services/team.service';
 import { DataTable } from '../../../shared/components/data-table/data-table.component';
 import {
+  AcaoPrimaria,
   AcaoVazia,
   CabecalhoDaTabela,
+  FiltrosAtivos,
+  FiltrosAvancados,
+  FiltrosRapidos,
   LinhaDaTabela,
 } from '../../../shared/components/data-table/data-table.directives';
+import { FilterChip } from '../../../shared/components/filter-chip/filter-chip.component';
+import { FilterGroup, FilterMenuComponent } from '../../../shared/components/filter-menu/filter-menu.component';
+import { QuickFilter } from '../../../shared/components/quick-filter/quick-filter.component';
 import { InviteFormComponent } from '../../../shared/components/team/invite-form.component';
 import { RoleGuideComponent } from '../../../shared/components/team/role-guide.component';
 import {
@@ -54,16 +62,23 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
     Button,
     Dialog,
     Message,
-    Select,
     DataTable,
     CabecalhoDaTabela,
     LinhaDaTabela,
     AcaoVazia,
+    AcaoPrimaria,
+    FiltrosAtivos,
+    FiltrosAvancados,
+    FiltrosRapidos,
+    FilterChip,
+    FilterMenuComponent,
+    QuickFilter,
     InviteFormComponent,
     RoleGuideComponent,
     RoleEditorComponent,
     DisableDialogComponent,
   ],
+  providers: [provideIcons({ lucideMail, lucideUserX })],
   templateUrl: './team.component.html',
   styleUrl: './team.component.css',
 })
@@ -97,6 +112,97 @@ export class TeamComponent implements OnInit {
     { label: 'Convite pendente', value: 'INVITED' },
     { label: 'Desligado', value: 'DISABLED' },
   ];
+
+  readonly termo = signal('');
+
+  readonly membrosFiltrados = computed(() => {
+    const t = this.termo().toLowerCase().trim();
+    if (!t) return this.membros();
+    return this.membros().filter(
+      (m) => m.name.toLowerCase().includes(t) || m.email.toLowerCase().includes(t),
+    );
+  });
+
+  readonly contagemPendentes = computed(
+    () => this.membros().filter((m) => m.status === 'INVITED').length,
+  );
+
+  readonly contagemDesligados = computed(
+    () => this.membros().filter((m) => m.status === 'DISABLED').length,
+  );
+
+  alternarFiltroStatus(status: UserStatus): void {
+    if (this.filtros().status === status) {
+      this.filtrar('status', null);
+    } else {
+      this.filtrar('status', status);
+    }
+  }
+
+  readonly gruposDeFiltro = computed<FilterGroup[]>(() => {
+    const grupos: FilterGroup[] = [];
+
+    grupos.push({
+      id: 'papel',
+      label: 'Papel',
+      selectedValue: this.filtros().role ?? null,
+      options: this.opcoesDePapel.map((p) => ({
+        label: p.label,
+        value: p.value,
+        count: this.membros().filter((m) => this.papeisDe(m).includes(p.value)).length,
+      })),
+    });
+
+    if (this.opcoesDeEmpresa().length > 1) {
+      grupos.push({
+        id: 'empresa',
+        label: 'Empresa',
+        selectedValue: this.filtros().companyId ?? null,
+        options: this.opcoesDeEmpresa().map((e) => ({
+          label: e.label,
+          value: e.value,
+          count: this.membros().filter((m) => m.memberships.some((v) => v.companyId === e.value)).length,
+        })),
+      });
+    }
+
+    grupos.push({
+      id: 'status',
+      label: 'Situação',
+      selectedValue: this.filtros().status ?? null,
+      options: this.opcoesDeStatus.map((s) => ({
+        label: s.label,
+        value: s.value,
+        dotColor:
+          s.value === 'ACTIVE'
+            ? 'var(--p-green-500)'
+            : s.value === 'INVITED'
+              ? 'var(--p-amber-500)'
+              : 'var(--p-surface-400)',
+        count: this.membros().filter((m) => m.status === s.value).length,
+      })),
+    });
+
+    return grupos;
+  });
+
+  aoMudarFiltro(evento: { groupId: string; value: unknown | null }): void {
+    if (evento.groupId === 'papel') {
+      this.filtrar('role', evento.value as Role | null);
+    } else if (evento.groupId === 'empresa') {
+      this.filtrar('companyId', evento.value as string | null);
+    } else if (evento.groupId === 'status') {
+      this.filtrar('status', evento.value as UserStatus | null);
+    }
+  }
+
+  nomeDaEmpresaFiltro(companyId: string): string {
+    return this.minhasEmpresas().find((e) => e.id === companyId)?.tradeName ?? 'Empresa';
+  }
+
+  rotuloDoStatusFiltro(status: UserStatus): string {
+    return this.opcoesDeStatus.find((s) => s.value === status)?.label ?? status;
+  }
 
   /** As empresas de quem está olhando — teto de escopo do convite e do filtro. */
   readonly minhasEmpresas = computed<CompanySummary[]>(() => {

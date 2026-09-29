@@ -1,0 +1,58 @@
+/*
+ * Botão disparador do Menu de Filtros (28px × 28px).
+ * Segue rigorosamente a linguagem visual Linear / shadcn / Certidões.
+ */
+
+.filtro-trigger-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+  color: var(--p-text-muted-color);
+  transition: all 0.15s ease-in-out;
+}
+
+.filtro-trigger-btn:hover {
+  background: var(--p-content-hover-background);
+  border-color: var(--p-surface-400);
+  color: var(--p-text-color);
+}
+
+.filtro-trigger-btn.ativo {
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  color: var(--p-primary-color);
+  box-shadow: 0 0 0 1px var(--p-primary-color);
+}
+
+/* ── Micro-badge circular de contagem ────────────────────────────────────── */
+
+.micro-badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0.875rem;
+  height: 0.875rem;
+  padding: 0 0.125rem;
+  border-radius: 9999px;
+  font-size: 0.5625rem; /* 9px */
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: var(--p-primary-color);
+  box-shadow: 0 0 0 1.5px var(--p-content-background);
+}
+
+/* ── Ponte de hover entre grupo e submenu ─────────────────────────────────── */
+
+.group-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 100%;
+  width: 0.5rem;
+  height: 100%;
+}

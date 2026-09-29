@@ -7,9 +7,7 @@ import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideBox, lucideLayoutGrid, lucideList, lucideSearch } from '@ng-icons/lucide';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
@@ -30,10 +28,19 @@ import { ROTAS } from '../../../../../core/routing/rotas';
 import { InventoryService } from '../../../../../core/services/inventory.service';
 import { DataTable } from '../../../../../shared/components/data-table/data-table.component';
 import {
+  AcaoPrimaria,
   AcaoVazia,
   CabecalhoDaTabela,
+  FiltrosAtivos,
+  FiltrosAvancados,
+  FiltrosRapidos,
   LinhaDaTabela,
+  ToolbarEsquerda,
+  VisualizacaoCustomizada,
 } from '../../../../../shared/components/data-table/data-table.directives';
+import { FilterChip } from '../../../../../shared/components/filter-chip/filter-chip.component';
+import { FilterGroup, FilterMenuComponent } from '../../../../../shared/components/filter-menu/filter-menu.component';
+import { QuickFilter } from '../../../../../shared/components/quick-filter/quick-filter.component';
 import { RowActionComponent } from '../../../../../shared/components/row-action/row-action.component';
 
 type Vista = 'tabela' | 'cartoes';
@@ -62,16 +69,23 @@ type Vista = 'tabela' | 'cartoes';
     ButtonDirective,
     ButtonLabel,
     Dialog,
-    InputText,
     Message,
-    Select,
     DataTable,
     CabecalhoDaTabela,
     LinhaDaTabela,
     AcaoVazia,
+    AcaoPrimaria,
+    FiltrosAtivos,
+    FiltrosAvancados,
+    FiltrosRapidos,
+    ToolbarEsquerda,
+    VisualizacaoCustomizada,
     RowActionComponent,
+    QuickFilter,
+    FilterChip,
+    FilterMenuComponent,
   ],
-  providers: [provideIcons({ lucideSearch, lucideBox, lucideList, lucideLayoutGrid })],
+  providers: [provideIcons({ lucideBox, lucideList, lucideLayoutGrid })],
   templateUrl: './equipments.component.html',
   styleUrl: './equipments.component.css',
 })
@@ -110,6 +124,51 @@ export class EquipmentsComponent implements OnInit {
   ];
 
   readonly opcoesDeSetor = computed(() => this.setores().map((s) => ({ label: s.name, value: s.id })));
+
+  readonly contagemInativos = computed(
+    () => this.equipamentos().filter((e) => e.status === 'INACTIVE').length,
+  );
+
+  readonly gruposDeFiltro = computed<FilterGroup[]>(() => {
+    const grupos: FilterGroup[] = [];
+
+    if (this.setores().length > 0) {
+      grupos.push({
+        id: 'setor',
+        label: 'Setor',
+        selectedValue: this.filtros().sectorId ?? null,
+        options: this.setores().map((s) => ({
+          label: s.name,
+          value: s.id,
+          count: this.equipamentos().filter((e) => e.sector?.id === s.id).length,
+        })),
+      });
+    }
+
+    grupos.push({
+      id: 'status',
+      label: 'Situação',
+      selectedValue: this.filtros().status ?? null,
+      options: this.opcoesDeStatus.map((st) => ({
+        label: st.label,
+        value: st.value,
+        dotColor: st.value === 'INACTIVE' ? 'var(--p-red-500)' : undefined,
+        count: st.value === 'INACTIVE'
+          ? this.contagemInativos()
+          : this.equipamentos().length,
+      })),
+    });
+
+    return grupos;
+  });
+
+  aoMudarFiltro(evento: { groupId: string; value: unknown | null }): void {
+    if (evento.groupId === 'setor') {
+      this.filtrarSetor(evento.value as string | null);
+    } else if (evento.groupId === 'status') {
+      this.filtrarStatus(evento.value as EquipmentStatus | 'ALL' | null);
+    }
+  }
 
   readonly rotasDaEmpresa = computed(() => ROTAS.empresa(this.empresa()?.slug ?? ''));
 
@@ -241,8 +300,21 @@ export class EquipmentsComponent implements OnInit {
     void this.router.navigateByUrl(this.painelDe(equipamento));
   }
 
-  rotuloDoStatus(status: EquipmentStatus): string {
+  rotuloDoStatus(status: EquipmentStatus | 'ALL'): string {
+    if (status === 'ALL') return 'Todos';
     return EQUIPMENT_STATUS_LABEL[status];
+  }
+
+  nomeDoSetor(id: string): string {
+    return this.setores().find((s) => s.id === id)?.name ?? 'Setor';
+  }
+
+  alternarFiltroStatus(status: EquipmentStatus | 'INACTIVE'): void {
+    if (this.filtros().status === status) {
+      this.filtrarStatus(null);
+    } else {
+      this.filtrarStatus(status);
+    }
   }
 
   rotuloDaConformidade(equipamento: EquipmentListItem): string {

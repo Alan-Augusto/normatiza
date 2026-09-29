@@ -18,7 +18,12 @@ import { ROTAS } from '../../../../../core/routing/rotas';
 import { InventoryService } from '../../../../../core/services/inventory.service';
 import { TeamService } from '../../../../../core/services/team.service';
 import { DataTable } from '../../../../../shared/components/data-table/data-table.component';
-import { CabecalhoDaTabela, LinhaDaTabela } from '../../../../../shared/components/data-table/data-table.directives';
+import {
+  AcaoPrimaria,
+  AcaoVazia,
+  CabecalhoDaTabela,
+  LinhaDaTabela,
+} from '../../../../../shared/components/data-table/data-table.directives';
 import { RowActionComponent } from '../../../../../shared/components/row-action/row-action.component';
 
 interface Edicao {
@@ -51,6 +56,8 @@ interface Edicao {
     DataTable,
     CabecalhoDaTabela,
     LinhaDaTabela,
+    AcaoPrimaria,
+    AcaoVazia,
     RowActionComponent,
   ],
   templateUrl: './sectors.component.html',
@@ -68,8 +75,20 @@ export class SectorsComponent implements OnInit {
   readonly erro = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
 
+  readonly termo = signal('');
   readonly novo = signal('');
   readonly criando = signal(false);
+
+  readonly setoresFiltrados = computed(() => {
+    const t = this.termo().toLowerCase().trim();
+    if (!t) return this.setores();
+    return this.setores().filter(
+      (s) =>
+        s.name.toLowerCase().includes(t) ||
+        s.description?.toLowerCase().includes(t) ||
+        s.responsible?.name.toLowerCase().includes(t),
+    );
+  });
 
   readonly editando = signal<Edicao | null>(null);
   readonly erroDoNome = signal<string | null>(null);
@@ -114,6 +133,10 @@ export class SectorsComponent implements OnInit {
         this.erro.set('Não foi possível carregar os setores.');
       },
     });
+  }
+
+  aoDigitar(valor: string): void {
+    this.termo.set(valor);
   }
 
   inventarioDo(setor: SectorListItem): { rota: string; params: Record<string, string> } {

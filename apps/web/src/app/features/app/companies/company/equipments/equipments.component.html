@@ -1,61 +1,23 @@
-<div class="space-y-4">
-  <div class="flex flex-wrap items-end justify-between gap-3">
-    <div class="flex flex-wrap items-end gap-3">
-      <div class="flex flex-col gap-1">
-        <label for="busca-equipamento" class="text-xs font-medium text-muted-color">Buscar</label>
-        <div class="relative">
-          <ng-icon
-            name="lucideSearch"
-            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-color"
-          />
-          <input
-            pInputText
-            id="busca-equipamento"
-            data-testid="busca"
-            type="search"
-            class="w-72 max-w-full pl-9"
-            placeholder="Código, nome, TAG, série…"
-            [value]="termo()"
-            (input)="aoDigitar($any($event.target).value)"
-          />
-        </div>
-      </div>
+<div class="flex-1 min-h-0 flex flex-col gap-4">
+  @if (confirmacao()) {
+    <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="confirmacao()!" />
+  }
+  @if (erro()) {
+    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
 
-      @if (opcoesDeSetor().length) {
-        <div class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-muted-color">Setor</label>
-          <p-select
-            data-testid="filtro-setor"
-            [options]="opcoesDeSetor()"
-            [ngModel]="filtros().sectorId ?? null"
-            (ngModelChange)="filtrarSetor($event)"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Todos"
-            [showClear]="true"
-            styleClass="w-48"
-          />
-        </div>
-      }
-
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-muted-color">Situação</label>
-        <!-- Sem escolha, o inventário em operação. O desativado se pede. -->
-        <p-select
-          data-testid="filtro-status"
-          [options]="opcoesDeStatus"
-          [ngModel]="filtros().status ?? null"
-          (ngModelChange)="filtrarStatus($event)"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Em operação"
-          [showClear]="true"
-          styleClass="w-56"
-        />
-      </div>
-    </div>
-
-    <div class="flex items-center gap-2">
+  <app-data-table
+    [dados]="equipamentos()"
+    [carregando]="carregando()"
+    entidade="equipamentos"
+    [termoBusca]="termo()"
+    placeholderBusca="Código, nome, TAG, série…"
+    (buscaChange)="aoDigitar($event)"
+    [vazio]="tituloDoVazio()"
+    [vazioDetalhe]="detalheDoVazio()"
+  >
+    <!-- Alternador de visualização na esquerda -->
+    <ng-template appToolbarEsquerda>
       <div class="alternador" role="group" aria-label="Visualização">
         <button
           type="button"
@@ -78,70 +40,88 @@
           <ng-icon name="lucideLayoutGrid" />
         </button>
       </div>
+    </ng-template>
 
+    <!-- Chips de filtros ativos -->
+    <ng-template appFiltrosAtivos>
+      @if (filtros().sectorId; as sectorId) {
+        <app-filter-chip
+          [label]="nomeDoSetor(sectorId)"
+          (remover)="filtrarSetor(null)"
+        />
+      }
+      @if (filtros().status) {
+        <app-filter-chip
+          [label]="rotuloDoStatus(filtros().status!)"
+          (remover)="filtrarStatus(null)"
+        />
+      }
+    </ng-template>
+
+    <!-- Filtros Rápidos -->
+    <ng-template appFiltrosRapidos>
+      <app-quick-filter
+        icon="lucidePowerOff"
+        label="Desativados"
+        [badge]="contagemInativos()"
+        [ativo]="filtros().status === 'INACTIVE'"
+        severity="primary"
+        (acionar)="alternarFiltroStatus('INACTIVE')"
+      />
+    </ng-template>
+
+    <!-- Menu de Filtros Avançados -->
+    <ng-template appFiltrosAvancados>
+      <app-filter-menu
+        [groups]="gruposDeFiltro()"
+        (change)="aoMudarFiltro($event)"
+      />
+    </ng-template>
+
+    <!-- Ação Primária -->
+    <ng-template appAcaoPrimaria>
       @if (podeCadastrar()) {
-        <a pButton [routerLink]="rotasDaEmpresa().novoEquipamento" data-testid="novo-equipamento">
+        <a pButton size="small" [routerLink]="rotasDaEmpresa().novoEquipamento" data-testid="novo-equipamento">
           <span pButtonLabel>Novo equipamento</span>
         </a>
       }
-    </div>
-  </div>
+    </ng-template>
 
-  @if (confirmacao()) {
-    <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="confirmacao()!" />
-  }
-  @if (erro()) {
-    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
-  }
-
-  @if (vista() === 'cartoes') {
-    @if (!carregando() && equipamentos().length === 0) {
-      <div class="vazio" data-testid="vazio">
-        <p class="font-medium text-surface-900 dark:text-surface-0">{{ tituloDoVazio() }}</p>
-        <p class="text-sm text-muted-color">{{ detalheDoVazio() }}</p>
-        @if (podeCadastrar() && !buscando()) {
-          <a pButton [routerLink]="rotasDaEmpresa().novoEquipamento" data-testid="novo-equipamento-vazio">
-            <span pButtonLabel>Cadastrar o primeiro equipamento</span>
-          </a>
-        }
-      </div>
-    } @else {
-      <div class="cartoes">
-        @for (equipamento of equipamentos(); track equipamento.code) {
-          <a data-testid="cartao" class="cartao" [routerLink]="painelDe(equipamento)" [attr.data-code]="equipamento.code">
-            <div class="cartao-foto">
-              @if (equipamento.thumbnailUrl) {
-                <img [src]="equipamento.thumbnailUrl" [alt]="equipamento.name" loading="lazy" />
-              } @else {
-                <ng-icon data-testid="sem-foto" name="lucideBox" size="2rem" class="text-muted-color" />
-              }
-            </div>
-            <div class="space-y-1 p-3">
-              <div class="flex items-center justify-between gap-2">
-                <span class="codigo">{{ equipamento.code }}</span>
-                @if (equipamento.status === 'INACTIVE') {
-                  <span class="selo">{{ rotuloDoStatus(equipamento.status) }}</span>
+    <!-- Visualização Customizada em Cartões -->
+    @if (vista() === 'cartoes') {
+      <ng-template appVisualizacaoCustomizada let-itens>
+        <div class="cartoes">
+          @for (equipamento of (itens ?? equipamentos()); track equipamento.code) {
+            <a data-testid="cartao" class="cartao" [routerLink]="painelDe(equipamento)" [attr.data-code]="equipamento.code">
+              <div class="cartao-foto">
+                @if (equipamento.thumbnailUrl) {
+                  <img [src]="equipamento.thumbnailUrl" [alt]="equipamento.name" loading="lazy" />
+                } @else {
+                  <ng-icon data-testid="sem-foto" name="lucideBox" size="2rem" class="text-muted-color" />
                 }
               </div>
-              <p class="font-medium text-surface-900 dark:text-surface-0">{{ equipamento.name }}</p>
-              <p class="text-xs text-muted-color">
-                {{ equipamento.sector?.name ?? 'Sem setor' }}
-                @if (equipamento.tag) {
-                  · TAG {{ equipamento.tag }}
-                }
-              </p>
-            </div>
-          </a>
-        }
-      </div>
+              <div class="space-y-1 p-3">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="codigo">{{ equipamento.code }}</span>
+                  @if (equipamento.status === 'INACTIVE') {
+                    <span class="selo">{{ rotuloDoStatus(equipamento.status) }}</span>
+                  }
+                </div>
+                <p class="font-medium text-surface-900 dark:text-surface-0">{{ equipamento.name }}</p>
+                <p class="text-xs text-muted-color">
+                  {{ equipamento.sector?.name ?? 'Sem setor' }}
+                  @if (equipamento.tag) {
+                    · TAG {{ equipamento.tag }}
+                  }
+                </p>
+              </div>
+            </a>
+          }
+        </div>
+      </ng-template>
     }
-  } @else {
-    <app-data-table
-      [dados]="equipamentos()"
-      [carregando]="carregando()"
-      [vazio]="tituloDoVazio()"
-      [vazioDetalhe]="detalheDoVazio()"
-    >
+
+    <!-- Cabeçalho e Linhas da Tabela -->
       <ng-template appCabecalho>
         <tr>
           <th aria-label="Foto"></th>
@@ -242,7 +222,6 @@
         </ng-template>
       }
     </app-data-table>
-  }
 </div>
 
 @if (desativando(); as equipamento) {

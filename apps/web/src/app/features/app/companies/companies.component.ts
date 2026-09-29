@@ -3,13 +3,9 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideSearch } from '@ng-icons/lucide';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
@@ -33,10 +29,17 @@ import { CompanyInfoComponent } from '../../../shared/components/company-info/co
 import { CompanyLogoComponent } from '../../../shared/components/company-logo/company-logo.component';
 import { DataTable } from '../../../shared/components/data-table/data-table.component';
 import {
+  AcaoPrimaria,
   AcaoVazia,
   CabecalhoDaTabela,
+  FiltrosAtivos,
+  FiltrosAvancados,
+  FiltrosRapidos,
   LinhaDaTabela,
 } from '../../../shared/components/data-table/data-table.directives';
+import { FilterChip } from '../../../shared/components/filter-chip/filter-chip.component';
+import { FilterGroup, FilterMenuComponent } from '../../../shared/components/filter-menu/filter-menu.component';
+import { QuickFilter } from '../../../shared/components/quick-filter/quick-filter.component';
 import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
 import { InviteFormComponent } from '../../../shared/components/team/invite-form.component';
 import { ROTAS } from '../../../core/routing/rotas';
@@ -60,24 +63,27 @@ import { ROTAS } from '../../../core/routing/rotas';
     RowActionComponent,
     CompanyInfoComponent,
     InviteFormComponent,
+    QuickFilter,
+    FilterChip,
+    FilterMenuComponent,
     DatePipe,
     DecimalPipe,
     FormsModule,
     RouterLink,
-    NgIconComponent,
     Button,
     ButtonDirective,
     ButtonLabel,
     Dialog,
-    InputText,
     Message,
-    Select,
     DataTable,
     CabecalhoDaTabela,
     LinhaDaTabela,
     AcaoVazia,
+    AcaoPrimaria,
+    FiltrosAtivos,
+    FiltrosAvancados,
+    FiltrosRapidos,
   ],
-  providers: [provideIcons({ lucideSearch })],
   templateUrl: './companies.component.html',
   styleUrl: './companies.component.css',
 })
@@ -110,6 +116,38 @@ export class CompaniesComponent implements OnInit {
     { label: 'Todas, inclusive inativas', value: 'ALL' as const },
   ];
 
+  corDoStatus(status: CompanyStatus | 'ALL'): string | undefined {
+    switch (status) {
+      case 'ACTIVE': return 'var(--p-green-500)';
+      case 'AWAITING_MANAGER': return 'var(--p-amber-500)';
+      case 'IMPLANTATION': return 'var(--p-blue-500)';
+      case 'INACTIVE': return 'var(--p-surface-400)';
+      default: return undefined;
+    }
+  }
+
+  readonly gruposDeFiltro = computed<FilterGroup[]>(() => [
+    {
+      id: 'status',
+      label: 'Situação',
+      selectedValue: this.filtros().status ?? null,
+      options: this.opcoesDeStatus.map((opt) => ({
+        label: opt.label,
+        value: opt.value,
+        dotColor: this.corDoStatus(opt.value),
+        count: opt.value === 'ALL'
+          ? this.empresas().length
+          : this.empresas().filter((e) => e.status === opt.value).length,
+      })),
+    },
+  ]);
+
+  aoMudarFiltro(evento: { groupId: string; value: unknown | null }): void {
+    if (evento.groupId === 'status') {
+      this.filtrarStatus(evento.value as CompanyStatus | 'ALL' | null);
+    }
+  }
+
   /**
    * Quem pode cadastrar vê o botão. O titular da conta sempre pode — numa conta
    * recém-aberta ele ainda não tem vínculo nenhum, e é ele quem cadastra a
@@ -128,6 +166,14 @@ export class CompaniesComponent implements OnInit {
 
   /** A prévia aberta pelo olho — o mesmo diálogo que o nome da empresa abre na sidebar. */
   readonly vendo = signal<CompanyListItem | null>(null);
+
+  readonly contagemAguardando = computed(
+    () => this.empresas().filter((e) => e.status === 'AWAITING_MANAGER').length,
+  );
+
+  readonly contagemImplantacao = computed(
+    () => this.empresas().filter((e) => e.status === 'IMPLANTATION').length,
+  );
 
   readonly buscando = computed(() => !!this.filtros().q || !!this.filtros().status);
 
@@ -183,6 +229,14 @@ export class CompaniesComponent implements OnInit {
     this.aplicar({ status: status ?? undefined });
   }
 
+  alternarFiltroStatus(status: CompanyStatus): void {
+    if (this.filtros().status === status) {
+      this.filtrarStatus(null);
+    } else {
+      this.filtrarStatus(status);
+    }
+  }
+
   /** O filtro vai para a URL, e a URL recarrega a lista — um caminho só. */
   private aplicar(mudança: Partial<CompanyListQuery>): void {
     const próximo = { ...this.filtros(), ...mudança };
@@ -209,7 +263,8 @@ export class CompaniesComponent implements OnInit {
     return formatCnpj(documento);
   }
 
-  rotuloDoStatus(status: CompanyStatus): string {
+  rotuloDoStatus(status: CompanyStatus | 'ALL'): string {
+    if (status === 'ALL') return 'Todas';
     return COMPANY_STATUS_LABEL[status];
   }
 

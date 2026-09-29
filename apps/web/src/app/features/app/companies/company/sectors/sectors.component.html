@@ -1,29 +1,4 @@
-<div class="space-y-4">
-  @if (podeCriar()) {
-    <form class="flex flex-wrap items-end gap-2" (ngSubmit)="criar()">
-      <div class="flex flex-col gap-1">
-        <label for="novo-setor" class="text-xs font-medium text-muted-color">Novo setor</label>
-        <input
-          pInputText
-          id="novo-setor"
-          data-testid="novo-setor"
-          name="novo"
-          class="w-72 max-w-full"
-          placeholder="Ex.: Usinagem, Linha 2, Galpão B"
-          [ngModel]="novo()"
-          (ngModelChange)="novo.set($event)"
-        />
-      </div>
-      <p-button
-        data-testid="adicionar-setor"
-        type="submit"
-        label="Adicionar"
-        [loading]="criando()"
-        [disabled]="!novo().trim()"
-      />
-    </form>
-  }
-
+<div class="flex-1 min-h-0 flex flex-col gap-4">
   @if (aviso()) {
     <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
   }
@@ -32,11 +7,42 @@
   }
 
   <app-data-table
-    [dados]="setores()"
+    [dados]="setoresFiltrados()"
     [carregando]="carregando()"
+    entidade="setores"
+    [termoBusca]="termo()"
+    placeholderBusca="Buscar setor ou responsável…"
+    (buscaChange)="aoDigitar($event)"
     vazio="Nenhum setor cadastrado."
     vazioDetalhe="Setores organizam a planta — galpões, linhas, áreas. Também dá para criar um no cadastro do equipamento, digitando o nome."
   >
+    <!-- Ação Primária: Cadastro Rápido de Setor Integrado à Toolbar -->
+    <ng-template appAcaoPrimaria>
+      @if (podeCriar()) {
+        <form class="flex items-center gap-1.5" (ngSubmit)="criar()">
+          <input
+            pInputText
+            id="novo-setor"
+            data-testid="novo-setor"
+            name="novo"
+            class="h-7 text-xs w-44 sm:w-56"
+            placeholder="Novo setor…"
+            [ngModel]="novo()"
+            (ngModelChange)="novo.set($event)"
+          />
+          <p-button
+            data-testid="adicionar-setor"
+            type="submit"
+            size="small"
+            label="Adicionar"
+            [loading]="criando()"
+            [disabled]="!novo().trim()"
+            styleClass="!h-7 !py-0 !text-xs"
+          />
+        </form>
+      }
+    </ng-template>
+
     <ng-template appCabecalho>
       <tr>
         <th>Setor</th>
@@ -46,7 +52,7 @@
       </tr>
     </ng-template>
 
-    <ng-template appLinha [appLinhaDe]="setores()" let-setor>
+    <ng-template appLinha [appLinhaDe]="setoresFiltrados()" let-setor>
       <tr data-testid="linha" [attr.data-sector]="setor.id">
         <td>
           <div class="font-medium text-surface-900 dark:text-surface-0">{{ setor.name }}</div>

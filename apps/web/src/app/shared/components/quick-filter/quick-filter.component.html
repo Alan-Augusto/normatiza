@@ -1,0 +1,19 @@
+<button
+  type="button"
+  class="filtro-rapido relative inline-flex items-center justify-center rounded-lg border transition-all cursor-pointer select-none"
+  [class.ativo]="ativo()"
+  [attr.data-severity]="severity()"
+  [pTooltip]="label()"
+  tooltipPosition="top"
+  [attr.aria-label]="label()"
+  [attr.aria-pressed]="ativo()"
+  (click)="acionar.emit()"
+>
+  <ng-icon [name]="icon()" class="text-xs" aria-hidden="true" />
+
+  @if (badge() !== undefined && badge()! > 0) {
+    <span class="micro-badge" [attr.data-severity]="severity()">
+      {{ badge() }}
+    </span>
+  }
+</button>
