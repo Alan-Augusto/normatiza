@@ -1,0 +1,230 @@
+@if (inexistente()) {
+  <div data-testid="analise-inexistente" class="vazio">
+    <p class="font-medium">Esta análise não foi encontrada.</p>
+    <p class="text-sm text-muted-color">O rascunho pode ter sido descartado, ou o endereço está errado.</p>
+    @if (rotas(); as r) {
+      <a class="text-sm font-medium text-primary" [routerLink]="r.analise">Voltar para as análises</a>
+    }
+  </div>
+} @else if (analise(); as a) {
+  <!-- Sem `ngSubmit`: salvar é um clique, nunca um Enter esbarrado. -->
+  <form [formGroup]="form" (keydown.enter)="semEnter($event)" class="formulario" novalidate>
+    <div class="mx-auto w-full max-w-5xl space-y-6">
+      <div class="flex flex-wrap items-center gap-2">
+        <h2 data-testid="titulo" class="text-lg font-semibold">{{ equipamento()?.code }} · Análise {{ a.number }}</h2>
+        <span class="selo" [attr.data-status]="a.status">{{ rotuloDoStatus() }}</span>
+        <span class="text-sm text-muted-color">aberta em {{ a.startedAt | date: 'dd/MM/yyyy' }}</span>
+      </div>
+
+      @if (erro()) {
+        <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+      }
+      @if (aviso()) {
+        <p-message data-testid="aviso" severity="success" styleClass="w-full" [text]="aviso()!" />
+      }
+
+      <p-stepper [value]="passo()">
+        <p-step-list>
+          @for (etapa of etapas; track etapa.valor) {
+            <p-step [value]="etapa.valor" [attr.data-testid]="'passo-' + etapa.chave">
+              <ng-template #content>
+                <button
+                  type="button"
+                  class="etapa"
+                  [class.ativa]="etapa.valor === passo()"
+                  [attr.aria-current]="etapa.valor === passo() ? 'step' : null"
+                  (click)="irPara(etapa.valor)"
+                >
+                  <span class="etapa-icone"><ng-icon [name]="etapa.icone" /></span>
+                  <span class="etapa-titulo">{{ etapa.titulo }}</span>
+                </button>
+              </ng-template>
+            </p-step>
+          }
+        </p-step-list>
+      </p-stepper>
+
+      <section data-testid="etapa-atual" [attr.data-etapa]="etapaAtual().chave" [attr.aria-label]="etapaAtual().titulo">
+        @if (etapaAtual().futura) {
+          <div data-testid="etapa-futura" class="vazio">
+            <p class="font-medium">{{ etapaAtual().titulo }} chega na próxima entrega.</p>
+            <p class="text-sm text-muted-color">O rascunho guarda o que já foi preenchido na ficha técnica.</p>
+          </div>
+        } @else {
+          <div class="space-y-6">
+            <!-- A ficha do ativo é do equipamento: aqui se lê, e se corrige no cadastro dele (D8). -->
+            <section class="painel">
+              <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="titulo !mb-0">Ficha do ativo</h3>
+                @if (a.actions.edit && corrigirFicha(); as c) {
+                  <a pButton outlined size="small" data-testid="corrigir-ficha" [routerLink]="c.rota" [queryParams]="{ voltar: c.voltar }">
+                    <span pButtonLabel>Corrigir no cadastro</span>
+                  </a>
+                }
+              </div>
+              @if (ficha().length) {
+                <dl class="identidade">
+                  @for (item of ficha(); track item.chave) {
+                    <div [class.longo]="item.longo">
+                      <dt>{{ item.rotulo }}</dt>
+                      <dd [attr.data-testid]="'ficha-' + item.chave">{{ item.valor }}</dd>
+                    </div>
+                  }
+                </dl>
+              } @else {
+                <p data-testid="ficha-vazia" class="text-sm text-muted-color">
+                  Operação, fontes de energia, dimensões e fabricante ainda não foram preenchidos no cadastro da máquina.
+                </p>
+              }
+              <p class="mt-3 text-xs text-muted-color">
+                O que se corrige ali vale para o equipamento, e a próxima análise já encontra. Ao concluir, esta análise
+                guarda uma cópia da ficha como ela estava.
+              </p>
+            </section>
+
+            <section class="painel">
+              <h3 class="titulo">Vistoria</h3>
+              <div class="grade sm:grid-cols-2">
+                <app-campo class="sm:col-span-2" para="an-tecnico" rotulo="Técnico de campo" ajuda="Quem levantou a máquina em campo. Quem assina o laudo se escolhe ao concluir." mensagemId="ajuda-tecnico">
+                  <p-select
+                    inputId="an-tecnico"
+                    data-testid="campo-tecnico"
+                    styleClass="w-full"
+                    formControlName="tecnico"
+                    [options]="tecnicos().length ? tecnicos() : a.fieldTechnician ? [a.fieldTechnician] : []"
+                    optionLabel="name"
+                    optionValue="id"
+                    [showClear]="true"
+                    placeholder="Ninguém"
+                    ariaLabelledBy="an-tecnico"
+                  />
+                </app-campo>
+
+                <app-campo para="an-ciclo" rotulo="Tempo de ciclo">
+                  <app-numero inputId="an-ciclo" testid="campo-ciclo" unidade="s" [casas]="2" formControlName="ciclo" />
+                </app-campo>
+                <app-campo para="an-acionamento" rotulo="Tempo de acionamento">
+                  <app-numero inputId="an-acionamento" testid="campo-acionamento" unidade="s" [casas]="2" formControlName="acionamento" />
+                </app-campo>
+                <app-campo para="an-parada" rotulo="Tempo de parada de emergência" ajuda="Do acionamento da emergência até a parada total." mensagemId="ajuda-parada">
+                  <app-numero inputId="an-parada" testid="campo-parada" unidade="s" [casas]="2" formControlName="parada" descritoPor="ajuda-parada" />
+                </app-campo>
+                <app-campo para="an-regime" rotulo="Regime de uso">
+                  <input pInputText id="an-regime" data-testid="campo-regime" class="w-full" formControlName="regime" placeholder="Ex.: 2 turnos, 16 h por dia" />
+                </app-campo>
+              </div>
+            </section>
+
+            <section class="painel">
+              <h3 class="titulo">Gestão de segurança</h3>
+              <p class="mb-4 text-sm text-muted-color">Os requisitos da NR-12, com o texto da norma. Deixe sem marcar o que ainda não foi verificado.</p>
+              <ol class="perguntas">
+                @for (q of perguntas; track q.key; let i = $index) {
+                  <li [attr.data-testid]="'pergunta-' + q.key">
+                    <p [id]="'pergunta-' + q.key" class="text-sm">{{ i + 1 }}. {{ q.text }}</p>
+                    <p-selectbutton
+                      [formControl]="pergunta(q.key)"
+                      [options]="simOuNao"
+                      optionLabel="label"
+                      optionValue="value"
+                      [allowEmpty]="true"
+                      [ariaLabelledBy]="'pergunta-' + q.key"
+                      size="small"
+                    />
+                  </li>
+                }
+              </ol>
+            </section>
+
+            <section class="painel">
+              <h3 class="titulo">Reconhecimento visual</h3>
+              <p class="mb-4 text-sm text-muted-color">
+                As quatro vistas que cercam a máquina. Obrigatórias para concluir, não para salvar — cada foto sobe assim que é escolhida.
+                @if (fotosFaltando()) {
+                  <span data-testid="fotos-faltando"> Faltam {{ fotosFaltando() }}.</span>
+                }
+              </p>
+              <div class="vistas">
+                @for (v of vistas; track v) {
+                  <div class="vista" [attr.data-testid]="'vista-' + v">
+                    <div class="vista-previa">
+                      @if (a.photos[v]; as foto) {
+                        <img [src]="foto.thumbnailUrl" [alt]="rotuloDaVista(v)" />
+                      } @else {
+                        <span class="text-xs text-muted-color">Sem foto</span>
+                      }
+                    </div>
+                    <p class="text-sm font-medium">{{ rotuloDaVista(v) }}</p>
+                    @if (a.actions.edit) {
+                      <div class="flex flex-wrap gap-1">
+                        <label class="botao-arquivo" [class.ocupado]="enviando() === v" [attr.for]="'foto-' + v">
+                          {{ enviando() === v ? 'Enviando…' : a.photos[v] ? 'Trocar' : 'Enviar' }}
+                        </label>
+                        <input
+                          [id]="'foto-' + v"
+                          [attr.data-testid]="'foto-arquivo-' + v"
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          capture="environment"
+                          class="sr-only"
+                          [disabled]="enviando() !== null"
+                          (change)="aoEscolherFoto(v, $event)"
+                        />
+                        @if (a.photos[v]) {
+                          <p-button [attr.data-testid]="'remover-foto-' + v" label="Remover" severity="secondary" [text]="true" size="small" [disabled]="enviando() !== null" (onClick)="removerFoto(v)" />
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+              <p data-testid="foto-erro" role="alert" class="erro mt-2">{{ erroDaFoto() }}</p>
+            </section>
+          </div>
+        }
+      </section>
+    </div>
+
+    <footer class="rodape">
+      <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          @if (rotas(); as r) {
+            <a pButton [text]="true" data-testid="voltar-lista" [routerLink]="r.analise">
+              <span pButtonLabel>Voltar às análises</span>
+            </a>
+          }
+          @if (a.actions.discard) {
+            <p-button data-testid="descartar" type="button" label="Descartar rascunho" severity="danger" [text]="true" (onClick)="confirmandoDescarte.set(true)" />
+          }
+        </div>
+        @if (a.actions.edit) {
+          <p-button data-testid="salvar" type="button" label="Salvar rascunho" [loading]="salvando()" (onClick)="salvar()" />
+        }
+      </div>
+    </footer>
+  </form>
+
+  @if (confirmandoDescarte()) {
+    <p-dialog
+      [header]="'Descartar a Análise ' + a.number"
+      [visible]="true"
+      (visibleChange)="confirmandoDescarte.set(false)"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '32rem' }"
+      [breakpoints]="{ '640px': '95vw' }"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-surface-700 dark:text-surface-300">
+          O rascunho é apagado de vez, com as fotos. Isso não tem volta. Descartar é para a análise aberta por engano ou
+          abandonada; a máquina fica livre para uma análise nova.
+        </p>
+        <div class="flex justify-end gap-2">
+          <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="confirmandoDescarte.set(false)" />
+          <p-button data-testid="confirmar-descarte" label="Descartar" severity="danger" [loading]="descartando()" (onClick)="confirmarDescarte()" />
+        </div>
+      </div>
+    </p-dialog>
+  }
+}

@@ -362,6 +362,12 @@ Radiografia da máquina.
 
 **Tela principal:** histórico de análises da máquina. Cada volta à máquina é uma análise nova, numerada por equipamento (Análise 1, Análise 2); corrigir uma análise concluída gera uma revisão dela, e a lista mostra a revisão vigente com as anteriores acessíveis. Colunas: Nº, Data de início, Data de conclusão, Responsável técnico, Pontos identificados, Pior HRN, Status. Ações: abrir, continuar, duplicar como base para nova análise, imprimir laudo.
 
+**Rascunho.** Uma análise nasce rascunho, aberta pela consultoria (Engenheiro Responsável, Engenheiro da Consultoria ou Técnico), e só a consultoria a vê enquanto é rascunho — o cliente enxerga a análise quando ela é concluída.
+- **Um rascunho por equipamento.** Para abrir outra análise, conclui-se ou descarta-se a que está aberta: dois técnicos preenchendo análises paralelas da mesma máquina, sem saber um do outro, produziriam dois laudos que se contradizem.
+- **Rascunho se descarta; análise concluída, não.** Descartar apaga o rascunho e as fotos dele, com registro na auditoria. "Nenhum registro é apagado" vale para o que foi concluído: o rascunho abandonado não é prova de nada e só atrapalha a lista.
+- **Quem levantou e quem assina.** O *técnico de campo* é quem abriu a análise, e pode ser trocado por outra pessoa da consultoria alocada na empresa. O *engenheiro que assina* — Engenheiro Responsável ou da Consultoria — e o número da **ART** são escolhidos ao concluir.
+- **Nada é obrigatório para salvar.** O rascunho guarda o que tiver, e o técnico volta depois. O que o laudo exige — as 4 fotos, entre outros — é conferido **ao concluir**.
+
 > **Imutabilidade:** análise concluída é **congelada**. Correção posterior gera **nova revisão versionada**, nunca edição silenciosa — o laudo comparativo depende disso para ter valor probatório.
 
 #### Assistente de Análise — 4 Etapas
@@ -378,7 +384,7 @@ Radiografia da máquina.
   4. As máquinas e equipamentos possuem manual de instruções fornecido pelo fabricante ou importador, com informações relativas à segurança em todas as fases de utilização?
   5. A máquina possui procedimentos de trabalho e segurança específicos, padronizados, com descrição detalhada de cada tarefa, passo a passo, a partir da análise de risco?
   6. Os trabalhadores envolvidos na operação, manutenção, inspeção e demais intervenções possuem capacitação providenciada pelo empregador, compatível com suas funções, que aborde os riscos a que estão expostos e as medidas de proteção existentes e necessárias?
-- *Reconhecimento visual:* 4 fotos obrigatórias — Frontal, Lateral Esquerda, Lateral Direita, Posterior. As quatro vistas que cercam a máquina no chão da fábrica, e as que o acervo legado tem: a vista de cima raramente é fotografável em campo
+- *Reconhecimento visual:* 4 fotos obrigatórias para concluir — Frontal, Lateral Esquerda, Lateral Direita, Posterior. As quatro vistas que cercam a máquina no chão da fábrica, e as que o acervo legado tem: a vista de cima raramente é fotografável em campo
 
 **Etapa 2 — Pontos de Risco e HRN**
 

@@ -33,6 +33,7 @@ const COMPLETO = {
   sector: { select: { id: true, name: true } },
   machineType: { select: { id: true, name: true, accountId: true } },
   mainPhoto: { select: { id: true, storageKey: true, thumbnailKey: true } },
+  _count: { select: { analyses: true } },
 } satisfies Prisma.EquipmentInclude;
 
 type EquipamentoCompleto = Prisma.EquipmentGetPayload<{ include: typeof COMPLETO }>;
@@ -202,12 +203,17 @@ export class EquipmentsService {
   /**
    * Exclusão de verdade — só do equipamento que nunca teve análise: o
    * cadastro feito errado não tem prova a preservar (docs/produto/03 §4.2).
-   * Enquanto a análise não existe no sistema, todo equipamento se enquadra; a
-   * checagem nasce com ela. As fotos saem junto, registro e bytes.
+   * Conta também o rascunho: descartá-lo é um ato à parte, de quem o abriu. As
+   * fotos saem junto, registro e bytes.
    */
   async remove(actor: SessionScope, companyId: string, code: string): Promise<void> {
     await this.access.assertEdits(actor, companyId);
     const máquina = await this.carregar(actor, companyId, code);
+    if (máquina._count.analyses > 0) {
+      throw new ConflictException(
+        `"${máquina.name}" já tem análise, e a análise é prova: o equipamento não se exclui. Desative-o para tirá-lo do inventário.`,
+      );
+    }
     const arquivos = await this.prisma.fileAsset.findMany({
       where: { equipmentId: máquina.id },
       select: { id: true, storageKey: true, thumbnailKey: true },
@@ -475,9 +481,14 @@ function fichaDe(m: EquipamentoCompleto): EquipmentSheet {
   };
 }
 
-function ações(m: { deactivatedAt: Date | null }, edita: boolean): EquipmentActions {
+function ações(m: { deactivatedAt: Date | null; _count: { analyses: number } }, edita: boolean): EquipmentActions {
   const ativo = !m.deactivatedAt;
-  return { edit: edita && ativo, deactivate: edita && ativo, reactivate: edita && !ativo, delete: edita };
+  return {
+    edit: edita && ativo,
+    deactivate: edita && ativo,
+    reactivate: edita && !ativo,
+    delete: edita && m._count.analyses === 0,
+  };
 }
 
 function assertAtivo(m: { deactivatedAt: Date | null; name: string }): void {

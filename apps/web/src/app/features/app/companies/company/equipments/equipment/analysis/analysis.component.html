@@ -1,1 +1,74 @@
-<p>inspection works!</p>
+<div class="space-y-4">
+  @if (erro()) {
+    <p-message data-testid="erro" severity="error" styleClass="w-full" [text]="erro()!" />
+  }
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <p class="text-sm text-muted-color">
+      Cada volta à máquina é uma análise nova. A concluída fica congelada: corrigir gera uma revisão.
+    </p>
+    @if (podeAbrir()) {
+      @if (rascunho(); as r) {
+        <a pButton data-testid="continuar" [routerLink]="rotaDa(r)">
+          <span pButtonLabel>Continuar a Análise {{ r.number }}</span>
+        </a>
+      } @else if (analises()) {
+        <button pButton type="button" data-testid="nova-analise" [disabled]="abrindo()" (click)="novaAnalise()">
+          <span pButtonLabel>Nova análise</span>
+        </button>
+      }
+    }
+  </div>
+
+  @if (analises(); as lista) {
+    @if (lista.length) {
+      <div class="tabela">
+        <table data-testid="lista">
+          <thead>
+            <tr>
+              <th scope="col">Nº</th>
+              <th scope="col">Início</th>
+              <th scope="col">Conclusão</th>
+              <th scope="col">Técnico de campo</th>
+              <th scope="col">Engenheiro responsável</th>
+              <th scope="col">Pontos</th>
+              <th scope="col">Pior HRN</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of lista; track a.id) {
+              <tr [attr.data-testid]="'analise-' + a.number">
+                <td>
+                  <a class="font-medium text-primary" [routerLink]="rotaDa(a)">Análise {{ a.number }}</a>
+                  @if (a.revision > 1) {
+                    <span class="text-xs text-muted-color"> · rev. {{ a.revision }}</span>
+                  }
+                </td>
+                <td class="tabular-nums">{{ a.startedAt | date: 'dd/MM/yyyy' }}</td>
+                <td class="tabular-nums">{{ a.concludedAt ? (a.concludedAt | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td>{{ a.fieldTechnician?.name ?? '—' }}</td>
+                <td>{{ a.responsibleEngineer?.name ?? '—' }}</td>
+                <!-- Os pontos de risco chegam na próxima etapa do assistente: até lá, não há o que contar. -->
+                <td>—</td>
+                <td>—</td>
+                <td><span class="selo" [attr.data-status]="a.status">{{ rotulo(a.status) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div data-testid="vazio" class="vazio">
+        <p class="font-medium">Esta máquina ainda não tem análise de risco.</p>
+        <p class="text-sm text-muted-color">
+          @if (podeAbrir()) {
+            Abra a primeira para levantar a ficha técnica, os pontos de risco, o PAP e o PE.
+          } @else {
+            As análises aparecem aqui quando a consultoria as conclui.
+          }
+        </p>
+      </div>
+    }
+  }
+</div>

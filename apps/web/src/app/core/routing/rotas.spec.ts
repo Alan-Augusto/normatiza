@@ -58,6 +58,7 @@ function todosOsEndereços(): string[] {
     equipamento.painel,
     equipamento.editar,
     equipamento.analise,
+    equipamento.analiseNumero(1),
     equipamento.historico,
     ...Object.values(admin),
   ];

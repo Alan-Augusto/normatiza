@@ -44,6 +44,12 @@ export const AuditAction = {
   SECTOR_MERGED: 'sector.merged',
   SECTOR_DELETED: 'sector.deleted',
   MACHINE_TYPE_CREATED: 'machine_type.created',
+  ANALYSIS_CREATED: 'analysis.created',
+  /** A etapa 1: tempos, regime, gestão de segurança e técnico de campo. */
+  ANALYSIS_SHEET_UPDATED: 'analysis.sheet_updated',
+  ANALYSIS_PHOTO_CHANGED: 'analysis.photo_changed',
+  /** O rascunho apagado: o `before` guarda o que ele tinha, e é a única memória dele. */
+  ANALYSIS_DISCARDED: 'analysis.discarded',
 } as const;
 
 export type AuditActionValue = (typeof AuditAction)[keyof typeof AuditAction];

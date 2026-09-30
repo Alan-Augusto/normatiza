@@ -512,6 +512,11 @@ model FileAsset {
   equipmentId String?
   equipment   Equipment? @relation("EquipmentFiles", fields: [equipmentId], references: [id], onDelete: SetNull)
 
+  /// As fotos que a análise tirou. Descartar o rascunho as remove antes — a
+  /// chave sem `onDelete` recusa apagar a análise que ainda tem arquivo.
+  analysisId String?
+  analysis   Analysis? @relation("AnalysisFiles", fields: [analysisId], references: [id], onDelete: Restrict)
+
   title       String?
   description String?
   /// Para que o arquivo existe: `COMPANY_LOGO`, e as categorias que vierem com
@@ -534,6 +539,10 @@ model FileAsset {
 
   logoOf      Company?   @relation("CompanyLogo")
   mainPhotoOf Equipment? @relation("EquipmentMainPhoto")
+  frontOf     Analysis?  @relation("AnalysisFrontPhoto")
+  leftSideOf  Analysis?  @relation("AnalysisLeftSidePhoto")
+  rightSideOf Analysis?  @relation("AnalysisRightSidePhoto")
+  rearOf      Analysis?  @relation("AnalysisRearPhoto")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -542,6 +551,7 @@ model FileAsset {
   @@index([accountId])
   @@index([companyId])
   @@index([equipmentId])
+  @@index([analysisId])
   @@map("file_assets")
 }
 
@@ -657,6 +667,8 @@ model Equipment {
   mainPhotoFileId String?     @unique
   mainPhoto       FileAsset?  @relation("EquipmentMainPhoto", fields: [mainPhotoFileId], references: [id])
   files           FileAsset[] @relation("EquipmentFiles")
+
+  analyses Analysis[]
 
   /// Preenchido = fora do inventário, em modo leitura. Só a desativação é
   /// gravada; conformidade, pior HRN e pontos nascem das análises.
@@ -800,6 +812,8 @@ model HrnTableVersion {
   factors       Json
   levels        Json
 
+  analyses Analysis[]
+
   createdAt DateTime @default(now())
 
   @@map("hrn_table_versions")
@@ -818,4 +832,81 @@ model LegacyRef {
   @@id([entity, legacyId])
   @@index([entity, newId])
   @@map("legacy_refs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A análise de risco (docs/produto/03 §5.2, 04 §4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum AnalysisStatus {
+  DRAFT
+  CONCLUDED
+}
+
+/// A vistoria de uma máquina. Nasce rascunho, visto só pela consultoria; ao
+/// concluir, congela. Um rascunho por equipamento — índice parcial na migração,
+/// que o Prisma não sabe declarar.
+model Analysis {
+  id          String    @id @default(cuid())
+  accountId   String
+  companyId   String
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+
+  /// Análise 1, 2, 3… do equipamento: cada volta à máquina é uma nova.
+  number               Int
+  /// Correção de análise concluída: mesmo número, revisão seguinte.
+  revision             Int            @default(1)
+  supersedesAnalysisId String?
+  /// Sob qual norma. Hoje só "NR-12", sem aparecer em tela.
+  norm                 String         @default("NR-12")
+  status               AnalysisStatus @default(DRAFT)
+
+  startedAt   DateTime  @default(now())
+  concludedAt DateTime?
+  frozenAt    DateTime?
+
+  /// Quem levantou em campo: quem abriu, trocável por outra pessoa da consultoria.
+  fieldTechnicianUserId     String?
+  /// Quem assina — escolhido ao concluir, com a ART.
+  responsibleEngineerUserId String?
+  artNumber                 String?
+
+  /// A tabela com que o HRN foi calculado: é o que torna o laudo reproduzível.
+  hrnTableVersionId String
+  hrnTableVersion   HrnTableVersion @relation(fields: [hrnTableVersionId], references: [id])
+
+  // ── Medido na vistoria ─────────────────────────────────────────────────────
+  cycleTimeSec         Float?
+  activationTimeSec    Float?
+  emergencyStopTimeSec Float?
+  shiftRegime          String?
+
+  // As seis perguntas de gestão de segurança; nulo = ainda sem resposta.
+  maintenancePlannedByQualifiedProfessional Boolean?
+  maintenanceRecorded                       Boolean?
+  maintenanceRecordsAvailable               Boolean?
+  hasInstructionManual                      Boolean?
+  hasWorkAndSafetyProcedures                Boolean?
+  workersTrained                            Boolean?
+
+  frontPhotoFileId     String?    @unique
+  frontPhoto           FileAsset? @relation("AnalysisFrontPhoto", fields: [frontPhotoFileId], references: [id])
+  leftSidePhotoFileId  String?    @unique
+  leftSidePhoto        FileAsset? @relation("AnalysisLeftSidePhoto", fields: [leftSidePhotoFileId], references: [id])
+  rightSidePhotoFileId String?    @unique
+  rightSidePhoto       FileAsset? @relation("AnalysisRightSidePhoto", fields: [rightSidePhotoFileId], references: [id])
+  rearPhotoFileId      String?    @unique
+  rearPhoto            FileAsset? @relation("AnalysisRearPhoto", fields: [rearPhotoFileId], references: [id])
+
+  files FileAsset[] @relation("AnalysisFiles")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([equipmentId, number, revision])
+  @@index([accountId])
+  @@index([companyId])
+  @@map("analyses")
 }

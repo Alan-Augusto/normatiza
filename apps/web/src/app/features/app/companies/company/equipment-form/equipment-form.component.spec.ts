@@ -50,6 +50,7 @@ describe('EquipmentFormComponent', () => {
           { path: 'app/empresas/:companySlug/equipamentos/novo', component: EquipmentFormComponent },
           { path: 'app/empresas/:companySlug/equipamentos/:equipmentCode/editar', component: EquipmentFormComponent },
           { path: 'app/empresas/:companySlug/equipamentos/:equipmentCode/painel', component: Destino },
+          { path: 'app/empresas/:companySlug/equipamentos/:equipmentCode/analise/:numero', component: Destino },
         ]),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -412,6 +413,40 @@ describe('EquipmentFormComponent', () => {
       await assentar();
 
       expect(url()).toBe(`/app/empresas/${BRF.slug}/equipamentos/eq-0001/painel`);
+    });
+
+    /** Edita pela URL dada, troca o nome e salva: devolve para onde o formulário foi. */
+    async function editarESalvar(endereço: string) {
+      await comoFernando();
+      harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl(endereço, EquipmentFormComponent);
+      http.expectOne(SETORES_URL).flush(SETORES);
+      http.expectOne(`${API}/machine-types`).flush(TIPOS);
+      http.expectOne(`${EQUIPAMENTOS}/eq-0001`).flush(detalheDeEquipamento({ sector: { id: 'sec-usinagem', name: 'Usinagem' } }));
+      await assentar();
+      digitar('nome', 'Prensa 60t');
+      salvar();
+      http.expectOne(`${EQUIPAMENTOS}/EQ-0001`).flush(detalheDeEquipamento({ name: 'Prensa 60t' }));
+      await assentar();
+      return url();
+    }
+
+    it('deve voltar para a análise que pediu a correção da ficha, ao salvar', async () => {
+      const analise = `/app/empresas/${BRF.slug}/equipamentos/eq-0001/analise/1`;
+
+      const destino = await editarESalvar(
+        `/app/empresas/${BRF.slug}/equipamentos/eq-0001/editar?voltar=${encodeURIComponent(analise)}`,
+      );
+
+      expect(destino).toBe(analise);
+    });
+
+    it('não deve mandar para fora da aplicação, qualquer que seja o endereço de volta pedido', async () => {
+      const destino = await editarESalvar(
+        `/app/empresas/${BRF.slug}/equipamentos/eq-0001/editar?voltar=${encodeURIComponent('https://golpe.example/app/x')}`,
+      );
+
+      expect(destino).toBe(`/app/empresas/${BRF.slug}/equipamentos/eq-0001/painel`);
     });
   });
 });

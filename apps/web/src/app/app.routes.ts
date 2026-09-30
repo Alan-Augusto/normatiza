@@ -246,6 +246,16 @@ export const routes: Routes = [
                 }
               },
               {
+                path: 'analise/:numero',
+                canDeactivate: [unsavedChangesGuard],
+                loadComponent: () => import('./features/app/companies/company/equipments/equipment/analysis/wizard/analysis-wizard.component').then(m => m.AnalysisWizardComponent),
+                data: {
+                  label: 'Análise de Risco',
+                  icon: 'pi pi-shield',
+                  subtitle: 'Ficha técnica, pontos de risco, PAP e PE. O rascunho salva a cada etapa, e só a consultoria o vê.'
+                }
+              },
+              {
                 path: 'historico',
                 loadComponent: () => import('./features/app/companies/company/equipments/equipment/history/history.component').then(m => m.EquipmentHistoryComponent),
                 data: {

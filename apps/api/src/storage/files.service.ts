@@ -34,6 +34,12 @@ export interface EquipmentPhotoUpload {
   bytes: Buffer;
 }
 
+export interface AnalysisPhotoUpload extends EquipmentPhotoUpload {
+  analysisId: string;
+  /** Qual vista: `front`, `leftSide`, `rightSide`, `rear`. */
+  view: string;
+}
+
 export interface CompanyLogoUpload {
   accountId: string;
   companyId: string;
@@ -87,6 +93,34 @@ export class FilesService {
    * prova de que o conteúdo é imagem: a assinatura nos primeiros bytes não basta.
    */
   async uploadEquipmentPhoto(upload: EquipmentPhotoUpload) {
+    const base = `accounts/${upload.accountId}/companies/${upload.companyId}/equipments/${upload.equipmentId}/main/${randomUUID()}`;
+    return this.uploadPhoto(upload, base, { category: 'EQUIPMENT_MAIN_PHOTO' });
+  }
+
+  /**
+   * Uma das 4 vistas de reconhecimento da análise (docs/produto/03 §5.2). Mesmo
+   * tratamento da foto principal: original intacto — é o que vai ao laudo — e
+   * miniatura ao lado. O arquivo pende da análise e do equipamento.
+   */
+  async uploadAnalysisPhoto(upload: AnalysisPhotoUpload) {
+    const base = `accounts/${upload.accountId}/companies/${upload.companyId}/equipments/${upload.equipmentId}/analyses/${upload.analysisId}/${upload.view}/${randomUUID()}`;
+    return this.uploadPhoto(upload, base, {
+      category: `ANALYSIS_PHOTO_${upload.view.replace(/[A-Z]/g, (l) => `_${l}`).toUpperCase()}`,
+      analysisId: upload.analysisId,
+    });
+  }
+
+  /**
+   * Foto de máquina (docs/produto/05 §4). O **original fica intacto** e ao lado
+   * dele nasce a miniatura WebP que as listas carregam. Decodificar para gerar a
+   * miniatura é também a prova de que o conteúdo é imagem: a assinatura nos
+   * primeiros bytes não basta.
+   */
+  private async uploadPhoto(
+    upload: EquipmentPhotoUpload,
+    base: string,
+    extra: { category: string; analysisId?: string },
+  ) {
     if (upload.bytes.length > EQUIPMENT_PHOTO_MAX_BYTES) {
       throw new PayloadTooLargeException('A foto pode ter no máximo 10 MB.');
     }
@@ -109,7 +143,6 @@ export class FilesService {
       throw new BadRequestException('Não foi possível ler esta imagem. Confira o arquivo e envie de novo.');
     }
 
-    const base = `accounts/${upload.accountId}/companies/${upload.companyId}/equipments/${upload.equipmentId}/main/${randomUUID()}`;
     const thumbnailKey = `${base}-thumb`;
     await this.storage.put(base, upload.bytes, mimeType);
     await this.storage.put(thumbnailKey, miniatura, 'image/webp');
@@ -119,7 +152,7 @@ export class FilesService {
         accountId: upload.accountId,
         companyId: upload.companyId,
         equipmentId: upload.equipmentId,
-        category: 'EQUIPMENT_MAIN_PHOTO',
+        ...extra,
         storageKey: base,
         thumbnailKey,
         mimeType,

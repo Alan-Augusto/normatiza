@@ -15,5 +15,7 @@ import { SectorsService } from './sectors.service';
   imports: [AuthModule, AuthorizationModule, AuditModule, CompaniesModule],
   controllers: [EquipmentsController, SectorsController, MachineTypesController],
   providers: [InventoryAccess, EquipmentsService, SectorsService, MachineTypesService],
+  // A análise mora no equipamento e responde à mesma pergunta de leitura.
+  exports: [InventoryAccess],
 })
 export class InventoryModule {}

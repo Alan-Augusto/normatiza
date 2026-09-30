@@ -43,6 +43,8 @@ function equipamento(daEmpresa: string, code: string) {
     painel: `${raiz}/painel`,
     editar: `${raiz}/editar`,
     analise: `${raiz}/analise`,
+    /** O assistente de uma análise, pelo número dela na máquina. */
+    analiseNumero: (numero: number) => `${raiz}/analise/${numero}`,
     historico: `${raiz}/historico`,
   };
 }

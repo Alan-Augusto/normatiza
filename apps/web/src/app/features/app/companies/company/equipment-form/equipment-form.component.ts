@@ -240,10 +240,21 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
     return !!nome && !this.tipos().some((t) => normalizeForSearch(t.name) === nome);
   });
 
+  /**
+   * `?voltar=`: quem abriu a edição de outra tela — a análise, que corrige a
+   * ficha do ativo aqui (docs/planos/analise-de-risco.md D8) — volta para ela
+   * ao cancelar ou salvar. Só endereço de dentro da aplicação: o parâmetro vem
+   * da URL, e aceitar qualquer um faria deste formulário um redirecionador.
+   */
+  private readonly voltarPara = (() => {
+    const pedido = this.route.snapshot?.queryParamMap.get('voltar') ?? null;
+    return pedido && /^\/app\/[^/]/.test(pedido) && !pedido.startsWith('//') ? pedido : null;
+  })();
+
   readonly rotaDeVolta = computed(() => {
     const rotas = ROTAS.empresa(this.empresa()?.slug ?? '');
     const code = this.code();
-    return code ? rotas.equipamento(code).painel : rotas.equipamentos;
+    return this.voltarPara ?? (code ? rotas.equipamento(code).painel : rotas.equipamentos);
   });
 
   ngOnInit(): void {
@@ -467,7 +478,7 @@ export class EquipmentFormComponent implements OnInit, FormularioComAlteracoes {
           this.form.markAsPristine();
           const rotas = ROTAS.empresa(this.empresa()?.slug ?? '');
           if (code) {
-            void this.router.navigateByUrl(rotas.equipamento(equipamento.code).painel);
+            void this.router.navigateByUrl(this.voltarPara ?? rotas.equipamento(equipamento.code).painel);
           } else {
             void this.router.navigate([rotas.equipamentos], {
               queryParams: { cadastrado: equipmentCodeForUrl(equipamento.code) },
