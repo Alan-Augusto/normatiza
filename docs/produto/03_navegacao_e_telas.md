@@ -388,7 +388,7 @@ Radiografia da máquina.
 
 **Etapa 2 — Pontos de Risco e HRN**
 
-Lista dinâmica de pontos identificados. Cada ponto:
+Lista dinâmica de pontos identificados, numerados na ordem em que foram levantados (Ponto 1, 2, 3…). Excluir um ponto do rascunho renumera os seguintes: o laudo nunca pula um número. No rascunho o ponto pode ficar incompleto — o que se exige é conferido ao concluir —, mas o HRN nunca fica pela metade: ou os quatro fatores, ou nenhum. Cada ponto:
 
 - **Local** na máquina
 - **Origens do perigo** e **Consequências** — seleção múltipla nos catálogos, agrupada pelo tipo de perigo (mecânico, elétrico, térmico…). Quase todo ponto tem mais de uma

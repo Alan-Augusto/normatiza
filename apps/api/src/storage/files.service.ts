@@ -36,8 +36,10 @@ export interface EquipmentPhotoUpload {
 
 export interface AnalysisPhotoUpload extends EquipmentPhotoUpload {
   analysisId: string;
-  /** Qual vista: `front`, `leftSide`, `rightSide`, `rear`. */
-  view: string;
+  /** Onde mora dentro da análise: a vista (`front`), ou `risk-points/{id}`. */
+  folder: string;
+  /** `ANALYSIS_PHOTO_FRONT`, `ANALYSIS_RISK_POINT_PHOTO`… */
+  category: string;
 }
 
 export interface CompanyLogoUpload {
@@ -98,16 +100,13 @@ export class FilesService {
   }
 
   /**
-   * Uma das 4 vistas de reconhecimento da análise (docs/produto/03 §5.2). Mesmo
-   * tratamento da foto principal: original intacto — é o que vai ao laudo — e
-   * miniatura ao lado. O arquivo pende da análise e do equipamento.
+   * Foto tirada na análise — as 4 vistas, o ponto de perigo (docs/produto/03
+   * §5.2). Mesmo tratamento da foto principal: original intacto — é o que vai
+   * ao laudo — e miniatura ao lado. O arquivo pende da análise e do equipamento.
    */
   async uploadAnalysisPhoto(upload: AnalysisPhotoUpload) {
-    const base = `accounts/${upload.accountId}/companies/${upload.companyId}/equipments/${upload.equipmentId}/analyses/${upload.analysisId}/${upload.view}/${randomUUID()}`;
-    return this.uploadPhoto(upload, base, {
-      category: `ANALYSIS_PHOTO_${upload.view.replace(/[A-Z]/g, (l) => `_${l}`).toUpperCase()}`,
-      analysisId: upload.analysisId,
-    });
+    const base = `accounts/${upload.accountId}/companies/${upload.companyId}/equipments/${upload.equipmentId}/analyses/${upload.analysisId}/${upload.folder}/${randomUUID()}`;
+    return this.uploadPhoto(upload, base, { category: upload.category, analysisId: upload.analysisId });
   }
 
   /**

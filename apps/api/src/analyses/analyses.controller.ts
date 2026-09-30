@@ -7,6 +7,7 @@ import {
   HttpCode,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Put,
   Req,
@@ -17,13 +18,14 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import type { AnalysisDetail, AnalysisListItem, PersonRef, RecognitionPhoto } from '@normatiza/shared';
+import type { AnalysisDetail, AnalysisListItem, PersonRef, RecognitionPhoto, RiskPointDto } from '@normatiza/shared';
 
 import { AuthService } from '../auth/auth.service';
 import { AuthenticatedRequest, JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EQUIPMENT_PHOTO_MAX_BYTES } from '../storage/files.service';
 import { AnalysesService } from './analyses.service';
-import { AnalysisCreateDto, AnalysisSheetUpdateDto } from './dto/analyses.dto';
+import { AnalysisCreateDto, AnalysisSheetUpdateDto, RiskPointUpsertDto } from './dto/analyses.dto';
+import { RiskPointsService } from './risk-points.service';
 
 /**
  * A análise mora no equipamento (`/companies/:companyId/equipments/:code/…`):
@@ -35,6 +37,7 @@ import { AnalysisCreateDto, AnalysisSheetUpdateDto } from './dto/analyses.dto';
 export class AnalysesController {
   constructor(
     private readonly analyses: AnalysesService,
+    private readonly riskPoints: RiskPointsService,
     private readonly auth: AuthService,
   ) {}
 
@@ -117,6 +120,58 @@ export class AnalysesController {
     @Param('view') view: string,
   ) {
     await this.analyses.removePhoto(await this.escopo(req), companyId, code, number, view);
+  }
+
+  // ── Pontos de risco: gravados inteiros pelo id do aparelho (D11) ─────────
+
+  @Put(':number/risk-points/:pointId')
+  async upsertRiskPoint(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('pointId', new ParseUUIDPipe()) pointId: string,
+    @Body() dto: RiskPointUpsertDto,
+  ): Promise<RiskPointDto> {
+    return this.riskPoints.upsert(await this.escopo(req), companyId, code, number, pointId, dto);
+  }
+
+  @Delete(':number/risk-points/:pointId')
+  @HttpCode(204)
+  async removeRiskPoint(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('pointId', new ParseUUIDPipe()) pointId: string,
+  ) {
+    await this.riskPoints.remove(await this.escopo(req), companyId, code, number, pointId);
+  }
+
+  @Put(':number/risk-points/:pointId/photo')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: EQUIPMENT_PHOTO_MAX_BYTES, files: 1 } }))
+  async setRiskPointPhoto(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('pointId', new ParseUUIDPipe()) pointId: string,
+    @UploadedFile() file: { buffer: Buffer } | undefined,
+  ): Promise<RecognitionPhoto> {
+    if (!file) throw new BadRequestException('Envie a imagem no campo `file`.');
+    return this.riskPoints.setPhoto(await this.escopo(req), companyId, code, number, pointId, file.buffer);
+  }
+
+  @Delete(':number/risk-points/:pointId/photo')
+  @HttpCode(204)
+  async removeRiskPointPhoto(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('pointId', new ParseUUIDPipe()) pointId: string,
+  ) {
+    await this.riskPoints.removePhoto(await this.escopo(req), companyId, code, number, pointId);
   }
 
   /** Descartar o rascunho. Análise concluída não se apaga: a recusa é 409. */

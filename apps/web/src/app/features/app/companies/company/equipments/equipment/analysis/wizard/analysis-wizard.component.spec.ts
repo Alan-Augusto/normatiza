@@ -200,9 +200,9 @@ describe('AnalysisWizardComponent', () => {
   it('deve anunciar as etapas que ainda não existem, sem esconder o caminho', async () => {
     await abrir();
 
-    clicar('passo-pontos');
+    clicar('passo-pap');
 
-    expect(el('etapa-futura')?.textContent).toContain('Pontos de risco chega na próxima entrega');
+    expect(el('etapa-futura')?.textContent).toContain('PAP chega na próxima entrega');
   });
 
   it('deve abrir só para leitura a análise que não se edita', async () => {

@@ -10,6 +10,8 @@ import type {
   PersonRef,
   RecognitionPhoto,
   RecognitionView,
+  RiskPointDto,
+  RiskPointUpsert,
 } from '@normatiza/shared';
 
 import { API_BASE_URL } from '../auth/api.config';
@@ -55,6 +57,25 @@ export class AnalysisService {
 
   removePhoto(companyId: string, code: string, number: number, view: RecognitionView): Observable<void> {
     return this.http.delete<void>(`${this.base(companyId, code)}/${number}/photos/${view}`);
+  }
+
+  /** O ponto inteiro, pelo id gerado aqui: regravar não duplica. */
+  saveRiskPoint(companyId: string, code: string, number: number, pointId: string, dados: RiskPointUpsert): Observable<RiskPointDto> {
+    return this.http.put<RiskPointDto>(`${this.base(companyId, code)}/${number}/risk-points/${pointId}`, dados);
+  }
+
+  removeRiskPoint(companyId: string, code: string, number: number, pointId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(companyId, code)}/${number}/risk-points/${pointId}`);
+  }
+
+  setRiskPointPhoto(companyId: string, code: string, number: number, pointId: string, arquivo: File): Observable<RecognitionPhoto> {
+    const corpo = new FormData();
+    corpo.append('file', arquivo);
+    return this.http.put<RecognitionPhoto>(`${this.base(companyId, code)}/${number}/risk-points/${pointId}/photo`, corpo);
+  }
+
+  removeRiskPointPhoto(companyId: string, code: string, number: number, pointId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(companyId, code)}/${number}/risk-points/${pointId}/photo`);
   }
 
   discard(companyId: string, code: string, number: number): Observable<void> {

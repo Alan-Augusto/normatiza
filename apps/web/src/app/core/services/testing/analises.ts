@@ -16,6 +16,7 @@ export function linhaDeAnalise(over: Partial<AnalysisListItem> = {}): AnalysisLi
     status: 'DRAFT',
     startedAt: '2026-09-30T12:00:00.000Z',
     fieldTechnician: FERNANDO,
+    riskPointsCount: 0,
     actions: RASCUNHO_EDITÁVEL,
     ...over,
   };
@@ -28,6 +29,7 @@ export function detalheDeAnalise(over: Partial<AnalysisDetail> = {}): AnalysisDe
     hrnTableVersionId: 'hrn-legado-v1',
     sheet: { times: {}, safetyManagement: emptySafetyManagement() },
     photos: {},
+    riskPoints: [],
     ...over,
   };
 }

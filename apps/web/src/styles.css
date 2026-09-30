@@ -25,6 +25,29 @@
   --color-warning: var(--p-amber-500);
   --color-info: var(--p-blue-500);
 
+  /*
+   * As faixas do HRN (docs/web/design_system.md §5). As cores são as do laudo
+   * do sistema anterior — é a legenda que o cliente já lê há anos no PDF —, e
+   * por isso são hexadecimais fixos, iguais no claro e no escuro: são dado,
+   * não tema. Cada uma com o texto que se lê sobre ela.
+   */
+  --color-risk-acceptable: #006600;
+  --color-risk-acceptable-contrast: #ffffff;
+  --color-risk-very-low: #00b0f0;
+  --color-risk-very-low-contrast: #0b1f2a;
+  --color-risk-low: #0000cc;
+  --color-risk-low-contrast: #ffffff;
+  --color-risk-significant: #ffc000;
+  --color-risk-significant-contrast: #2a1f00;
+  --color-risk-high: #ff0000;
+  --color-risk-high-contrast: #ffffff;
+  --color-risk-very-high: #c00000;
+  --color-risk-very-high-contrast: #ffffff;
+  --color-risk-extreme: #800000;
+  --color-risk-extreme-contrast: #ffffff;
+  --color-risk-unacceptable: #660066;
+  --color-risk-unacceptable-contrast: #ffffff;
+
   /* Variáveis de Espaçamento Estruturais do Layout */
   --spacing-layout-padding: 1.5rem; /* 24px */
   --spacing-sidebar-width: 18rem;   /* 288px */

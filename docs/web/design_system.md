@@ -96,6 +96,23 @@ As cores de status (sucesso, erro, alerta, info) utilizam as paletas de cores pa
 *   **Warning (Alerta/Aviso):** `bg-warning` / `text-warning` (Lê a variável `--p-amber-500`)
 *   **Info (Informação):** `bg-info` / `text-info` (Lê a variável `--p-blue-500`)
 
+### Cores de risco (HRN): `app-hrn-badge`
+
+As oito faixas do HRN têm cor própria, e ela é a do **laudo do sistema anterior** — a legenda que o cliente lê no PDF há anos. Por isso são os únicos hexadecimais fixos do sistema, iguais no claro e no escuro: são dado, não tema (a exceção da §2). Moram em `styles.css` como `--color-risk-*`, cada uma com o `-contrast` do texto que se lê sobre ela.
+
+| Faixa | Token | Cor |
+| :--- | :--- | :--- |
+| Aceitável | `--color-risk-acceptable` | verde `#006600` |
+| Muito Baixo | `--color-risk-very-low` | azul-claro `#00b0f0` |
+| Baixo | `--color-risk-low` | azul `#0000cc` |
+| Significante | `--color-risk-significant` | âmbar `#ffc000` |
+| Alto | `--color-risk-high` | vermelho `#ff0000` |
+| Muito Alto | `--color-risk-very-high` | vermelho-escuro `#c00000` |
+| Extremo | `--color-risk-extreme` | vinho `#800000` |
+| Inaceitável | `--color-risk-unacceptable` | roxo `#660066` |
+
+Nenhuma tela usa esses tokens direto: **todo HRN aparece por `app-hrn-badge`**, que escreve o número **e o nome da faixa** ("120 Risco Muito Alto"). A cor nunca fala sozinha — quem não distingue cores e a impressão em preto e branco leem o nome. Sem HRN, o componente mostra "—".
+
 ---
 
 ## 📋 6. Tabelas: sempre `app-data-table`

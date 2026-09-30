@@ -1,5 +1,7 @@
+import { registerLocaleData } from '@angular/common';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import localePt from '@angular/common/locales/pt';
+import { ApplicationConfig, LOCALE_ID, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
@@ -11,9 +13,17 @@ import { MyCustomPreset } from './theme';
 
 import { routes } from './app.routes';
 
+/**
+ * Número e data à brasileira em todo pipe (`| number`, `| date`): sem isto, o
+ * Angular formata em inglês, e um HRN de 2.250 aparece como "2,250" — que aqui
+ * se lê dois vírgula vinte e cinco.
+ */
+registerLocaleData(localePt, 'pt-BR');
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    { provide: LOCALE_ID, useValue: 'pt-BR' },
     provideRouter(routes),
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),

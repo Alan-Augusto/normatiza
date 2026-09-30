@@ -20,6 +20,7 @@ import {
   type PersonRef,
   type RecognitionPhoto,
   type RecognitionView,
+  type RiskLevel,
   type SafetyManagement,
 } from '@normatiza/shared';
 
@@ -30,6 +31,7 @@ import { CompanyWriteGuard } from '../companies/company-write-guard.service';
 import { InventoryAccess } from '../inventory/inventory-access.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FilesService } from '../storage/files.service';
+import { pontoDto } from './risk-point-dto';
 
 const ARQUIVO = { select: { id: true, storageKey: true, thumbnailKey: true } } as const;
 
@@ -38,7 +40,13 @@ const COMPLETA = {
   leftSidePhoto: ARQUIVO,
   rightSidePhoto: ARQUIVO,
   rearPhoto: ARQUIVO,
+  riskPoints: { include: { hazardPhoto: ARQUIVO }, orderBy: { number: 'asc' } },
 } satisfies Prisma.AnalysisInclude;
+
+/** O que a lista precisa dos pontos: contar e achar o pior. */
+const RESUMO_DOS_PONTOS = { riskPoints: { select: { hrnResult: true, hrnLevel: true } } } satisfies Prisma.AnalysisInclude;
+
+type Pontos = Array<{ hrnResult: number | null; hrnLevel: RiskLevel | null }>;
 
 type AnáliseCompleta = Prisma.AnalysisGetPayload<{ include: typeof COMPLETA }>;
 
@@ -87,6 +95,7 @@ export class AnalysesService {
     const todas = await this.prisma.analysis.findMany({
       where: { equipmentId: máquina.id, ...(consultoria ? {} : { status: 'CONCLUDED' }) },
       orderBy: [{ number: 'desc' }, { revision: 'desc' }],
+      include: RESUMO_DOS_PONTOS,
     });
     const vigentes = todas.filter((a, i) => i === 0 || todas[i - 1].number !== a.number);
 
@@ -242,7 +251,8 @@ export class AnalysesService {
       equipmentId: máquina.id,
       analysisId: análise.id,
       actorUserId: actor.userId,
-      view: vista,
+      folder: vista,
+      category: `ANALYSIS_PHOTO_${vista.replace(/[A-Z]/g, (l) => `_${l}`).toUpperCase()}`,
       bytes,
     });
     const anterior = análise[VISTA[vista].relação];
@@ -295,8 +305,8 @@ export class AnalysesService {
     await this.writeGuard.assertWritable(actor.accountId, [companyId]);
   }
 
-  /** O rascunho, pronto para ser escrito — ou a recusa que explica por que não. */
-  private async rascunho(actor: SessionScope, companyId: string, code: string, number: number) {
+  /** O rascunho, pronto para ser escrito — ou a recusa que explica por que não. Os pontos de risco usam também. */
+  async rascunho(actor: SessionScope, companyId: string, code: string, number: number) {
     await this.assertEdita(actor, companyId);
     const máquina = await this.máquina(actor, companyId, code);
     assertAtiva(máquina);
@@ -353,10 +363,14 @@ export class AnalysesService {
   }
 
   private linha(
-    a: Prisma.AnalysisGetPayload<object>,
+    a: Prisma.AnalysisGetPayload<object> & { riskPoints: Pontos },
     pessoas: Map<string, PersonRef>,
     edita: boolean,
   ): AnalysisListItem {
+    const pior = a.riskPoints.reduce<{ result: number; level: RiskLevel } | null>(
+      (maior, p) => (p.hrnResult !== null && p.hrnLevel !== null && (!maior || p.hrnResult > maior.result) ? { result: p.hrnResult, level: p.hrnLevel } : maior),
+      null,
+    );
     const técnico = a.fieldTechnicianUserId ? pessoas.get(a.fieldTechnicianUserId) : undefined;
     const engenheiro = a.responsibleEngineerUserId ? pessoas.get(a.responsibleEngineerUserId) : undefined;
     return {
@@ -368,6 +382,8 @@ export class AnalysesService {
       ...(a.concludedAt ? { concludedAt: a.concludedAt.toISOString() } : {}),
       ...(técnico ? { fieldTechnician: técnico } : {}),
       ...(engenheiro ? { responsibleEngineer: engenheiro } : {}),
+      riskPointsCount: a.riskPoints.length,
+      ...(pior ? { worstHrn: pior } : {}),
       actions: ações(a, edita),
     };
   }
@@ -392,6 +408,7 @@ export class AnalysesService {
         safetyManagement: Object.fromEntries(SAFETY_MANAGEMENT_QUESTIONS.map((q) => [q.key, a[q.key]])) as SafetyManagement,
       },
       photos,
+      riskPoints: await Promise.all(a.riskPoints.map((p) => pontoDto(this.files, p))),
     };
   }
 

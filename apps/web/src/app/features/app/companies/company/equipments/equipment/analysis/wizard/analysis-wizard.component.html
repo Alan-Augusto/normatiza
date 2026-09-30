@@ -50,6 +50,10 @@
             <p class="font-medium">{{ etapaAtual().titulo }} chega na próxima entrega.</p>
             <p class="text-sm text-muted-color">O rascunho guarda o que já foi preenchido na ficha técnica.</p>
           </div>
+        } @else if (etapaAtual().chave === 'pontos') {
+          @if (alvoDaAnalise(); as alvo) {
+            <app-risk-points-step [alvo]="alvo" [pontos]="a.riskPoints" [editavel]="a.actions.edit" (pontosChange)="atualizarPontos($event)" />
+          }
         } @else {
           <div class="space-y-6">
             <!-- A ficha do ativo é do equipamento: aqui se lê, e se corrige no cadastro dele (D8). -->
@@ -197,7 +201,8 @@
             <p-button data-testid="descartar" type="button" label="Descartar rascunho" severity="danger" [text]="true" (onClick)="confirmandoDescarte.set(true)" />
           }
         </div>
-        @if (a.actions.edit) {
+        <!-- Os pontos se salvam um a um, no editor deles: aqui o botão é da ficha. -->
+        @if (a.actions.edit && etapaAtual().chave === 'ficha') {
           <p-button data-testid="salvar" type="button" label="Salvar rascunho" [loading]="salvando()" (onClick)="salvar()" />
         }
       </div>

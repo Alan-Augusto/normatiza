@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ButtonDirective, ButtonLabel } from 'primeng/button';
+import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
 import { Message } from 'primeng/message';
 
 import { ANALYSIS_EDITOR_ROLES, ANALYSIS_STATUS_LABEL, type AnalysisListItem, type AnalysisStatus } from '@normatiza/shared';
@@ -13,6 +13,9 @@ import { empresaDaRota } from '@core/routing/empresa-da-rota';
 import { ROTAS } from '@core/routing/rotas';
 import { AnalysisService } from '@core/services/analysis.service';
 
+import { DataTable } from '../../../../../../../shared/components/data-table/data-table.component';
+import { AcaoPrimaria, AcaoVazia, CabecalhoDaTabela, LinhaDaTabela } from '../../../../../../../shared/components/data-table/data-table.directives';
+import { HrnBadgeComponent } from '../../../../../../../shared/components/hrn-badge/hrn-badge.component';
 import { EquipmentContext } from '../equipment-context';
 
 /**
@@ -25,7 +28,20 @@ import { EquipmentContext } from '../equipment-context';
 @Component({
   selector: 'app-equipment-analysis',
   standalone: true,
-  imports: [DatePipe, RouterLink, ButtonDirective, ButtonLabel, Message],
+  imports: [
+    DatePipe,
+    RouterLink,
+    Button,
+    ButtonDirective,
+    ButtonLabel,
+    Message,
+    DataTable,
+    CabecalhoDaTabela,
+    LinhaDaTabela,
+    AcaoPrimaria,
+    AcaoVazia,
+    HrnBadgeComponent,
+  ],
   templateUrl: './analysis.component.html',
   styleUrl: './analysis.component.css',
 })
@@ -50,6 +66,15 @@ export class EquipmentAnalysisComponent {
   });
 
   readonly rascunho = computed(() => this.analises()?.find((a) => a.status === 'DRAFT') ?? null);
+  readonly lista = computed(() => this.analises() ?? []);
+
+  /**
+   * O que não varia não aparece (docs/web/design_system.md §6): enquanto
+   * nenhuma análise foi concluída, "Conclusão" e "Engenheiro" diriam "—" em
+   * todas as linhas.
+   */
+  readonly mostraConclusao = computed(() => this.lista().some((a) => a.concludedAt));
+  readonly mostraEngenheiro = computed(() => this.lista().some((a) => a.responsibleEngineer));
 
   constructor() {
     effect(() => {

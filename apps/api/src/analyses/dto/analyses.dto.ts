@@ -1,6 +1,27 @@
+import { applyDecorators } from '@nestjs/common';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateNested } from 'class-validator';
-import type { AnalysisCreateRequest, AnalysisSheetUpdate, SafetyManagement } from '@normatiza/shared';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import type {
+  AnalysisCreateRequest,
+  AnalysisSheetUpdate,
+  HrnFactors,
+  RiskPointUpsert,
+  SafetyCategoryAnswers,
+  SafetyManagement,
+} from '@normatiza/shared';
 
 /**
  * O formato de entrada da análise. O que depende do banco — o técnico ser da
@@ -74,4 +95,60 @@ export class AnalysisSheetUpdateDto implements AnalysisSheetUpdate {
   @ValidateNested()
   @Type(() => SafetyManagementDto)
   safetyManagement?: SafetyManagementDto;
+}
+
+/** Os quatro pesos. Se cada um existe na tabela da análise, quem confere é o serviço (D12). */
+class HrnFactorsDto implements HrnFactors {
+  @IsNumber() fe: number;
+  @IsNumber() pe: number;
+  @IsNumber() mpl: number;
+  @IsNumber() np: number;
+}
+
+class SafetyCategoryDto implements SafetyCategoryAnswers {
+  @IsIn([1, 2]) severity: 1 | 2;
+  @IsOptional() @IsIn([1, 2]) frequency?: 1 | 2;
+  @IsOptional() @IsIn([1, 2]) possibility?: 1 | 2;
+}
+
+/** Um ponto chega a citar mais de cem itens de norma (o legado tem um com 134). */
+const MÁXIMO_DA_LISTA = 300;
+
+/** Lista de ids do catálogo, opcional. Se cada id existe, quem confere é o serviço (D13). */
+const ListaDeIds = () => applyDecorators(IsOptional(), IsArray(), ArrayMaxSize(MÁXIMO_DA_LISTA), IsString({ each: true }));
+
+export class RiskPointUpsertDto implements RiskPointUpsert {
+  @opcional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  location?: string | null;
+
+  @ListaDeIds()
+  hazardOriginIds?: string[];
+
+  @ListaDeIds()
+  hazardConsequenceIds?: string[];
+
+  @ListaDeIds()
+  existingProtectionIds?: string[];
+
+  @ListaDeIds()
+  violatedStandardIds?: string[];
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => HrnFactorsDto)
+  hrn?: HrnFactorsDto | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SafetyCategoryDto)
+  safetyCategory?: SafetyCategoryDto | null;
+
+  @opcional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  suggestedSolution?: string | null;
 }

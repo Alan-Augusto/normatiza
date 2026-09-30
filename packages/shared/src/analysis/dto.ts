@@ -6,6 +6,8 @@
 
 import type { Role } from '../auth';
 import type { PersonRef } from '../team/dto';
+import type { HrnFactors, HrnScore, RiskLevel } from './hrn';
+import type { SafetyCategory, SafetyCategoryAnswers } from './safety-category';
 
 /**
  * Criam e editam a análise — só a consultoria (01 §7). É a garantia técnica de
@@ -93,7 +95,13 @@ export interface AnalysisActions {
   discard: boolean;
 }
 
-/** Uma linha de `GET …/analyses`. Os números de risco chegam com os pontos. */
+/** O HRN como a lista o mostra: o número e a faixa. */
+export interface HrnSummary {
+  result: number;
+  level: RiskLevel;
+}
+
+/** Uma linha de `GET …/analyses`. */
 export interface AnalysisListItem {
   id: string;
   number: number;
@@ -103,6 +111,9 @@ export interface AnalysisListItem {
   concludedAt?: string;
   fieldTechnician?: PersonRef;
   responsibleEngineer?: PersonRef;
+  riskPointsCount: number;
+  /** O maior HRN entre os pontos que já têm HRN. Ausente quando nenhum tem. */
+  worstHrn?: HrnSummary;
   actions: AnalysisActions;
 }
 
@@ -117,6 +128,42 @@ export interface AnalysisDetail extends AnalysisListItem {
   artNumber?: string;
   sheet: AnalysisSheet;
   photos: Partial<Record<RecognitionView, RecognitionPhoto>>;
+  riskPoints: RiskPointDto[];
+}
+
+/**
+ * Um ponto de perigo (docs/produto/03 §5.2, 04 §4). No rascunho pode estar
+ * incompleto; o HRN, nunca pela metade (D12).
+ */
+export interface RiskPointDto {
+  id: string;
+  number: number;
+  location?: string;
+  hazardOriginIds: string[];
+  hazardConsequenceIds: string[];
+  existingProtectionIds: string[];
+  violatedStandardIds: string[];
+  currentHrn?: HrnScore;
+  safetyCategory?: SafetyCategory;
+  suggestedSolution?: string;
+  photo?: RecognitionPhoto;
+}
+
+/**
+ * Corpo de `PUT …/analyses/:number/risk-points/:id`, com o id gerado no
+ * aparelho. O ponto inteiro: o que não vier é limpo.
+ */
+export interface RiskPointUpsert {
+  location?: string | null;
+  hazardOriginIds?: string[];
+  hazardConsequenceIds?: string[];
+  existingProtectionIds?: string[];
+  violatedStandardIds?: string[];
+  /** Os quatro pesos, ou nulo para sem HRN. */
+  hrn?: HrnFactors | null;
+  /** Nulo = não se aplica a categoria. */
+  safetyCategory?: SafetyCategoryAnswers | null;
+  suggestedSolution?: string | null;
 }
 
 /**

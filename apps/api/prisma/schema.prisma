@@ -543,6 +543,7 @@ model FileAsset {
   leftSideOf  Analysis?  @relation("AnalysisLeftSidePhoto")
   rightSideOf Analysis?  @relation("AnalysisRightSidePhoto")
   rearOf      Analysis?  @relation("AnalysisRearPhoto")
+  hazardOf    RiskPoint? @relation("RiskPointHazardPhoto")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -899,7 +900,8 @@ model Analysis {
   rearPhotoFileId      String?    @unique
   rearPhoto            FileAsset? @relation("AnalysisRearPhoto", fields: [rearPhotoFileId], references: [id])
 
-  files FileAsset[] @relation("AnalysisFiles")
+  files      FileAsset[] @relation("AnalysisFiles")
+  riskPoints RiskPoint[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -909,4 +911,65 @@ model Analysis {
   @@index([accountId])
   @@index([companyId])
   @@map("analyses")
+}
+
+enum RiskLevel {
+  ACCEPTABLE
+  VERY_LOW
+  LOW
+  SIGNIFICANT
+  HIGH
+  VERY_HIGH
+  EXTREME
+  UNACCEPTABLE
+}
+
+/// Um ponto de perigo da máquina, com o HRN (docs/produto/03 §5.2, 04 §4).
+/// O id vem do aparelho (UUID): regravar o mesmo ponto não duplica (D11).
+model RiskPoint {
+  id          String   @id
+  accountId   String
+  analysisId  String
+  analysis    Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  /// Desnormalizado: o ponto sobrevive à análise no plano de ação.
+  equipmentId String
+
+  /// Ponto 1, 2, 3… na análise. Dado pelo servidor; excluir renumera.
+  number   Int
+  location String?
+
+  // Listas de ids dos catálogos globais, conferidas na gravação (D13).
+  hazardOriginIds       String[] @default([])
+  hazardConsequenceIds  String[] @default([])
+  existingProtectionIds String[] @default([])
+  violatedStandardIds   String[] @default([])
+
+  /// Os quatro pesos, ou nenhum (D12). Resultado e faixa são calculados pelo
+  /// servidor com a tabela da análise, e guardados para a lista não recalcular.
+  hrnFe     Float?
+  hrnPe     Float?
+  hrnMpl    Float?
+  hrnNp     Float?
+  hrnResult Float?
+  hrnLevel  RiskLevel?
+
+  /// Categoria NBR 14153: nula = não se aplica. A categoria é calculada.
+  safetySeverity    Int?
+  safetyFrequency   Int?
+  safetyPossibility Int?
+  safetyCategory    Int?
+
+  suggestedSolution String?
+
+  hazardPhotoFileId String?    @unique
+  hazardPhoto       FileAsset? @relation("RiskPointHazardPhoto", fields: [hazardPhotoFileId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([analysisId, number])
+  @@index([accountId])
+  @@index([equipmentId])
+  @@map("risk_points")
 }

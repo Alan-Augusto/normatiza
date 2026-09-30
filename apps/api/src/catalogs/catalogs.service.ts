@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { AnalysisCatalogsDto, HrnTable } from '@normatiza/shared';
+import type { AnalysisCatalogsDto } from '@normatiza/shared';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { tabelaHrnDe } from './hrn-table';
 
 /** "12.2" antes de "12.10": os códigos comparados número a número. */
 const porCódigo = (a: { itemCode: string }, b: { itemCode: string }) =>
@@ -36,13 +37,7 @@ export class CatalogsService {
     // A migração semeia a tabela; faltar é banco quebrado, não catálogo vazio.
     if (!hrn) throw new NotFoundException('Nenhuma tabela HRN vigente');
 
-    const hrnTable: HrnTable = {
-      id: hrn.id,
-      label: hrn.label,
-      effectiveFrom: hrn.effectiveFrom.toISOString(),
-      factors: hrn.factors as unknown as HrnTable['factors'],
-      levels: hrn.levels as unknown as HrnTable['levels'],
-    };
+    const hrnTable = tabelaHrnDe(hrn);
 
     const conteúdo: Omit<AnalysisCatalogsDto, 'version'> = {
       standardSections: sections.map((s) => ({

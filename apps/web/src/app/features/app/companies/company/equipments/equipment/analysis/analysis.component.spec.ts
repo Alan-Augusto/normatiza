@@ -59,14 +59,21 @@ describe('EquipmentAnalysisComponent', () => {
     harness.detectChanges();
   }
 
-  const el = (testid: string) => (harness.routeNativeElement as HTMLElement).querySelector<HTMLElement>(`[data-testid="${testid}"]`);
+  const raiz = () => harness.routeNativeElement as HTMLElement;
+  const el = (testid: string) => raiz().querySelector<HTMLElement>(`[data-testid="${testid}"]`);
+  function clicar(testid: string) {
+    const alvo = el(testid)?.matches('button, a') ? el(testid) : el(testid)?.querySelector<HTMLElement>('button');
+    if (!alvo) throw new Error(`"${testid}" não está na tela.`);
+    alvo.click();
+    harness.detectChanges();
+  }
   const comoFernando = () => abrirComo([vínculo(BRF.id, ['TECHNICIAN'])]);
 
   it('deve oferecer à consultoria abrir a primeira análise, e levar direto para ela', async () => {
     await comoFernando();
-    expect(el('vazio')?.textContent).toContain('ainda não tem análise');
+    expect(raiz().textContent).toContain('ainda não tem análise');
 
-    el('nova-analise')!.click();
+    clicar('nova-analise');
     const req = http.expectOne(ANALISES);
     expect(req.request.method).toBe('POST');
     req.flush(detalheDeAnalise());
@@ -83,26 +90,40 @@ describe('EquipmentAnalysisComponent', () => {
     expect(el('continuar')?.getAttribute('href')).toBe(`${LISTA}/2`);
   });
 
-  it('deve mostrar o técnico, e "—" nos números de risco, que chegam com os pontos', async () => {
-    await abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], [linhaDeAnalise()]);
+  it('deve mostrar o técnico, quantos pontos a análise tem e o pior HRN, com o nome da faixa', async () => {
+    await abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], [linhaDeAnalise({ riskPointsCount: 3, worstHrn: { result: 120, level: 'VERY_HIGH' } })]);
 
     const linha = el('analise-1')!;
     expect(linha.textContent).toContain('Fernando');
     expect(linha.textContent).toContain('Rascunho');
-    expect([...linha.querySelectorAll('td')].map((td) => td.textContent?.trim()).slice(5, 7)).toEqual(['—', '—']);
+    expect(linha.querySelector('[data-testid="pontos"]')?.textContent?.trim()).toBe('3');
+    expect(linha.querySelector('[data-testid="hrn"]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('120 Risco Muito Alto');
+  });
+
+  it('deve mostrar "—" no pior HRN enquanto nenhum ponto tem HRN', async () => {
+    await abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], [linhaDeAnalise()]);
+
+    expect(el('analise-1')!.querySelector('[data-testid="hrn"]')?.textContent?.trim()).toBe('—');
+  });
+
+  it('não deve mostrar conclusão nem engenheiro enquanto nenhuma análise tem esses dados', async () => {
+    await abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], [linhaDeAnalise()]);
+
+    expect(raiz().textContent).not.toContain('Engenheiro responsável');
+    expect(raiz().textContent).not.toContain('Conclusão');
   });
 
   it('não deve oferecer abrir análise ao cliente, e deve dizer quando ela aparece', async () => {
     await abrirComo([vínculo(BRF.id, ['MANAGER'])]);
 
     expect(el('nova-analise')).toBeNull();
-    expect(el('vazio')?.textContent).toContain('quando a consultoria as conclui');
+    expect(raiz().textContent).toContain('quando a consultoria as conclui');
   });
 
   it('deve dizer qual rascunho outro técnico já abriu, e atualizar a lista', async () => {
     await comoFernando();
 
-    el('nova-analise')!.click();
+    clicar('nova-analise');
     http
       .expectOne(ANALISES)
       .flush(

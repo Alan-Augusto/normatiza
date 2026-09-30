@@ -50,6 +50,8 @@ export const AuditAction = {
   ANALYSIS_PHOTO_CHANGED: 'analysis.photo_changed',
   /** O rascunho apagado: o `before` guarda o que ele tinha, e é a única memória dele. */
   ANALYSIS_DISCARDED: 'analysis.discarded',
+  ANALYSIS_RISK_POINT_SAVED: 'analysis.risk_point_saved',
+  ANALYSIS_RISK_POINT_DELETED: 'analysis.risk_point_deleted',
 } as const;
 
 export type AuditActionValue = (typeof AuditAction)[keyof typeof AuditAction];

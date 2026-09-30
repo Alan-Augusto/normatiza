@@ -1,6 +1,6 @@
 # Plano — Análise de Risco
 
-> **Status:** fatia 1 concluída (21 e2e e 14 testes de tela novos), falta o aceite no homelab · fatia 2 a seguir · **Criado em:** 2026-09-29 · os catálogos (normas, perigos, proteções, tabela HRN) já existem: `GET /catalogs/analysis`, `@normatiza/shared` `analysis/`
+> **Status:** fatias 1 e 2 concluídas, falta o aceite no homelab · fatia 3 (PAP e PE) a seguir · **Criado em:** 2026-09-29 · os catálogos (normas, perigos, proteções, tabela HRN) já existem: `GET /catalogs/analysis`, `@normatiza/shared` `analysis/`
 > **Regras de negócio:** [03 — Navegação §5.1 e §5.2](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §3 e §4](../produto/04_modelo_de_dados.md) · [01 — Permissões §7](../produto/01_papeis_e_permissoes.md) · [05 — Regras Transversais §1 e §4](../produto/05_regras_transversais.md)
 > **Migração:** [docs/migracao §5 e §8](../migracao/README.md)
 
@@ -30,6 +30,10 @@ O assistente de análise do equipamento, nas 4 etapas de 03 §5.2 — ficha téc
 | D8 | **A ficha do ativo se corrige no cadastro do equipamento** | A etapa 1 mostra a ficha do equipamento, e **Corrigir** abre o formulário do equipamento, que volta para a análise ao salvar. Um segundo formulário da mesma ficha dentro da análise seria duas telas para manter iguais |
 | D9 | **Rotas** | API: `/companies/:companyId/equipments/:code/analyses[/:number[/sheet|/photos/:view]]`. Painel: `…/equipamentos/:equipmentCode/analise` (lista) e `…/analise/:numero` (assistente) |
 | D10 | **Criar aceita o id do aparelho** | `POST …/analyses` com `id` (UUID) opcional: se já existe aquela análise naquele equipamento, devolve a existente. O app offline reenvia sem medo de duplicar (D1) |
+| D11 | **O ponto é item com o id do aparelho** | `PUT …/analyses/:number/risk-points/:id` cria ou substitui, pelo UUID gerado no aparelho (D1); `DELETE` remove. O número (Ponto 1, 2, 3…) é dado pelo servidor; excluir um ponto do rascunho renumera os seguintes, para o laudo nunca pular um número |
+| D12 | **HRN: os quatro fatores ou nenhum** | No rascunho o ponto pode ficar sem HRN, mas não pela metade: três fatores sem o quarto não são um risco. O servidor recusa peso fora da tabela e calcula resultado e faixa com a tabela da análise (`calculateHrn`), guardando os dois para a lista mostrar o pior HRN sem recalcular |
+| D13 | **Catálogos por id, em listas** | Origens, consequências, proteções e normas são listas de ids nas colunas do ponto (`String[]`), conferidas contra o catálogo na gravação. O catálogo nunca apaga item (migracao §7), então a lista não fica apontando para o vazio, e o app offline grava o ponto de uma vez só |
+| D14 | **Cores de risco são as do laudo do legado** | Uma por faixa, em tokens do design system (`--color-risk-*`), para a tela e o laudo falarem a mesma língua. `app-hrn-badge` é o único jeito de mostrar um HRN |
 
 ## 3. Fatias
 
@@ -43,6 +47,15 @@ O passo a passo de cada uma se escreve aqui quando ela começar.
 - [x] Testes de API: alçada por papel, rascunho único, número, descarte, técnico de outra empresa recusado, fotos.
 - [x] Painel: lista na aba Análises, **Nova análise**, assistente com a etapa 1 e as outras três anunciadas, descartar. O técnico de campo vem de `GET …/analyses/field-technicians` (a Equipe da Empresa mostra a consultoria só como contexto), e o formulário do equipamento aceita `?voltar=` só para endereço interno.
 - [ ] Aceite no homelab: Fernando abre, preenche e envia fotos; Marcos não vê o rascunho; descartar libera a máquina.
+- [x] Testes do painel.
+
+### Fatia 2 — pontos de risco
+- [x] Prisma: `RiskPoint` (número, local, listas de catálogo, os quatro fatores com resultado e faixa, categoria NBR 14153, solução, foto do perigo).
+- [x] Shared: contratos do ponto; a lista de análises ganha contagem de pontos e pior HRN.
+- [x] API: gravar (D11, D12, D13), excluir com renumeração, foto do ponto. Descartar o rascunho leva os pontos.
+- [x] Testes de API.
+- [x] Painel: tokens de risco e `app-hrn-badge` (design system §5); etapa 2 com a lista de pontos e o editor no lugar dela (um ponto por vez, com o HRN e a categoria calculados enquanto se escolhe); a lista de análises passa a `app-data-table` (§6), com pontos e pior HRN, e sem as colunas que ainda não variam.
+- [ ] Aceite no homelab: Fernando levanta três pontos com HRN, categoria, normas e foto; exclui o primeiro e os outros sobem; a lista mostra o pior HRN.
 - [x] Testes do painel.
 
 ### Próximas
