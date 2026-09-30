@@ -54,6 +54,10 @@
           @if (alvoDaAnalise(); as alvo) {
             <app-risk-points-step [alvo]="alvo" [pontos]="a.riskPoints" [editavel]="a.actions.edit" (pontosChange)="atualizarPontos($event)" />
           }
+        } @else if (etapaAtual().chave === 'pap') {
+          @if (alvoDaAnalise(); as alvo) {
+            <app-pap-step [alvo]="alvo" [paps]="a.paps" [editavel]="a.actions.edit" (papsChange)="atualizarPaps($event)" />
+          }
         } @else {
           <div class="space-y-6">
             <!-- A ficha do ativo é do equipamento: aqui se lê, e se corrige no cadastro dele (D8). -->

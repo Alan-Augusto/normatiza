@@ -30,6 +30,7 @@ export function detalheDeAnalise(over: Partial<AnalysisDetail> = {}): AnalysisDe
     sheet: { times: {}, safetyManagement: emptySafetyManagement() },
     photos: {},
     riskPoints: [],
+    paps: [],
     ...over,
   };
 }

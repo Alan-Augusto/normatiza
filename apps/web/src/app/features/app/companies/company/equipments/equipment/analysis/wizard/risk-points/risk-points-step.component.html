@@ -139,38 +139,7 @@
 
       <section class="painel">
         <h4 class="titulo">Normas descumpridas</h4>
-        <app-campo para="rp-normas" rotulo="Itens da NR-12" ajuda="Busque pelo código ou por uma palavra do texto." mensagemId="ajuda-normas">
-          <p-multiselect
-            inputId="rp-normas"
-            data-testid="campo-normas"
-            formControlName="normas"
-            [options]="gruposDeNorma()"
-            [group]="true"
-            optionGroupLabel="label"
-            optionGroupChildren="items"
-            optionLabel="label"
-            optionValue="value"
-            [filter]="true"
-            filterPlaceholder="12.38 ou intertravamento"
-            [virtualScroll]="true"
-            [virtualScrollItemSize]="40"
-            [maxSelectedLabels]="0"
-            selectedItemsLabel="{0} itens escolhidos"
-            placeholder="Nenhum item"
-            styleClass="w-full"
-            panelStyleClass="painel-de-normas"
-            appendTo="body"
-          />
-        </app-campo>
-        @if (normasEscolhidas().length) {
-          <ul class="normas" data-testid="normas-escolhidas">
-            @for (n of normasEscolhidas(); track n.id) {
-              <li>
-                <span class="codigo">{{ n.itemCode }}</span>&ngsp;<span class="text-sm">{{ n.text }}</span>
-              </li>
-            }
-          </ul>
-        }
+        <app-normas-descumpridas inputId="rp-normas" formControlName="normas" [secoes]="catalogos().pacote?.standardSections ?? []" />
       </section>
 
       <section class="painel">

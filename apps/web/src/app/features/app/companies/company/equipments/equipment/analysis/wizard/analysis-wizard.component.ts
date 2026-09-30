@@ -21,6 +21,7 @@ import {
   SAFETY_MANAGEMENT_QUESTIONS,
   type AnalysisDetail,
   type AnalysisSheetUpdate,
+  type PapDto,
   type PersonRef,
   type RecognitionView,
   type RiskPointDto,
@@ -37,6 +38,7 @@ import { CampoComponent } from '../../../../../../../../shared/components/form/c
 import { NumeroComponent } from '../../../../../../../../shared/components/form/numero.component';
 import { EquipmentContext } from '../../equipment-context';
 import { linhasDaFicha } from '../../ficha-do-ativo';
+import { PapStepComponent } from './pap/pap-step.component';
 import { RiskPointsStepComponent, type AlvoDaAnalise } from './risk-points/risk-points-step.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -55,7 +57,7 @@ interface Etapa {
 const ETAPAS: readonly Etapa[] = [
   { valor: 1, chave: 'ficha', titulo: 'Ficha técnica', icone: 'lucideClipboardList' },
   { valor: 2, chave: 'pontos', titulo: 'Pontos de risco', icone: 'lucideTriangleAlert' },
-  { valor: 3, chave: 'pap', titulo: 'PAP', icone: 'lucidePower', futura: true },
+  { valor: 3, chave: 'pap', titulo: 'PAP', icone: 'lucidePower' },
   { valor: 4, chave: 'pe', titulo: 'PE', icone: 'lucideWrench', futura: true },
 ];
 
@@ -96,6 +98,7 @@ const SIM_OU_NÃO = [
     CampoComponent,
     NumeroComponent,
     RiskPointsStepComponent,
+    PapStepComponent,
   ],
   providers: [provideIcons({ lucideClipboardList, lucideTriangleAlert, lucidePower, lucideWrench, lucideCircleAlert })],
   templateUrl: './analysis-wizard.component.html',
@@ -151,6 +154,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
 
   readonly etapaAtual = computed(() => ETAPAS[this.passo() - 1]);
   private readonly etapaDosPontos = viewChild(RiskPointsStepComponent);
+  private readonly etapaDoPap = viewChild(PapStepComponent);
 
   /** A análise na API, para a etapa dos pontos gravar direto. */
   readonly alvoDaAnalise = computed<AlvoDaAnalise | null>(() => this.alvo());
@@ -206,6 +210,9 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     if (this.etapaDosPontos()?.temAlteracoes() && !window.confirm('O ponto aberto tem alterações não salvas. Trocar de etapa mesmo assim?')) {
       return;
     }
+    if (this.etapaDoPap()?.temAlteracoes() && !window.confirm('O PAP aberto tem alterações não salvas. Trocar de etapa mesmo assim?')) {
+      return;
+    }
     this.passo.set(valor);
     this.aviso.set(null);
   }
@@ -231,14 +238,18 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     if ((evento.target as HTMLElement).tagName !== 'TEXTAREA') evento.preventDefault();
   }
 
-  /** A ficha por salvar, ou um ponto aberto no editor com alteração. */
+  /** A ficha por salvar, ou um ponto ou PAP aberto no editor com alteração. */
   temAlteracoesNaoSalvas(): boolean {
-    return (this.form.dirty && !this.salvando()) || !!this.etapaDosPontos()?.temAlteracoes();
+    return (this.form.dirty && !this.salvando()) || !!this.etapaDosPontos()?.temAlteracoes() || !!this.etapaDoPap()?.temAlteracoes();
   }
 
   /** A etapa dos pontos gravou ou excluiu: a lista da análise passa a ser a dela. */
   atualizarPontos(pontos: RiskPointDto[]): void {
     this.analise.update((a) => (a ? { ...a, riskPoints: pontos, riskPointsCount: pontos.length } : a));
+  }
+
+  atualizarPaps(paps: PapDto[]): void {
+    this.analise.update((a) => (a ? { ...a, paps } : a));
   }
 
   salvar(depois?: () => void): void {

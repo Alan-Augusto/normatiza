@@ -31,6 +31,7 @@ import { CompanyWriteGuard } from '../companies/company-write-guard.service';
 import { InventoryAccess } from '../inventory/inventory-access.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FilesService } from '../storage/files.service';
+import { FOTOS_DO_PAP, papDto } from './pap-dto';
 import { pontoDto } from './risk-point-dto';
 
 const ARQUIVO = { select: { id: true, storageKey: true, thumbnailKey: true } } as const;
@@ -41,6 +42,7 @@ const COMPLETA = {
   rightSidePhoto: ARQUIVO,
   rearPhoto: ARQUIVO,
   riskPoints: { include: { hazardPhoto: ARQUIVO }, orderBy: { number: 'asc' } },
+  paps: { include: FOTOS_DO_PAP, orderBy: { number: 'asc' } },
 } satisfies Prisma.AnalysisInclude;
 
 /** O que a lista precisa dos pontos: contar e achar o pior. */
@@ -409,6 +411,7 @@ export class AnalysesService {
       },
       photos,
       riskPoints: await Promise.all(a.riskPoints.map((p) => pontoDto(this.files, p))),
+      paps: await Promise.all(a.paps.map((p) => papDto(this.files, p))),
     };
   }
 

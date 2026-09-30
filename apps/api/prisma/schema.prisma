@@ -537,13 +537,16 @@ model FileAsset {
   capturedAt       DateTime?
   capturedByUserId String?
 
-  logoOf      Company?   @relation("CompanyLogo")
-  mainPhotoOf Equipment? @relation("EquipmentMainPhoto")
-  frontOf     Analysis?  @relation("AnalysisFrontPhoto")
-  leftSideOf  Analysis?  @relation("AnalysisLeftSidePhoto")
-  rightSideOf Analysis?  @relation("AnalysisRightSidePhoto")
-  rearOf      Analysis?  @relation("AnalysisRearPhoto")
-  hazardOf    RiskPoint? @relation("RiskPointHazardPhoto")
+  logoOf             Company?       @relation("CompanyLogo")
+  mainPhotoOf        Equipment?     @relation("EquipmentMainPhoto")
+  frontOf            Analysis?      @relation("AnalysisFrontPhoto")
+  leftSideOf         Analysis?      @relation("AnalysisLeftSidePhoto")
+  rightSideOf        Analysis?      @relation("AnalysisRightSidePhoto")
+  rearOf             Analysis?      @relation("AnalysisRearPhoto")
+  hazardOf           RiskPoint?     @relation("RiskPointHazardPhoto")
+  papActivationOf    PapAssessment? @relation("PapActivationPhoto")
+  papResetOf         PapAssessment? @relation("PapResetPhoto")
+  papEmergencyStopOf PapAssessment? @relation("PapEmergencyStopPhoto")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -900,8 +903,9 @@ model Analysis {
   rearPhotoFileId      String?    @unique
   rearPhoto            FileAsset? @relation("AnalysisRearPhoto", fields: [rearPhotoFileId], references: [id])
 
-  files      FileAsset[] @relation("AnalysisFiles")
+  files      FileAsset[]     @relation("AnalysisFiles")
   riskPoints RiskPoint[]
+  paps       PapAssessment[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -972,4 +976,42 @@ model RiskPoint {
   @@index([accountId])
   @@index([equipmentId])
   @@map("risk_points")
+}
+
+/// Um PAP — conjunto de comando da máquina (docs/produto/03 §5.2, 04 §4).
+/// O id vem do aparelho (UUID), como o do ponto de risco (D11).
+model PapAssessment {
+  id          String   @id
+  accountId   String
+  analysisId  String
+  analysis    Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  equipmentId String
+
+  /// PAP 1, 2, 3… na análise. Dado pelo servidor; excluir renumera.
+  number   Int
+  location String?
+
+  /// As três seções × seis quesitos × {physicalState, nr12Compliant}, no
+  /// formato de `PapAnswers` por seção (`@normatiza/shared`). Validado na
+  /// gravação; nulo = ainda sem resposta.
+  answers Json
+
+  activationPhotoFileId    String?    @unique
+  activationPhoto          FileAsset? @relation("PapActivationPhoto", fields: [activationPhotoFileId], references: [id])
+  resetPhotoFileId         String?    @unique
+  resetPhoto               FileAsset? @relation("PapResetPhoto", fields: [resetPhotoFileId], references: [id])
+  emergencyStopPhotoFileId String?    @unique
+  emergencyStopPhoto       FileAsset? @relation("PapEmergencyStopPhoto", fields: [emergencyStopPhotoFileId], references: [id])
+
+  violatedStandardIds String[] @default([])
+  solution            String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([analysisId, number])
+  @@index([accountId])
+  @@index([equipmentId])
+  @@map("pap_assessments")
 }

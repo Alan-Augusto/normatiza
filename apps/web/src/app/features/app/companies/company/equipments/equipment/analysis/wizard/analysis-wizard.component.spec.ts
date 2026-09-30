@@ -229,9 +229,20 @@ describe('AnalysisWizardComponent', () => {
   it('deve anunciar as etapas que ainda não existem, sem esconder o caminho', async () => {
     await abrir();
 
-    clicar('passo-pap');
+    clicar('passo-pe');
 
-    expect(el('etapa-futura')?.textContent).toContain('PAP chega na próxima entrega');
+    expect(el('etapa-futura')?.textContent).toContain('PE chega na próxima entrega');
+  });
+
+  it('deve abrir a etapa do PAP com o convite para o primeiro conjunto de comando', async () => {
+    await abrir();
+
+    clicar('passo-pap');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('pap');
+    expect(el('sem-paps')?.textContent).toContain('Nenhum PAP avaliado ainda');
   });
 
   it('deve abrir só para leitura a análise que não se edita', async () => {

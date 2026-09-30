@@ -7,6 +7,9 @@ import type {
   AnalysisDetail,
   AnalysisListItem,
   AnalysisSheetUpdate,
+  PapDto,
+  PapSection,
+  PapUpsert,
   PersonRef,
   RecognitionPhoto,
   RecognitionView,
@@ -76,6 +79,25 @@ export class AnalysisService {
 
   removeRiskPointPhoto(companyId: string, code: string, number: number, pointId: string): Observable<void> {
     return this.http.delete<void>(`${this.base(companyId, code)}/${number}/risk-points/${pointId}/photo`);
+  }
+
+  /** O PAP inteiro, pelo id gerado aqui: regravar não duplica. */
+  savePap(companyId: string, code: string, number: number, papId: string, dados: PapUpsert): Observable<PapDto> {
+    return this.http.put<PapDto>(`${this.base(companyId, code)}/${number}/paps/${papId}`, dados);
+  }
+
+  removePap(companyId: string, code: string, number: number, papId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(companyId, code)}/${number}/paps/${papId}`);
+  }
+
+  setPapPhoto(companyId: string, code: string, number: number, papId: string, section: PapSection, arquivo: File): Observable<RecognitionPhoto> {
+    const corpo = new FormData();
+    corpo.append('file', arquivo);
+    return this.http.put<RecognitionPhoto>(`${this.base(companyId, code)}/${number}/paps/${papId}/photos/${section}`, corpo);
+  }
+
+  removePapPhoto(companyId: string, code: string, number: number, papId: string, section: PapSection): Observable<void> {
+    return this.http.delete<void>(`${this.base(companyId, code)}/${number}/paps/${papId}/photos/${section}`);
   }
 
   discard(companyId: string, code: string, number: number): Observable<void> {

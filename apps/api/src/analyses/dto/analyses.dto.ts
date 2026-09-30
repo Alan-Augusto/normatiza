@@ -17,7 +17,9 @@ import {
 import type {
   AnalysisCreateRequest,
   AnalysisSheetUpdate,
+  ChecklistAnswer,
   HrnFactors,
+  PapUpsert,
   RiskPointUpsert,
   SafetyCategoryAnswers,
   SafetyManagement,
@@ -151,4 +153,58 @@ export class RiskPointUpsertDto implements RiskPointUpsert {
   @IsString()
   @MaxLength(5000)
   suggestedSolution?: string | null;
+}
+
+/** Um quesito: cada dimensão é sim, não ou nulo (ainda sem resposta). */
+class ChecklistAnswerDto implements Partial<ChecklistAnswer> {
+  @IsOptional() @IsBoolean() physicalState?: boolean | null;
+  @IsOptional() @IsBoolean() nr12Compliant?: boolean | null;
+}
+
+const Quesito = () => applyDecorators(IsOptional(), ValidateNested(), Type(() => ChecklistAnswerDto));
+
+class PapAnswersDto {
+  @Quesito() installed?: ChecklistAnswerDto;
+  @Quesito() accidental?: ChecklistAnswerDto;
+  @Quesito() antiFraud?: ChecklistAnswerDto;
+  @Quesito() safeArea?: ChecklistAnswerDto;
+  @Quesito() extraLowVoltage?: ChecklistAnswerDto;
+  @Quesito() portuguese?: ChecklistAnswerDto;
+}
+
+class PapSectionInputDto {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PapAnswersDto)
+  answers?: PapAnswersDto;
+}
+
+const Seção = () => applyDecorators(IsOptional(), ValidateNested(), Type(() => PapSectionInputDto));
+
+class PapSectionsDto {
+  @Seção() activation?: PapSectionInputDto;
+  @Seção() reset?: PapSectionInputDto;
+  @Seção() emergencyStop?: PapSectionInputDto;
+}
+
+export class PapUpsertDto implements PapUpsert {
+  @opcional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  location?: string | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PapSectionsDto)
+  sections?: PapSectionsDto;
+
+  @ListaDeIds()
+  violatedStandardIds?: string[];
+
+  @opcional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  solution?: string | null;
 }

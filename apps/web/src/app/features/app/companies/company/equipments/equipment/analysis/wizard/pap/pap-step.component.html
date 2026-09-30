@@ -1,0 +1,244 @@
+@if (catalogos().erro) {
+  <p-message data-testid="erro-catalogos" severity="error" styleClass="w-full mb-4" text="Não foi possível carregar as normas. Recarregue a página para tentar de novo." />
+}
+@if (aviso()) {
+  <p-message data-testid="aviso-pap" severity="success" styleClass="w-full mb-4" [text]="aviso()!" />
+}
+
+@if (editando(); as aberto) {
+  <div class="space-y-6" data-testid="editor-pap">
+    <h3 class="text-base font-semibold">{{ aberto.existente ? 'PAP ' + aberto.existente.number : 'Novo PAP' }}</h3>
+
+    @if (erro()) {
+      <p-message data-testid="erro-pap" severity="error" styleClass="w-full" [text]="erro()!" />
+    }
+
+    <div [formGroup]="form" class="space-y-6">
+      <section class="painel">
+        <h4 class="titulo">O conjunto de comando</h4>
+        <app-campo para="pap-local" rotulo="Qual é" ajuda="O painel ou a botoeira avaliada. Uma máquina com dois painéis tem dois PAP." mensagemId="ajuda-pap-local">
+          <input pInputText id="pap-local" data-testid="campo-local-pap" class="w-full" formControlName="local" placeholder="Ex.: Painel principal, botoeira da descarga" aria-describedby="ajuda-pap-local" />
+        </app-campo>
+      </section>
+
+      <section class="painel" formGroupName="secoes">
+        <h4 class="titulo">Os quesitos</h4>
+        <p class="mb-4 text-sm text-muted-color">
+          Cada quesito tem duas respostas: o <strong>estado físico</strong>, o que se vê na máquina, e se ele <strong>atende à NR-12</strong>.
+          Deixe sem marcar o que ainda não foi verificado.
+        </p>
+
+        <div class="abas" role="tablist" aria-label="Seções do PAP">
+          @for (s of secoes; track s.key) {
+            <button
+              type="button"
+              role="tab"
+              class="aba"
+              [class.aberta]="secaoAberta() === s.key"
+              [attr.aria-selected]="secaoAberta() === s.key"
+              [attr.data-testid]="'aba-' + s.key"
+              (click)="secaoAberta.set(s.key)"
+            >
+              <span class="aba-titulo">{{ s.label }}</span>
+              <span class="aba-progresso">
+                <span class="tabular-nums">{{ resumo()[s.key].respondidos }}/{{ quesitos.length }}</span>
+                @if (resumo()[s.key].naoConformes; as n) {
+                  <span class="nao-atende">{{ n }} não {{ n === 1 ? 'atende' : 'atendem' }}</span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+
+        @for (s of secoes; track s.key) {
+          @if (secaoAberta() === s.key) {
+            <div role="tabpanel" [attr.data-testid]="'secao-' + s.key" [formGroupName]="s.key">
+              <ol class="quesitos">
+                @for (q of quesitos; track q.key; let i = $index) {
+                  <li
+                    class="quesito"
+                    [class.nao-conforme]="resposta(s.key, q.key).controls.nr12Compliant.value === false"
+                    [attr.data-testid]="'quesito-' + s.key + '-' + q.key"
+                    [formGroupName]="q.key"
+                  >
+                    <div class="quesito-texto">
+                      <span class="quesito-numero">{{ i + 1 }}</span>
+                      <div>
+                        <p class="text-sm font-medium" [id]="'pap-' + s.key + '-' + q.key">{{ q.label }}</p>
+                        <p class="text-xs text-muted-color">{{ q.question }}</p>
+                      </div>
+                    </div>
+                    <div class="respostas">
+                      <div class="resposta">
+                        <span class="resposta-rotulo" [id]="'pap-' + s.key + '-' + q.key + '-fisico'">Estado físico</span>
+                        <p-selectbutton
+                          [attr.data-testid]="'fisico-' + s.key + '-' + q.key"
+                          formControlName="physicalState"
+                          [options]="opcoesFisico"
+                          optionLabel="label"
+                          optionValue="value"
+                          [ariaLabelledBy]="'pap-' + s.key + '-' + q.key + ' pap-' + s.key + '-' + q.key + '-fisico'"
+                          size="small"
+                        />
+                      </div>
+                      <div class="resposta">
+                        <span class="resposta-rotulo" [id]="'pap-' + s.key + '-' + q.key + '-nr12'">NR-12</span>
+                        <p-selectbutton
+                          [attr.data-testid]="'nr12-' + s.key + '-' + q.key"
+                          formControlName="nr12Compliant"
+                          [options]="opcoesNr12"
+                          optionLabel="label"
+                          optionValue="value"
+                          [ariaLabelledBy]="'pap-' + s.key + '-' + q.key + ' pap-' + s.key + '-' + q.key + '-nr12'"
+                          size="small"
+                        />
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ol>
+
+              <div class="mt-4">
+                <app-foto-do-item
+                  [rotulo]="'Foto — ' + s.label"
+                  ajuda="O botão ou o painel auditado nesta seção. Sobe assim que é escolhida."
+                  [inputId]="'pap-foto-' + s.key"
+                  [testid]="'foto-' + s.key"
+                  [foto]="aberto.existente?.sections?.[s.key]?.photo"
+                  [editavel]="editavel()"
+                  [enviando]="enviandoFoto() === s.key"
+                  [erro]="erroDaFoto()?.secao === s.key ? erroDaFoto()!.texto : null"
+                  (escolher)="enviarFoto(s.key, $event)"
+                  (remover)="removerFoto(s.key)"
+                />
+              </div>
+            </div>
+          }
+        }
+      </section>
+
+      <section class="painel">
+        <h4 class="titulo">Normas descumpridas</h4>
+        <p class="mb-3 text-sm text-muted-color">Do conjunto inteiro, nas três seções.</p>
+        <app-normas-descumpridas inputId="pap-normas" formControlName="normas" [secoes]="catalogos().pacote?.standardSections ?? []" />
+      </section>
+
+      <section class="painel">
+        <h4 class="titulo">Solução</h4>
+        <app-campo para="pap-solucao" rotulo="O que fazer" ajuda="Uma para o conjunto. É o que o cliente vai ler para adequar: clara e acionável." mensagemId="ajuda-pap-solucao">
+          <textarea pTextarea id="pap-solucao" data-testid="campo-solucao-pap" class="w-full" rows="4" [autoResize]="true" formControlName="solucao" aria-describedby="ajuda-pap-solucao"></textarea>
+        </app-campo>
+      </section>
+    </div>
+
+    <div class="flex flex-wrap justify-end gap-2">
+      <p-button data-testid="cancelar-pap" label="Voltar à lista" severity="secondary" [text]="true" (onClick)="fechar()" />
+      @if (editavel()) {
+        <p-button data-testid="salvar-pap" label="Salvar PAP" [loading]="salvando()" (onClick)="salvar()" />
+      }
+    </div>
+  </div>
+} @else {
+  <div class="space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-sm text-muted-color">
+        Os conjuntos de comando da máquina — painéis e botoeiras —, cada um com o acionamento, o rearme e a parada de emergência avaliados.
+      </p>
+      @if (editavel() && paps().length) {
+        <p-button data-testid="novo-pap" label="Adicionar PAP" icon="pi pi-plus" (onClick)="novo()" />
+      }
+    </div>
+
+    @if (paps().length) {
+      <ol class="pontos" data-testid="paps">
+        @for (p of paps(); track p.id) {
+          <li class="ponto" [attr.data-testid]="'pap-' + p.number">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <p class="font-medium">PAP {{ p.number }} · {{ p.location ?? 'Sem local' }}</p>
+              @if (naoConformidades(p); as n) {
+                <span class="selo selo-nao-conforme">{{ n }} {{ n === 1 ? 'não conformidade' : 'não conformidades' }}</span>
+              } @else if (semResposta(p) === 0) {
+                <span class="selo selo-conforme">Atende à NR-12</span>
+              } @else {
+                <span class="selo">Sem não conformidade até aqui</span>
+              }
+            </div>
+            <ul class="resumo-secoes">
+              @for (s of secoes; track s.key) {
+                <li>
+                  <span class="text-muted-color">{{ s.label }}</span>&ngsp;
+                  <strong [class.nao-atende]="naoConformesNaSecao(p, s.key) > 0">{{ naoConformesNaSecao(p, s.key) }}</strong>
+                </li>
+              }
+            </ul>
+            @if (p.solution) {
+              <p class="solucao text-sm">{{ p.solution }}</p>
+            }
+            <div class="flex flex-wrap items-center gap-2 text-xs text-muted-color">
+              <span>{{ p.violatedStandardIds.length }} {{ p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma' }}</span>
+              @if (semResposta(p); as n) {
+                <span>· {{ n }} {{ n === 1 ? 'quesito sem resposta' : 'quesitos sem resposta' }}</span>
+              }
+              @if (fotos(p); as n) {
+                <span>· {{ n }} {{ n === 1 ? 'foto' : 'fotos' }}</span>
+              }
+            </div>
+            <div class="flex gap-1">
+              <p-button [attr.data-testid]="'abrir-pap-' + p.number" [label]="editavel() ? 'Editar' : 'Ver'" severity="secondary" [outlined]="true" size="small" (onClick)="editar(p)" />
+              @if (editavel()) {
+                <p-button [attr.data-testid]="'excluir-pap-' + p.number" label="Excluir" severity="danger" [text]="true" size="small" (onClick)="excluindo.set(p)" />
+              }
+            </div>
+          </li>
+        }
+        @if (editavel()) {
+          <li>
+            <button type="button" class="adicionar" data-testid="adicionar-outro-pap" (click)="novo()">
+              <ng-icon name="lucidePlus" size="1.125rem" />
+              <span>Adicionar outro conjunto de comando</span>
+            </button>
+          </li>
+        }
+      </ol>
+    } @else {
+      <div data-testid="sem-paps" class="convite">
+        <span class="convite-icone"><ng-icon name="lucidePower" size="1.75rem" /></span>
+        <p class="text-base font-semibold">Nenhum PAP avaliado ainda</p>
+        @if (editavel()) {
+          <p class="text-sm text-muted-color">Cada painel ou botoeira que comanda a máquina é um PAP. Para cada um:</p>
+          <ol class="passos">
+            <li><ng-icon name="lucideListChecks" /><span><strong>Seis quesitos</strong> no acionamento, no rearme e na emergência</span></li>
+            <li><ng-icon name="lucideScale" /><span><strong>Duas respostas</strong> em cada: o que se vê, e se atende</span></li>
+            <li><ng-icon name="lucideCamera" /><span><strong>A foto</strong> de cada botão, as normas e a solução</span></li>
+          </ol>
+          <p-button data-testid="primeiro-pap" label="Avaliar o primeiro conjunto de comando" icon="pi pi-plus" (onClick)="novo()" />
+        } @else {
+          <p class="text-sm text-muted-color">A análise não tem PAP.</p>
+        }
+      </div>
+    }
+  </div>
+}
+
+@if (excluindo(); as pap) {
+  <p-dialog
+    [header]="'Excluir o PAP ' + pap.number"
+    [visible]="true"
+    (visibleChange)="excluindo.set(null)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '32rem' }"
+    [breakpoints]="{ '640px': '95vw' }"
+  >
+    <div class="space-y-4">
+      <p class="text-sm text-surface-700 dark:text-surface-300">
+        O PAP sai do rascunho, com as fotos, e os seguintes são renumerados para a lista não pular um número.
+      </p>
+      <div class="flex justify-end gap-2">
+        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="excluindo.set(null)" />
+        <p-button data-testid="confirmar-exclusao-pap" label="Excluir" severity="danger" [loading]="processando()" (onClick)="confirmarExclusao()" />
+      </div>
+    </div>
+  </p-dialog>
+}

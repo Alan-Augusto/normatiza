@@ -69,27 +69,6 @@
   color: var(--p-text-muted-color);
 }
 
-.normas {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.normas li {
-  display: grid;
-  grid-template-columns: 5.5rem 1fr;
-  gap: 0.5rem;
-  color: var(--p-text-color);
-}
-
-.codigo {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--p-text-muted-color);
-}
-
 .foto-do-ponto {
   display: flex;
   flex-wrap: wrap;

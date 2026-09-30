@@ -1,6 +1,6 @@
 # Plano — Análise de Risco
 
-> **Status:** fatias 1 e 2 concluídas, falta o aceite no homelab · fatia 3 (PAP e PE) a seguir · **Criado em:** 2026-09-29 · os catálogos (normas, perigos, proteções, tabela HRN) já existem: `GET /catalogs/analysis`, `@normatiza/shared` `analysis/`
+> **Status:** fatias 1 e 2 concluídas, falta o aceite no homelab · fatia 3: PAP pronto, PE a seguir · **Criado em:** 2026-09-29 · os catálogos (normas, perigos, proteções, tabela HRN) já existem: `GET /catalogs/analysis`, `@normatiza/shared` `analysis/`
 > **Regras de negócio:** [03 — Navegação §5.1 e §5.2](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §3 e §4](../produto/04_modelo_de_dados.md) · [01 — Permissões §7](../produto/01_papeis_e_permissoes.md) · [05 — Regras Transversais §1 e §4](../produto/05_regras_transversais.md)
 > **Migração:** [docs/migracao §5 e §8](../migracao/README.md)
 
@@ -34,6 +34,7 @@ O assistente de análise do equipamento, nas 4 etapas de 03 §5.2 — ficha téc
 | D12 | **HRN: os quatro fatores ou nenhum** | No rascunho o ponto pode ficar sem HRN, mas não pela metade: três fatores sem o quarto não são um risco. O servidor recusa peso fora da tabela e calcula resultado e faixa com a tabela da análise (`calculateHrn`), guardando os dois para a lista mostrar o pior HRN sem recalcular |
 | D13 | **Catálogos por id, em listas** | Origens, consequências, proteções e normas são listas de ids nas colunas do ponto (`String[]`), conferidas contra o catálogo na gravação. O catálogo nunca apaga item (migracao §7), então a lista não fica apontando para o vazio, e o app offline grava o ponto de uma vez só |
 | D14 | **Cores de risco são as do laudo do legado** | Uma por faixa, em tokens do design system (`--color-risk-*`), para a tela e o laudo falarem a mesma língua. `app-hrn-badge` é o único jeito de mostrar um HRN |
+| D15 | **PAP e PE sem justificativa por quesito** | Cada quesito tem só as duas respostas (estado físico e NR-12), cada uma sim, não ou sem resposta. O porquê de um "não atende" está nas normas descumpridas e na solução, que são do conjunto. O legado não tem justificativa, e 18 campos de texto por PAP ninguém preencheria em campo (04 §4) |
 
 ## 3. Fatias
 
@@ -57,6 +58,16 @@ O passo a passo de cada uma se escreve aqui quando ela começar.
 - [x] Painel: tokens de risco e `app-hrn-badge` (design system §5); etapa 2 com a lista de pontos e o editor no lugar dela (um ponto por vez, com o HRN e a categoria calculados enquanto se escolhe); a lista de análises passa a `app-data-table` (§6), com pontos e pior HRN, e sem as colunas que ainda não variam.
 - [ ] Aceite no homelab: Fernando levanta três pontos com HRN, categoria, normas e foto; exclui o primeiro e os outros sobem; a lista mostra o pior HRN.
 - [x] Testes do painel.
+
+### Fatia 3 — PAP e PE
+- [x] Shared: `ChecklistAnswer`, as 3 seções e os 6 quesitos com o texto de 03 §5.2, `PapDto`/`PapUpsert`, `papNonConformities`. O detalhe da análise ganha `paps`.
+- [x] Prisma: `PapAssessment` (número, local, respostas em JSON, uma foto por seção, normas, solução).
+- [x] API: `PUT`/`DELETE …/analyses/:number/paps/:id` pelo id do aparelho (como D11), com renumeração; foto por seção em `…/paps/:id/photos/:section`. As respostas voltam sempre com as três seções completas (D15).
+- [x] Testes de API.
+- [x] Painel: etapa 3 com a lista (não conformidades por seção, quesitos sem resposta) e o editor com as seções em abas, cada aba com o progresso e o que não atende; o seletor de normas e a foto viram componentes da análise, usados também pelos pontos.
+- [x] Testes do painel.
+- [ ] PE: o mesmo desenho, com um checklist só, de 8 quesitos, e uma foto.
+- [ ] Aceite no homelab: Fernando avalia dois conjuntos de comando, com fotos por seção; exclui o primeiro e o outro sobe.
 
 ### Próximas
 1. **Abrir a análise e a etapa 1:** número por equipamento, lista em 03 §5.2, ficha técnica (a ficha do ativo corrige o equipamento), tempos, regime, gestão de segurança e as 4 fotos.

@@ -366,28 +366,32 @@ interface SafetyCategory {
 
 PAP e PE são **listas** dentro da análise, como os pontos de risco: uma máquina com dois painéis de comando tem dois PAP. No legado, 2.690 máquinas têm mais de um PAP (até 13) e 4.352 mais de um PE (até 19).
 
+> **Sem justificativa por quesito.** O legado não tem, e o que o laudo precisa dizer sobre um quesito que não atende já está nas normas descumpridas e na solução do conjunto. Uma justificativa por quesito seriam 18 campos de texto por PAP que ninguém preencheria em campo.
+
+> **As respostas ficam num JSON, não em 36 colunas.** Três seções × seis quesitos × duas dimensões. A API confere o formato na gravação e devolve sempre as três seções completas, com nulo no que não foi respondido.
+
 ```typescript
-// Cada quesito é avaliado em duas dimensões independentes
+// Cada quesito é avaliado em duas dimensões independentes. Nulo = ainda sem
+// resposta: o rascunho guarda o que tiver.
 interface ChecklistAnswer {
   physicalState: boolean | null;   // existe / está assim?
   nr12Compliant: boolean | null;   // atende à norma?
-  justification?: string;          // obrigatório quando não conforme
 }
 
-type PapSection = 'ACTIVATION' | 'RESET' | 'EMERGENCY_STOP';
+type PapSection = 'activation' | 'reset' | 'emergencyStop';
 
 type PapCriterion =
-  | 'INSTALLED'          // o dispositivo existe?
-  | 'ACCIDENTAL'         // proteção contra toque involuntário?
-  | 'ANTI_FRAUD'         // difícil de burlar ou travar?
-  | 'SAFE_AREA'          // aciona sem expor as mãos?
-  | 'EXTRA_LOW_VOLTAGE'  // tensão de comando segura (máx. 24V)?
-  | 'PORTUGUESE';        // sinalização clara em português?
+  | 'installed'          // o dispositivo existe?
+  | 'accidental'         // proteção contra toque involuntário?
+  | 'antiFraud'          // difícil de burlar ou travar?
+  | 'safeArea'           // aciona sem expor as mãos?
+  | 'extraLowVoltage'    // tensão de comando segura (máx. 24V)?
+  | 'portuguese';        // sinalização clara em português?
 
 // Um PAP é um conjunto de comando da máquina — um painel, uma botoeira —,
 // com as três seções avaliadas juntas
 interface PapAssessment {
-  id: string;
+  id: string;                      // UUID gerado no aparelho, como o do ponto
   accountId: string;
   analysisId: string;
   number: number;                  // 1, 2, 3... na análise

@@ -30,6 +30,7 @@ import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { HrnBadgeComponent } from '../../../../../../../../../shared/components/hrn-badge/hrn-badge.component';
+import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
 import { HRN_VAZIO, HrnCalculatorComponent, type HrnEscolha } from '../../../../../../../../../shared/components/hrn-calculator/hrn-calculator.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -46,11 +47,6 @@ export interface AlvoDaAnalise {
 interface Grupo {
   label: string;
   items: { label: string; value: string }[];
-}
-
-/** "Conforme item 12.38.1, as zonas de perigo…" → "as zonas de perigo…": o código já vem ao lado. */
-function textoDoItem(texto: string): string {
-  return texto.replace(/^Conforme (o )?item [^,]+,\s*/i, '');
 }
 
 /**
@@ -80,6 +76,7 @@ function textoDoItem(texto: string): string {
     CampoComponent,
     HrnBadgeComponent,
     HrnCalculatorComponent,
+    NormasDescumpridasComponent,
   ],
   providers: [provideIcons({ lucideTriangleAlert, lucidePlus, lucideMapPin, lucideGauge, lucideWrench })],
   templateUrl: './risk-points-step.component.html',
@@ -161,24 +158,6 @@ export class RiskPointsStepComponent {
       .map((t) => ({ label: t.name, items: t.protections.map((p) => ({ label: p.name, value: p.id })) })),
   );
 
-  readonly gruposDeNorma = computed<Grupo[]>(() =>
-    (this.catalogos().pacote?.standardSections ?? [])
-      .filter((s) => s.standards.length)
-      .map((s) => ({
-        label: s.name,
-        items: s.standards.map((i) => ({ label: `${i.itemCode} — ${textoDoItem(i.text)}`, value: i.id })),
-      })),
-  );
-
-  /** Para mostrar, abaixo da escolha, o texto inteiro de cada item marcado. */
-  private readonly normaPorId = computed(() => {
-    const mapa = new Map<string, { itemCode: string; text: string; secao: string }>();
-    for (const s of this.catalogos().pacote?.standardSections ?? []) {
-      for (const i of s.standards) mapa.set(i.id, { itemCode: i.itemCode, text: textoDoItem(i.text), secao: s.name });
-    }
-    return mapa;
-  });
-
   private readonly nomePorId = computed(() => {
     const mapa = new Map<string, string>();
     const pacote = this.catalogos().pacote;
@@ -186,12 +165,6 @@ export class RiskPointsStepComponent {
     for (const t of pacote?.protectionTypes ?? []) for (const x of t.protections) mapa.set(x.id, x.name);
     return mapa;
   });
-
-  readonly normasEscolhidas = computed(() =>
-    this.valores()
-      .normas.map((id) => ({ id, ...this.normaPorId().get(id) }))
-      .filter((n): n is { id: string; itemCode: string; text: string; secao: string } => !!n.itemCode),
-  );
 
   // ── O que se calcula enquanto se escolhe ──────────────────────────────────
 

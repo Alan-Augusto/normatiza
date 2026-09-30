@@ -18,13 +18,14 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import type { AnalysisDetail, AnalysisListItem, PersonRef, RecognitionPhoto, RiskPointDto } from '@normatiza/shared';
+import type { AnalysisDetail, AnalysisListItem, PapDto, PersonRef, RecognitionPhoto, RiskPointDto } from '@normatiza/shared';
 
 import { AuthService } from '../auth/auth.service';
 import { AuthenticatedRequest, JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EQUIPMENT_PHOTO_MAX_BYTES } from '../storage/files.service';
 import { AnalysesService } from './analyses.service';
-import { AnalysisCreateDto, AnalysisSheetUpdateDto, RiskPointUpsertDto } from './dto/analyses.dto';
+import { AnalysisCreateDto, AnalysisSheetUpdateDto, PapUpsertDto, RiskPointUpsertDto } from './dto/analyses.dto';
+import { PapsService } from './paps.service';
 import { RiskPointsService } from './risk-points.service';
 
 /**
@@ -38,6 +39,7 @@ export class AnalysesController {
   constructor(
     private readonly analyses: AnalysesService,
     private readonly riskPoints: RiskPointsService,
+    private readonly paps: PapsService,
     private readonly auth: AuthService,
   ) {}
 
@@ -172,6 +174,60 @@ export class AnalysesController {
     @Param('pointId', new ParseUUIDPipe()) pointId: string,
   ) {
     await this.riskPoints.removePhoto(await this.escopo(req), companyId, code, number, pointId);
+  }
+
+  // ── PAP: um por conjunto de comando, gravado como o ponto (D11) ──────────
+
+  @Put(':number/paps/:papId')
+  async upsertPap(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('papId', new ParseUUIDPipe()) papId: string,
+    @Body() dto: PapUpsertDto,
+  ): Promise<PapDto> {
+    return this.paps.upsert(await this.escopo(req), companyId, code, number, papId, dto);
+  }
+
+  @Delete(':number/paps/:papId')
+  @HttpCode(204)
+  async removePap(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('papId', new ParseUUIDPipe()) papId: string,
+  ) {
+    await this.paps.remove(await this.escopo(req), companyId, code, number, papId);
+  }
+
+  @Put(':number/paps/:papId/photos/:section')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: EQUIPMENT_PHOTO_MAX_BYTES, files: 1 } }))
+  async setPapPhoto(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('papId', new ParseUUIDPipe()) papId: string,
+    @Param('section') section: string,
+    @UploadedFile() file: { buffer: Buffer } | undefined,
+  ): Promise<RecognitionPhoto> {
+    if (!file) throw new BadRequestException('Envie a imagem no campo `file`.');
+    return this.paps.setPhoto(await this.escopo(req), companyId, code, number, papId, section, file.buffer);
+  }
+
+  @Delete(':number/paps/:papId/photos/:section')
+  @HttpCode(204)
+  async removePapPhoto(
+    @Req() req: AuthenticatedRequest,
+    @Param('companyId') companyId: string,
+    @Param('code') code: string,
+    @Param('number', ParseIntPipe) number: number,
+    @Param('papId', new ParseUUIDPipe()) papId: string,
+    @Param('section') section: string,
+  ) {
+    await this.paps.removePhoto(await this.escopo(req), companyId, code, number, papId, section);
   }
 
   /** Descartar o rascunho. Análise concluída não se apaga: a recusa é 409. */
