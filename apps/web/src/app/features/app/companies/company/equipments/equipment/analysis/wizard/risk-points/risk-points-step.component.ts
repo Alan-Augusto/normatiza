@@ -114,7 +114,7 @@ export class RiskPointsStepComponent {
   );
 
   /** O ponto aberto no editor: um que existe, ou um novo com o id já gerado. */
-  readonly editando = signal<{ id: string; existente: RiskPointDto | null } | null>(null);
+  readonly editando = signal<{ id: string; existente: RiskPointDto | null; copiaDe?: number } | null>(null);
   readonly salvando = signal(false);
   readonly erro = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
@@ -216,6 +216,11 @@ export class RiskPointsStepComponent {
 
   editar(ponto: RiskPointDto): void {
     this.abrir({ id: ponto.id, existente: ponto });
+  }
+
+  /** Como no legado: tudo do original, menos a foto — é outro ponto da máquina. */
+  duplicar(ponto: RiskPointDto): void {
+    this.abrir({ id: crypto.randomUUID(), existente: null, copiaDe: ponto.number }, ponto);
   }
 
   fechar(): void {
@@ -359,8 +364,9 @@ export class RiskPointsStepComponent {
 
   // ── Apoio ────────────────────────────────────────────────────────────────
 
-  private abrir(aberto: { id: string; existente: RiskPointDto | null }): void {
-    const p = aberto.existente;
+  /** `origem` preenche o editor: o próprio ponto, ou o que se duplica. */
+  private abrir(aberto: { id: string; existente: RiskPointDto | null; copiaDe?: number }, origem: RiskPointDto | null = aberto.existente): void {
+    const p = origem;
     this.form.reset({
       local: p?.location ?? '',
       origens: p?.hazardOriginIds ?? [],
@@ -379,6 +385,8 @@ export class RiskPointsStepComponent {
     if (this.editavel()) this.form.enable();
     else this.form.disable();
     this.aplicarGravidade(this.form.controls.gravidade.value);
+    // A cópia ainda não existe: sair do editor a grava, como qualquer alteração.
+    if (aberto.copiaDe) this.form.markAsDirty();
     this.erro.set(null);
     this.aviso.set(null);
     this.erroDaFoto.set(null);

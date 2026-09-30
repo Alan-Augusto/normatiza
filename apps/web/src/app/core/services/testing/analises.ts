@@ -31,6 +31,7 @@ export function detalheDeAnalise(over: Partial<AnalysisDetail> = {}): AnalysisDe
     photos: {},
     riskPoints: [],
     paps: [],
+    pes: [],
     ...over,
   };
 }

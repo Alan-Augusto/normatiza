@@ -1,6 +1,6 @@
 # Plano — Análise de Risco
 
-> **Status:** fatias 1 e 2 concluídas, falta o aceite no homelab · fatia 3: PAP pronto, PE a seguir · **Criado em:** 2026-09-29 · os catálogos (normas, perigos, proteções, tabela HRN) já existem: `GET /catalogs/analysis`, `@normatiza/shared` `analysis/`
+> **Status:** fatias 1 e 2 concluídas, falta o aceite no homelab · fatia 3 (PAP e PE) concluída, falta o aceite no homelab · fatia 4 (concluir) a seguir · **Criado em:** 2026-09-29 · os catálogos (normas, perigos, proteções, tabela HRN) já existem: `GET /catalogs/analysis`, `@normatiza/shared` `analysis/`
 > **Regras de negócio:** [03 — Navegação §5.1 e §5.2](../produto/03_navegacao_e_telas.md) · [04 — Modelo de Dados §3 e §4](../produto/04_modelo_de_dados.md) · [01 — Permissões §7](../produto/01_papeis_e_permissoes.md) · [05 — Regras Transversais §1 e §4](../produto/05_regras_transversais.md)
 > **Migração:** [docs/migracao §5 e §8](../migracao/README.md)
 
@@ -67,8 +67,9 @@ O passo a passo de cada uma se escreve aqui quando ela começar.
 - [x] Testes de API.
 - [x] Painel: etapa 3 com a lista (não conformidades por seção, seção sem foto) e o editor com as seções em abas — a foto abre os quesitos, e a aba diz o que não atende; o seletor de normas e a foto viram componentes da análise, usados também pelos pontos. O stepper escreve o nome por extenso de PAP e PE, e o assistente passa a salvar ao sair (D16).
 - [x] Testes do painel.
-- [ ] PE: o mesmo desenho, com um checklist só, de 8 quesitos do legado, uma foto e o parecer da 12.6.
-- [ ] Aceite no homelab: Fernando avalia dois conjuntos de comando, com fotos por seção; exclui o primeiro e o outro sobe.
+- [x] PE: `PeAssessment` (respostas em JSON, uma foto), `PUT`/`DELETE …/pes/:id` e `…/pes/:id/photo`, e a etapa 4 com os 8 quesitos do legado sempre à vista, o parecer da 12.6 e as possíveis soluções.
+- [x] **Duplicar**, como no legado, nos pontos de risco, no PAP e no PE: abre um item novo com tudo do original menos as fotos, gravado ao sair do editor (D16).
+- [ ] Aceite no homelab: Fernando avalia dois conjuntos de comando, com fotos por seção, e duas paradas de emergência, uma duplicada da outra; exclui o primeiro PAP e o outro sobe; avança de etapa sem clicar em Salvar e nada se perde.
 
 ### Próximas
 1. **Abrir a análise e a etapa 1:** número por equipamento, lista em 03 §5.2, ficha técnica (a ficha do ativo corrige o equipamento), tempos, regime, gestão de segurança e as 4 fotos.

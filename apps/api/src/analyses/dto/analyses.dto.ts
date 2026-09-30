@@ -20,6 +20,7 @@ import type {
   ChecklistAnswer,
   HrnFactors,
   PapUpsert,
+  PeUpsert,
   RiskPointUpsert,
   SafetyCategoryAnswers,
   SafetyManagement,
@@ -198,6 +199,39 @@ export class PapUpsertDto implements PapUpsert {
   @ValidateNested()
   @Type(() => PapSectionsDto)
   sections?: PapSectionsDto;
+
+  @ListaDeIds()
+  violatedStandardIds?: string[];
+
+  @opcional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  solution?: string | null;
+}
+
+class PeAnswersDto {
+  @Quesito() installedDevices?: ChecklistAnswerDto;
+  @Quesito() startupDevice?: ChecklistAnswerDto;
+  @Quesito() triggeredByAnother?: ChecklistAnswerDto;
+  @Quesito() antiFraud?: ChecklistAnswerDto;
+  @Quesito() portuguese?: ChecklistAnswerDto;
+  @Quesito() manualReset?: ChecklistAnswerDto;
+  @Quesito() retention?: ChecklistAnswerDto;
+  @Quesito() lowVoltage?: ChecklistAnswerDto;
+}
+
+export class PeUpsertDto implements PeUpsert {
+  @opcional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  location?: string | null;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PeAnswersDto)
+  answers?: PeAnswersDto;
 
   @ListaDeIds()
   violatedStandardIds?: string[];

@@ -547,6 +547,7 @@ model FileAsset {
   papActivationOf PapAssessment? @relation("PapActivationPhoto")
   papResetOf      PapAssessment? @relation("PapResetPhoto")
   papStopOf       PapAssessment? @relation("PapStopPhoto")
+  peOf            PeAssessment?  @relation("PePhoto")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -906,6 +907,7 @@ model Analysis {
   files      FileAsset[]     @relation("AnalysisFiles")
   riskPoints RiskPoint[]
   paps       PapAssessment[]
+  pes        PeAssessment[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1015,4 +1017,37 @@ model PapAssessment {
   @@index([accountId])
   @@index([equipmentId])
   @@map("pap_assessments")
+}
+
+/// Um PE — dispositivo de parada de emergência (docs/produto/03 §5.2, 04 §4).
+/// O id vem do aparelho (UUID), como o do ponto de risco (D11).
+model PeAssessment {
+  id          String   @id
+  accountId   String
+  analysisId  String
+  analysis    Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  equipmentId String
+
+  /// PE 1, 2, 3… na análise. Dado pelo servidor; excluir renumera.
+  number   Int
+  location String?
+
+  /// Os oito quesitos × {physicalState, nr12Compliant}, no formato de
+  /// `PeAnswers` (`@normatiza/shared`). O que não veio é "Não", como no legado.
+  answers Json
+
+  photoFileId String?    @unique
+  photo       FileAsset? @relation("PePhoto", fields: [photoFileId], references: [id])
+
+  violatedStandardIds String[] @default([])
+  solution            String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdByUserId String?
+
+  @@unique([analysisId, number])
+  @@index([accountId])
+  @@index([equipmentId])
+  @@map("pe_assessments")
 }

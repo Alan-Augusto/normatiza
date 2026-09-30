@@ -50,18 +50,17 @@
       </p-stepper>
 
       <section data-testid="etapa-atual" [attr.data-etapa]="etapaAtual().chave" [attr.aria-label]="etapaAtual().titulo">
-        @if (etapaAtual().futura) {
-          <div data-testid="etapa-futura" class="vazio">
-            <p class="font-medium">{{ etapaAtual().titulo }} chega na próxima entrega.</p>
-            <p class="text-sm text-muted-color">O rascunho guarda o que já foi preenchido na ficha técnica.</p>
-          </div>
-        } @else if (etapaAtual().chave === 'pontos') {
+        @if (etapaAtual().chave === 'pontos') {
           @if (alvoDaAnalise(); as alvo) {
             <app-risk-points-step [alvo]="alvo" [pontos]="a.riskPoints" [editavel]="a.actions.edit" (pontosChange)="atualizarPontos($event)" />
           }
         } @else if (etapaAtual().chave === 'pap') {
           @if (alvoDaAnalise(); as alvo) {
             <app-pap-step [alvo]="alvo" [paps]="a.paps" [editavel]="a.actions.edit" (papsChange)="atualizarPaps($event)" />
+          }
+        } @else if (etapaAtual().chave === 'pe') {
+          @if (alvoDaAnalise(); as alvo) {
+            <app-pe-step [alvo]="alvo" [pes]="a.pes" [editavel]="a.actions.edit" (pesChange)="atualizarPes($event)" />
           }
         } @else {
           <div class="space-y-6">

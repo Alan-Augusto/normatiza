@@ -8,12 +8,13 @@ import { InventoryModule } from '../inventory/inventory.module';
 import { AnalysesController } from './analyses.controller';
 import { AnalysesService } from './analyses.service';
 import { PapsService } from './paps.service';
+import { PesService } from './pes.service';
 import { RiskPointsService } from './risk-points.service';
 
 /** A análise de risco — docs/planos/analise-de-risco.md. */
 @Module({
   imports: [AuthModule, AuthorizationModule, AuditModule, CompaniesModule, InventoryModule],
   controllers: [AnalysesController],
-  providers: [AnalysesService, RiskPointsService, PapsService],
+  providers: [AnalysesService, RiskPointsService, PapsService, PesService],
 })
 export class AnalysesModule {}

@@ -11,7 +11,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h3 class="text-base font-semibold">
-          {{ aberto.existente ? 'Ponto ' + aberto.existente.number : 'Novo ponto de risco' }}
+          {{ aberto.existente ? 'Ponto ' + aberto.existente.number : aberto.copiaDe ? 'Novo ponto — cópia do Ponto ' + aberto.copiaDe : 'Novo ponto de risco' }}
         </h3>
         @if (editavel()) {
           <p class="text-xs text-muted-color">Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.</p>
@@ -224,6 +224,7 @@
             <div class="flex gap-1">
               <p-button [attr.data-testid]="'abrir-ponto-' + p.number" [label]="editavel() ? 'Editar' : 'Ver'" severity="secondary" [outlined]="true" size="small" (onClick)="editar(p)" />
               @if (editavel()) {
+                <p-button [attr.data-testid]="'duplicar-ponto-' + p.number" label="Duplicar" severity="secondary" [text]="true" size="small" [disabled]="!catalogos().pacote" (onClick)="duplicar(p)" />
                 <p-button [attr.data-testid]="'excluir-ponto-' + p.number" label="Excluir" severity="danger" [text]="true" size="small" (onClick)="excluindo.set(p)" />
               }
             </div>

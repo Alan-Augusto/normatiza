@@ -54,6 +54,8 @@ export const AuditAction = {
   ANALYSIS_RISK_POINT_DELETED: 'analysis.risk_point_deleted',
   ANALYSIS_PAP_SAVED: 'analysis.pap_saved',
   ANALYSIS_PAP_DELETED: 'analysis.pap_deleted',
+  ANALYSIS_PE_SAVED: 'analysis.pe_saved',
+  ANALYSIS_PE_DELETED: 'analysis.pe_deleted',
 } as const;
 
 export type AuditActionValue = (typeof AuditAction)[keyof typeof AuditAction];

@@ -8,6 +8,7 @@ import type { Role } from '../auth';
 import type { PersonRef } from '../team/dto';
 import type { HrnFactors, HrnScore, RiskLevel } from './hrn';
 import type { PapDto } from './pap';
+import type { PeDto } from './pe';
 import type { SafetyCategory, SafetyCategoryAnswers } from './safety-category';
 
 /**
@@ -131,6 +132,7 @@ export interface AnalysisDetail extends AnalysisListItem {
   photos: Partial<Record<RecognitionView, RecognitionPhoto>>;
   riskPoints: RiskPointDto[];
   paps: PapDto[];
+  pes: PeDto[];
 }
 
 /**

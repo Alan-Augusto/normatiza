@@ -153,6 +153,22 @@ describe('PapStepComponent', () => {
     expect(el('sem-paps')).not.toBeNull();
   });
 
+  it('deve duplicar um PAP com tudo menos as fotos, como no legado', () => {
+    const partida = emptyPapAnswers();
+    partida.installed = { physicalState: true, nr12Compliant: true };
+    abrir([pap({ sections: { ...secoesVazias(), activation: { answers: partida, photo: FOTO } }, solution: 'Trocar a botoeira.' })]);
+
+    clicar('duplicar-pap-1');
+    expect(texto('editor-pap')).toContain('cópia do PAP 1');
+    expect(el('sem-foto-activation')).not.toBeNull();
+
+    clicar('voltar-a-lista');
+    const req = http.expectOne((r) => r.method === 'PUT' && /paps\/[0-9a-f-]{36}$/.test(r.url));
+    expect(req.request.body.sections.activation.answers.installed).toEqual({ physicalState: true, nr12Compliant: true });
+    expect(req.request.body.solution).toBe('Trocar a botoeira.');
+    req.flush(pap({ id: 'pap-2', number: 2 }));
+  });
+
   it('deve guardar a resposta de cada seção ao trocar de aba', () => {
     abrir([pap({ sections: { ...secoesVazias(), activation: { answers: emptyPapAnswers(), photo: FOTO }, stop: { answers: emptyPapAnswers(), photo: FOTO } } })]);
     clicar('abrir-pap-1');

@@ -276,12 +276,16 @@ describe('AnalysisWizardComponent', () => {
     expect(el('passo-pe')?.textContent).toContain('Parada de emergência');
   });
 
-  it('deve anunciar as etapas que ainda não existem, sem esconder o caminho', async () => {
+  it('deve abrir a etapa do PE, a última, sem o Avançar', async () => {
     await abrir();
 
     clicar('passo-pe');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
 
-    expect(el('etapa-futura')?.textContent).toContain('PE chega na próxima entrega');
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('pe');
+    expect(el('sem-pes')?.textContent).toContain('Nenhum PE avaliado ainda');
+    expect(el('avancar')).toBeNull();
   });
 
   it('deve abrir a etapa do PAP com o convite para o primeiro conjunto de comando', async () => {

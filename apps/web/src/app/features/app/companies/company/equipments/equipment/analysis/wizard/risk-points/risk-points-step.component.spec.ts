@@ -203,6 +203,20 @@ describe('RiskPointsStepComponent', () => {
     expect(el('foto-ponto')?.getAttribute('src')).toBe('http://arq/p-thumb');
   });
 
+  it('deve duplicar um ponto com tudo menos a foto, como no legado', () => {
+    abrir([ponto({ currentHrn: { fe: 2.5, pe: 8, mpl: 6, np: 1, result: 120, level: 'VERY_HIGH' }, photo: { url: 'u', thumbnailUrl: 't' } })]);
+
+    clicar('duplicar-ponto-1');
+    expect(el('editor')?.textContent).toContain('cópia do Ponto 1');
+    expect(el('foto-ponto')).toBeNull();
+
+    clicar('voltar-a-lista');
+    const req = http.expectOne((r) => r.method === 'PUT' && /risk-points\/[0-9a-f-]{36}$/.test(r.url));
+    expect(req.request.url).not.toContain('p-1');
+    expect(req.request.body).toMatchObject({ location: 'Zona de prensagem', hazardConsequenceIds: ['hc-esmagamento'], hrn: { fe: 2.5, pe: 8, mpl: 6, np: 1 } });
+    req.flush(ponto({ id: 'p-2', number: 2 }));
+  });
+
   it('deve oferecer adicionar outro ponto no fim da lista', () => {
     abrir([ponto()]);
 

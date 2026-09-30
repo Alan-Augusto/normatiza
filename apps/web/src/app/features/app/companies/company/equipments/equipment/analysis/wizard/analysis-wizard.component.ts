@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideCircleAlert, lucideClipboardList, lucidePower, lucideTriangleAlert, lucideWrench } from '@ng-icons/lucide';
+import { lucideCircleAlert, lucideClipboardList, lucideOctagonX, lucidePower, lucideTriangleAlert } from '@ng-icons/lucide';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
@@ -24,6 +24,7 @@ import {
   type AnalysisDetail,
   type AnalysisSheetUpdate,
   type PapDto,
+  type PeDto,
   type PersonRef,
   type RecognitionView,
   type RiskPointDto,
@@ -41,6 +42,7 @@ import { NumeroComponent } from '../../../../../../../../shared/components/form/
 import { EquipmentContext } from '../../equipment-context';
 import { linhasDaFicha } from '../../ficha-do-ativo';
 import { PapStepComponent } from './pap/pap-step.component';
+import { PeStepComponent } from './pe/pe-step.component';
 import { RiskPointsStepComponent, type AlvoDaAnalise, type ResultadoDoSalvar } from './risk-points/risk-points-step.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -54,15 +56,13 @@ interface Etapa {
   /** O que a sigla quer dizer, embaixo dela. */
   legenda?: string;
   icone: string;
-  /** Ainda não construída: a etapa aparece, e diz que chega depois. */
-  futura?: boolean;
 }
 
 const ETAPAS: readonly Etapa[] = [
   { valor: 1, chave: 'ficha', titulo: 'Ficha técnica', icone: 'lucideClipboardList' },
   { valor: 2, chave: 'pontos', titulo: 'Pontos de risco', icone: 'lucideTriangleAlert' },
   { valor: 3, chave: 'pap', titulo: 'PAP', legenda: PAP_NAME, icone: 'lucidePower' },
-  { valor: 4, chave: 'pe', titulo: 'PE', legenda: PE_NAME, icone: 'lucideWrench', futura: true },
+  { valor: 4, chave: 'pe', titulo: 'PE', legenda: PE_NAME, icone: 'lucideOctagonX' },
 ];
 
 /** Sim, não — e, sem nenhum dos dois marcado, sem resposta. */
@@ -104,8 +104,9 @@ const SIM_OU_NÃO = [
     NumeroComponent,
     RiskPointsStepComponent,
     PapStepComponent,
+    PeStepComponent,
   ],
-  providers: [provideIcons({ lucideClipboardList, lucideTriangleAlert, lucidePower, lucideWrench, lucideCircleAlert })],
+  providers: [provideIcons({ lucideClipboardList, lucideTriangleAlert, lucidePower, lucideOctagonX, lucideCircleAlert })],
   templateUrl: './analysis-wizard.component.html',
   styleUrls: ['../../../../../../../../shared/styles/cadastro-em-etapas.css', './analysis-wizard.component.css'],
 })
@@ -161,6 +162,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   readonly etapaAtual = computed(() => ETAPAS[this.passo() - 1]);
   private readonly etapaDosPontos = viewChild(RiskPointsStepComponent);
   private readonly etapaDoPap = viewChild(PapStepComponent);
+  private readonly etapaDoPe = viewChild(PeStepComponent);
 
   /** A análise na API, para a etapa dos pontos gravar direto. */
   readonly alvoDaAnalise = computed<AlvoDaAnalise | null>(() => this.alvo());
@@ -242,6 +244,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     if (chave === 'ficha') salvar$ = this.form.dirty ? this.salvarFicha() : of('nada');
     else if (chave === 'pontos') salvar$ = this.etapaDosPontos()?.salvarAberto() ?? of('nada');
     else if (chave === 'pap') salvar$ = this.etapaDoPap()?.salvarAberto() ?? of('nada');
+    else if (chave === 'pe') salvar$ = this.etapaDoPe()?.salvarAberto() ?? of('nada');
     else salvar$ = of('nada');
     this.ocupado.set(true);
     this.aviso.set(null);
@@ -255,7 +258,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
 
   /** A ficha por salvar, ou um ponto ou PAP aberto no editor com alteração. */
   temAlteracoesNaoSalvas(): boolean {
-    return (this.form.dirty && !this.salvando()) || !!this.etapaDosPontos()?.temAlteracoes() || !!this.etapaDoPap()?.temAlteracoes();
+    return (this.form.dirty && !this.salvando()) || !!this.etapaDosPontos()?.temAlteracoes() || !!this.etapaDoPap()?.temAlteracoes() || !!this.etapaDoPe()?.temAlteracoes();
   }
 
   /** A etapa dos pontos gravou ou excluiu: a lista da análise passa a ser a dela. */
@@ -265,6 +268,10 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
 
   atualizarPaps(paps: PapDto[]): void {
     this.analise.update((a) => (a ? { ...a, paps } : a));
+  }
+
+  atualizarPes(pes: PeDto[]): void {
+    this.analise.update((a) => (a ? { ...a, pes } : a));
   }
 
   private salvarFicha(): Observable<ResultadoDoSalvar> {

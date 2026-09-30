@@ -451,6 +451,8 @@ Lista dinâmica, como a do PAP: um PE por dispositivo de parada de emergência a
 
 Também nascem "Não" e "Não atende NR-12". No laudo do legado, as respostas do PE saem com ou sem foto. Local opcional, **parecer técnico** (só da seção **12.6 — Dispositivos de parada de emergência**) e **possíveis soluções**.
 
+**Duplicar**, nos pontos de risco, no PAP e no PE, como no legado: abre um item novo com tudo do original — respostas, normas, solução —, **menos as fotos**, que são de outro lugar da máquina. A cópia é gravada ao sair do editor, como qualquer alteração.
+
 **Salvar no assistente.** Sair de onde se está sempre salva, como no legado: **Avançar**, **Voltar** e o clique numa etapa do stepper gravam a ficha, ou o ponto, PAP ou PE aberto no editor, antes de trocar de etapa; **Voltar à lista** no editor também grava. **Salvar**, no rodapé, grava e fica na tela. Não há "alterações não salvas?" dentro do assistente — a pergunta só aparece para quem sai da análise. As duas exceções: item novo deixado em branco não vira item, e ponto com HRN pela metade não sai do editor (a tela diz o que falta).
 
 **Conclusão da análise:** revisão do resumo (pontos identificados, HRN por ponto, não conformidades PAP/PE) → confirmação → **congela a análise, gera as tarefas do plano de ação e notifica o cliente**.

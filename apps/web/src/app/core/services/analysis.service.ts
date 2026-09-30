@@ -10,6 +10,8 @@ import type {
   PapDto,
   PapSection,
   PapUpsert,
+  PeDto,
+  PeUpsert,
   PersonRef,
   RecognitionPhoto,
   RecognitionView,
@@ -98,6 +100,25 @@ export class AnalysisService {
 
   removePapPhoto(companyId: string, code: string, number: number, papId: string, section: PapSection): Observable<void> {
     return this.http.delete<void>(`${this.base(companyId, code)}/${number}/paps/${papId}/photos/${section}`);
+  }
+
+  /** O PE inteiro, pelo id gerado aqui: regravar não duplica. */
+  savePe(companyId: string, code: string, number: number, peId: string, dados: PeUpsert): Observable<PeDto> {
+    return this.http.put<PeDto>(`${this.base(companyId, code)}/${number}/pes/${peId}`, dados);
+  }
+
+  removePe(companyId: string, code: string, number: number, peId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(companyId, code)}/${number}/pes/${peId}`);
+  }
+
+  setPePhoto(companyId: string, code: string, number: number, peId: string, arquivo: File): Observable<RecognitionPhoto> {
+    const corpo = new FormData();
+    corpo.append('file', arquivo);
+    return this.http.put<RecognitionPhoto>(`${this.base(companyId, code)}/${number}/pes/${peId}/photo`, corpo);
+  }
+
+  removePePhoto(companyId: string, code: string, number: number, peId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(companyId, code)}/${number}/pes/${peId}/photo`);
   }
 
   discard(companyId: string, code: string, number: number): Observable<void> {

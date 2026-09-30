@@ -109,7 +109,8 @@ export class PapStepComponent {
     (this.catalogos().pacote?.standardSections ?? []).filter((s) => s.name.startsWith(`${PAP_STANDARD_SECTION} `)),
   );
 
-  readonly editando = signal<{ id: string; existente: PapDto | null } | null>(null);
+  /** O PAP aberto no editor: um que existe, ou um novo — em branco ou cópia de outro. */
+  readonly editando = signal<{ id: string; existente: PapDto | null; copiaDe?: number } | null>(null);
   readonly secaoAberta = signal<PapSection>('activation');
   readonly salvando = signal(false);
   readonly erro = signal<string | null>(null);
@@ -178,6 +179,11 @@ export class PapStepComponent {
 
   editar(pap: PapDto): void {
     this.abrir({ id: pap.id, existente: pap });
+  }
+
+  /** Como no legado: tudo do original, menos as fotos — é outro conjunto de comando. */
+  duplicar(pap: PapDto): void {
+    this.abrir({ id: crypto.randomUUID(), existente: null, copiaDe: pap.number }, pap);
   }
 
   fechar(): void {
@@ -296,8 +302,9 @@ export class PapStepComponent {
     );
   }
 
-  private abrir(aberto: { id: string; existente: PapDto | null }): void {
-    const p = aberto.existente;
+  /** `origem` preenche o editor: o próprio PAP, ou o que se duplica. */
+  private abrir(aberto: { id: string; existente: PapDto | null; copiaDe?: number }, origem: PapDto | null = aberto.existente): void {
+    const p = origem;
     this.form.reset({
       local: p?.location ?? '',
       secoes: Object.fromEntries(PAP_SECTIONS.map((s) => [s.key, p?.sections[s.key].answers ?? emptyPapAnswers()])) as never,
@@ -306,6 +313,8 @@ export class PapStepComponent {
     });
     if (this.editavel()) this.form.enable();
     else this.form.disable();
+    // A cópia ainda não existe: sair do editor a grava, como qualquer alteração.
+    if (aberto.copiaDe) this.form.markAsDirty();
     this.secaoAberta.set('activation');
     this.erro.set(null);
     this.aviso.set(null);

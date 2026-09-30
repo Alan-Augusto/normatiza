@@ -32,6 +32,7 @@ import { InventoryAccess } from '../inventory/inventory-access.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FilesService } from '../storage/files.service';
 import { FOTOS_DO_PAP, papDto } from './pap-dto';
+import { FOTO_DO_PE, peDto } from './pe-dto';
 import { pontoDto } from './risk-point-dto';
 
 const ARQUIVO = { select: { id: true, storageKey: true, thumbnailKey: true } } as const;
@@ -43,6 +44,7 @@ const COMPLETA = {
   rearPhoto: ARQUIVO,
   riskPoints: { include: { hazardPhoto: ARQUIVO }, orderBy: { number: 'asc' } },
   paps: { include: FOTOS_DO_PAP, orderBy: { number: 'asc' } },
+  pes: { include: FOTO_DO_PE, orderBy: { number: 'asc' } },
 } satisfies Prisma.AnalysisInclude;
 
 /** O que a lista precisa dos pontos: contar e achar o pior. */
@@ -412,6 +414,7 @@ export class AnalysesService {
       photos,
       riskPoints: await Promise.all(a.riskPoints.map((p) => pontoDto(this.files, p))),
       paps: await Promise.all(a.paps.map((p) => papDto(this.files, p))),
+      pes: await Promise.all(a.pes.map((p) => peDto(this.files, p))),
     };
   }
 
