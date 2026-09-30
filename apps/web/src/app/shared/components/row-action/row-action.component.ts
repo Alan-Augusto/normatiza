@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
+  lucideCopy,
   lucideEye,
   lucideMailX,
   lucideMerge,
@@ -39,6 +40,7 @@ const ICONES = {
   lucideShieldOff,
   lucideTrash2,
   lucideMerge,
+  lucideCopy,
 };
 
 export type RowActionIcon = keyof typeof ICONES;

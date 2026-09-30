@@ -118,7 +118,27 @@ describe('PeStepComponent', () => {
 
     expect(texto('aviso-pe')).toContain('PE 1 salvo');
     expect(texto('pe-1')).toContain('7 não conformidades');
-    expect(texto('pe-1')).toContain('sem foto');
+    expect(el('miniatura-pe-1')?.querySelector('img')).toBeNull();
+  });
+
+  it('deve salvar o PE e abrir outro em branco com "Salvar e adicionar outro"', () => {
+    abrir();
+    clicar('primeiro-pe');
+    digitar('campo-local-pe', 'Botão');
+
+    clicar('salvar-e-adicionar');
+    http.expectOne((r) => r.method === 'PUT' && /pes\/[0-9a-f-]{36}$/.test(r.url)).flush(pe({ location: 'Botão' }));
+    fixture.detectChanges();
+
+    expect(texto('aviso-pe')).toContain('PE 1 salvo');
+    expect(texto('editor-pe')).toContain('Novo PE');
+    expect((el('campo-local-pe') as HTMLInputElement).value).toBe('');
+  });
+
+  it('deve mostrar a foto do PE na lista', () => {
+    abrir([pe({ photo: FOTO })]);
+
+    expect(el('miniatura-pe-1')?.querySelector('img')?.getAttribute('src')).toBe('http://arq/f-thumb');
   });
 
   it('deve voltar à lista sem gravar o PE novo deixado em branco', () => {

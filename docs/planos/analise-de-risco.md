@@ -35,7 +35,7 @@ O assistente de análise do equipamento, nas 4 etapas de 03 §5.2 — ficha téc
 | D13 | **Catálogos por id, em listas** | Origens, consequências, proteções e normas são listas de ids nas colunas do ponto (`String[]`), conferidas contra o catálogo na gravação. O catálogo nunca apaga item (migracao §7), então a lista não fica apontando para o vazio, e o app offline grava o ponto de uma vez só |
 | D14 | **Cores de risco são as do laudo do legado** | Uma por faixa, em tokens do design system (`--color-risk-*`), para a tela e o laudo falarem a mesma língua. `app-hrn-badge` é o único jeito de mostrar um HRN |
 | D15 | **PAP e PE como no legado** | Siglas, seções, quesitos, textos e ordem são os da tela do legado (03 §5.2): PAP é Partida, Acionamento e Parada; PE é Parada de Emergência. Cada quesito tem as duas respostas, cada uma sim ou não, e tudo nasce "Não" e "Não atende NR-12" — sem "sem resposta" e sem justificativa por quesito (o porquê está no parecer técnico e nas possíveis soluções, do conjunto). Na seção do PAP, a foto é o que diz que ela foi avaliada: sem foto, fica fora do laudo. O parecer técnico só oferece a seção de normas do legado: 12.4 no PAP, 12.6 no PE |
-| D16 | **Sair sempre salva** | No assistente, Avançar, Voltar, o clique no stepper e "Voltar à lista" gravam o que está aberto (a ficha, ou o item no editor) antes de sair; Salvar grava e fica. Sem "alterações não salvas?" dentro do assistente, como no legado. Não salva, e fica: item novo em branco (não vira item) e ponto com HRN pela metade (D12) |
+| D16 | **Sair sempre salva** | No assistente, Avançar, Voltar, o clique no stepper, "Voltar à lista" e "Salvar e adicionar outro" gravam o que está aberto (a ficha, ou o item no editor) antes de sair; Salvar grava e fica, e na última etapa é "Salvar e sair", que volta para a lista de análises, como no legado. Sem "alterações não salvas?" dentro do assistente. Não salva, e fica: item novo em branco (não vira item) e ponto com HRN pela metade (D12) |
 
 ## 3. Fatias
 
@@ -68,6 +68,7 @@ O passo a passo de cada uma se escreve aqui quando ela começar.
 - [x] Painel: etapa 3 com a lista (não conformidades por seção, seção sem foto) e o editor com as seções em abas — a foto abre os quesitos, e a aba diz o que não atende; o seletor de normas e a foto viram componentes da análise, usados também pelos pontos. O stepper escreve o nome por extenso de PAP e PE, e o assistente passa a salvar ao sair (D16).
 - [x] Testes do painel.
 - [x] PE: `PeAssessment` (respostas em JSON, uma foto), `PUT`/`DELETE …/pes/:id` e `…/pes/:id/photo`, e a etapa 4 com os 8 quesitos do legado sempre à vista, o parecer da 12.6 e as possíveis soluções.
+- [x] As listas de pontos, PAP e PE mostram a foto de cada item (no PAP, uma miniatura por seção com foto); o rascunho se descarta também pela lista de análises.
 - [x] **Duplicar**, como no legado, nos pontos de risco, no PAP e no PE: abre um item novo com tudo do original menos as fotos, gravado ao sair do editor (D16).
 - [ ] Aceite no homelab: Fernando avalia dois conjuntos de comando, com fotos por seção, e duas paradas de emergência, uma duplicada da outra; exclui o primeiro PAP e o outro sobe; avança de etapa sem clicar em Salvar e nada se perde.
 

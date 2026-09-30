@@ -144,6 +144,33 @@ describe('PapStepComponent', () => {
     expect(texto('pap-1')).toContain('Parada sem foto');
   });
 
+  it('deve mostrar uma miniatura por seção com foto, na ordem das seções', () => {
+    const f = (t: string) => ({ url: t, thumbnailUrl: t });
+    abrir([
+      pap({ sections: { activation: { answers: emptyPapAnswers(), photo: f('partida') }, stop: { answers: emptyPapAnswers() }, reset: { answers: emptyPapAnswers(), photo: f('rearme') } } }),
+      pap({ id: 'pap-2', number: 2 }),
+    ]);
+
+    const fotos = [...el('miniaturas-pap-1')!.querySelectorAll('img')];
+    expect(fotos.map((i) => i.getAttribute('src'))).toEqual(['partida', 'rearme']);
+    expect(fotos.map((i) => i.getAttribute('alt'))).toEqual(['Foto — Partida', 'Foto — Rearme']);
+    expect(el('miniaturas-pap-2')!.querySelectorAll('img').length).toBe(0);
+  });
+
+  it('deve salvar o PAP e abrir outro em branco com "Salvar e adicionar outro"', () => {
+    abrir([pap()]);
+    clicar('abrir-pap-1');
+    digitar('campo-local-pap', 'Botoeira');
+
+    clicar('salvar-e-adicionar');
+    http.expectOne(`${ANALISE}/paps/pap-1`).flush(pap({ location: 'Botoeira' }));
+    fixture.detectChanges();
+
+    expect(texto('aviso-pap')).toContain('PAP 1 salvo');
+    expect(texto('editor-pap')).toContain('Novo PAP');
+    expect((el('campo-local-pap') as HTMLInputElement).value).toBe('');
+  });
+
   it('deve voltar à lista sem gravar o PAP novo deixado em branco', () => {
     abrir();
     clicar('primeiro-pap');

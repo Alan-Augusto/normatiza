@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -33,7 +33,8 @@ import { CatalogsService } from '@core/services/catalogs.service';
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { FotoDoItemComponent } from '../foto/foto-do-item.component';
 import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
-import type { AlvoDaAnalise, ResultadoDoSalvar } from '../risk-points/risk-points-step.component';
+import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
+import type { AlvoDaAnalise } from '../risk-points/risk-points-step.component';
 
 const LIMITE_DE_ESPERA_MS = 20_000;
 
@@ -73,9 +74,10 @@ type Secao = FormGroup<Record<PapCriterion, Resposta>>;
   templateUrl: './pap-step.component.html',
   styleUrls: ['../risk-points/risk-points-step.component.css', './pap-step.component.css'],
 })
-export class PapStepComponent {
+export class PapStepComponent implements EtapaComEditor {
   private readonly service = inject(AnalysisService);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly alvo = input.required<AlvoDaAnalise>();
   readonly paps = input.required<PapDto[]>();
@@ -154,6 +156,14 @@ export class PapStepComponent {
     return PAP_CRITERIA.filter((c) => !pap.sections[secao].answers[c.key].nr12Compliant).length;
   }
 
+  /** As fotos do PAP, na ordem das seções: só as que existem. */
+  fotosDoPap(pap: PapDto) {
+    return PAP_SECTIONS.flatMap((s) => {
+      const foto = pap.sections[s.key].photo;
+      return foto ? [{ secao: s.key, rotulo: s.label, foto }] : [];
+    });
+  }
+
   avaliadas(pap: PapDto): number {
     return papAssessedSections(pap).length;
   }
@@ -207,6 +217,17 @@ export class PapStepComponent {
       }),
       catchError(() => of<ResultadoDoSalvar>('erro')),
     );
+  }
+
+  /** Salva o que está aberto e abre um em branco — para quem levanta vários em seguida. */
+  salvarEAdicionar(): void {
+    this.salvarAberto().subscribe((r) => {
+      if (r === 'erro') return;
+      const aviso = this.aviso();
+      this.novo();
+      this.aviso.set(aviso);
+      this.host.nativeElement.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    });
   }
 
   voltarALista(): void {

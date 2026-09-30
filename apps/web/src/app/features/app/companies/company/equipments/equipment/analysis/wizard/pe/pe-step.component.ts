@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
@@ -30,7 +30,8 @@ import { CatalogsService } from '@core/services/catalogs.service';
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { FotoDoItemComponent } from '../foto/foto-do-item.component';
 import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
-import type { AlvoDaAnalise, ResultadoDoSalvar } from '../risk-points/risk-points-step.component';
+import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
+import type { AlvoDaAnalise } from '../risk-points/risk-points-step.component';
 
 const LIMITE_DE_ESPERA_MS = 20_000;
 
@@ -64,9 +65,10 @@ type Resposta = FormGroup<{ physicalState: FormControl<boolean>; nr12Compliant: 
   templateUrl: './pe-step.component.html',
   styleUrls: ['../risk-points/risk-points-step.component.css', '../pap/pap-step.component.css'],
 })
-export class PeStepComponent {
+export class PeStepComponent implements EtapaComEditor {
   private readonly service = inject(AnalysisService);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly alvo = input.required<AlvoDaAnalise>();
   readonly pes = input.required<PeDto[]>();
@@ -171,6 +173,17 @@ export class PeStepComponent {
       }),
       catchError(() => of<ResultadoDoSalvar>('erro')),
     );
+  }
+
+  /** Salva o que está aberto e abre um em branco — para quem levanta vários em seguida. */
+  salvarEAdicionar(): void {
+    this.salvarAberto().subscribe((r) => {
+      if (r === 'erro') return;
+      const aviso = this.aviso();
+      this.novo();
+      this.aviso.set(aviso);
+      this.host.nativeElement.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    });
   }
 
   voltarALista(): void {

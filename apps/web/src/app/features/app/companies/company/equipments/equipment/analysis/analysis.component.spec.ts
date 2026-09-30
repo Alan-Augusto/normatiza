@@ -113,6 +113,28 @@ describe('EquipmentAnalysisComponent', () => {
     expect(raiz().textContent).not.toContain('Conclusão');
   });
 
+  it('deve descartar o rascunho pela lista, confirmando antes, e deixar a concluída sem a ação', async () => {
+    await abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], [linhaDeAnalise({ number: 2 }), linhaDeAnalise({ id: 'an-0', number: 1, status: 'CONCLUDED', actions: SÓ_LEITURA })]);
+
+    expect(el('analise-1')!.querySelector('[data-testid="acao-descartar"]')).toBeNull();
+    clicar('acao-descartar');
+    (document.querySelector('[data-testid="confirmar-descarte"] button') as HTMLElement).click();
+    const req = http.expectOne(`${ANALISES}/2`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+    harness.detectChanges();
+
+    expect(el('analise-2')).toBeNull();
+    expect(el('nova-analise')).not.toBeNull();
+  });
+
+  it('não deve mostrar a coluna de ações quando nenhuma análise se descarta', async () => {
+    await abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], [linhaDeAnalise({ status: 'CONCLUDED', actions: SÓ_LEITURA })]);
+
+    expect(el('acao-descartar')).toBeNull();
+    expect(raiz().querySelectorAll('thead th').length).toBe(6);
+  });
+
   it('não deve oferecer abrir análise ao cliente, e deve dizer quando ela aparece', async () => {
     await abrirComo([vínculo(BRF.id, ['MANAGER'])]);
 

@@ -1,8 +1,18 @@
 @if (catalogos().erro) {
-  <p-message data-testid="erro-catalogos" severity="error" styleClass="w-full mb-4" text="Não foi possível carregar as normas e os catálogos. Recarregue a página para tentar de novo." />
+  <p-message
+    data-testid="erro-catalogos"
+    severity="error"
+    styleClass="w-full mb-4"
+    text="Não foi possível carregar as normas e os catálogos. Recarregue a página para tentar de novo."
+  />
 }
 @if (aviso()) {
-  <p-message data-testid="aviso-ponto" severity="success" styleClass="w-full mb-4" [text]="aviso()!" />
+  <p-message
+    data-testid="aviso-ponto"
+    severity="success"
+    styleClass="w-full mb-4"
+    [text]="aviso()!"
+  />
 }
 
 @if (editando(); as aberto) {
@@ -11,10 +21,18 @@
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h3 class="text-base font-semibold">
-          {{ aberto.existente ? 'Ponto ' + aberto.existente.number : aberto.copiaDe ? 'Novo ponto — cópia do Ponto ' + aberto.copiaDe : 'Novo ponto de risco' }}
+          {{
+            aberto.existente
+              ? 'Ponto ' + aberto.existente.number
+              : aberto.copiaDe
+                ? 'Novo ponto — cópia do Ponto ' + aberto.copiaDe
+                : 'Novo ponto de risco'
+          }}
         </h3>
         @if (editavel()) {
-          <p class="text-xs text-muted-color">Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.</p>
+          <p class="text-xs text-muted-color">
+            Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.
+          </p>
         }
       </div>
     </div>
@@ -28,7 +46,14 @@
         <h4 class="titulo">O perigo</h4>
         <div class="grade">
           <app-campo para="rp-local" rotulo="Local na máquina">
-            <input pInputText id="rp-local" data-testid="campo-local" class="w-full" formControlName="local" placeholder="Ex.: Zona de prensagem" />
+            <input
+              pInputText
+              id="rp-local"
+              data-testid="campo-local"
+              class="w-full"
+              formControlName="local"
+              placeholder="Ex.: Zona de prensagem"
+            />
           </app-campo>
 
           <div class="grade sm:grid-cols-2">
@@ -72,7 +97,12 @@
             </app-campo>
           </div>
 
-          <app-campo para="rp-protecoes" rotulo="Proteções existentes" ajuda="Os dispositivos que o ponto já tem instalados." mensagemId="ajuda-protecoes">
+          <app-campo
+            para="rp-protecoes"
+            rotulo="Proteções existentes"
+            ajuda="Os dispositivos que o ponto já tem instalados."
+            mensagemId="ajuda-protecoes"
+          >
             <p-multiselect
               inputId="rp-protecoes"
               data-testid="campo-protecoes"
@@ -96,7 +126,10 @@
 
       <section class="painel">
         <h4 class="titulo">HRN — o tamanho do risco</h4>
-        <p class="mb-4 text-sm text-muted-color">Quatro perguntas sobre o ponto. O sistema multiplica as respostas e mostra em que faixa o risco cai.</p>
+        <p class="mb-4 text-sm text-muted-color">
+          Quatro perguntas sobre o ponto. O sistema multiplica as respostas e mostra em que faixa o
+          risco cai.
+        </p>
         @if (catalogos().pacote; as c) {
           <app-hrn-calculator formControlName="hrn" [tabela]="c.hrnTable" />
         }
@@ -105,7 +138,11 @@
       <section class="painel">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h4 class="titulo !mb-0" id="rp-categoria-titulo">Categoria NBR 14153</h4>
-          <p-toggleswitch data-testid="campo-usa-categoria" formControlName="usaCategoria" ariaLabelledBy="rp-categoria-titulo" />
+          <p-toggleswitch
+            data-testid="campo-usa-categoria"
+            formControlName="usaCategoria"
+            ariaLabelledBy="rp-categoria-titulo"
+          />
         </div>
         @if (form.controls.usaCategoria.value) {
           <div class="categoria">
@@ -124,7 +161,9 @@
                 />
                 <ul class="significados">
                   @for (o of q.opcoes; track o.value) {
-                    <li><strong>{{ o.code }}</strong> — {{ o.label }}</li>
+                    <li>
+                      <strong>{{ o.code }}</strong> — {{ o.label }}
+                    </li>
                   }
                 </ul>
               </div>
@@ -138,42 +177,85 @@
             </p>
           </div>
         } @else {
-          <p class="text-sm text-muted-color">Não se aplica a categoria. Ligue a chave para defini-la.</p>
+          <p class="text-sm text-muted-color">
+            Não se aplica a categoria. Ligue a chave para defini-la.
+          </p>
         }
       </section>
 
       <section class="painel">
         <h4 class="titulo">Normas descumpridas</h4>
-        <app-normas-descumpridas inputId="rp-normas" formControlName="normas" [secoes]="catalogos().pacote?.standardSections ?? []" />
+        <app-normas-descumpridas
+          inputId="rp-normas"
+          formControlName="normas"
+          [secoes]="catalogos().pacote?.standardSections ?? []"
+        />
       </section>
 
       <section class="painel">
         <h4 class="titulo">Solução e foto</h4>
-        <app-campo para="rp-solucao" rotulo="Solução sugerida" ajuda="É o que o cliente vai ler para adequar o ponto: clara e acionável." mensagemId="ajuda-solucao">
-          <textarea pTextarea id="rp-solucao" data-testid="campo-solucao" class="w-full" rows="4" [autoResize]="true" formControlName="solucao" aria-describedby="ajuda-solucao"></textarea>
+        <app-campo
+          para="rp-solucao"
+          rotulo="Solução sugerida"
+          ajuda="É o que o cliente vai ler para adequar o ponto: clara e acionável."
+          mensagemId="ajuda-solucao"
+        >
+          <textarea
+            pTextarea
+            id="rp-solucao"
+            data-testid="campo-solucao"
+            class="w-full"
+            rows="4"
+            [autoResize]="true"
+            formControlName="solucao"
+            aria-describedby="ajuda-solucao"
+          ></textarea>
         </app-campo>
 
         <div class="foto-do-ponto mt-4">
           <div class="foto-previa">
             @if (aberto.existente?.photo; as foto) {
-              <img data-testid="foto-ponto" [src]="foto.thumbnailUrl" alt="Foto do ponto de perigo" />
+              <img
+                data-testid="foto-ponto"
+                [src]="foto.thumbnailUrl"
+                alt="Foto do ponto de perigo"
+              />
             } @else {
               <span class="text-xs text-muted-color">Sem foto</span>
             }
           </div>
           <div class="space-y-1">
             <p class="text-sm font-medium">Foto do ponto de perigo</p>
-            <p class="text-xs text-muted-color">A foto do "antes" do laudo comparativo. Sobe assim que é escolhida.</p>
+            <p class="text-xs text-muted-color">
+              A foto do "antes" do laudo comparativo. Sobe assim que é escolhida.
+            </p>
             @if (editavel()) {
-            <div class="flex flex-wrap gap-1">
-              <label class="botao-arquivo" [class.ocupado]="enviandoFoto()" for="rp-foto">
-                {{ enviandoFoto() ? 'Enviando…' : aberto.existente?.photo ? 'Trocar' : 'Enviar' }}
-              </label>
-              <input id="rp-foto" data-testid="foto-arquivo-ponto" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" class="sr-only" [disabled]="enviandoFoto()" (change)="aoEscolherFoto($event)" />
-              @if (aberto.existente?.photo) {
-                <p-button data-testid="remover-foto-ponto" label="Remover" severity="secondary" [text]="true" size="small" [disabled]="enviandoFoto()" (onClick)="removerFoto()" />
-              }
-            </div>
+              <div class="flex flex-wrap gap-1">
+                <label class="botao-arquivo" [class.ocupado]="enviandoFoto()" for="rp-foto">
+                  {{ enviandoFoto() ? 'Enviando…' : aberto.existente?.photo ? 'Trocar' : 'Enviar' }}
+                </label>
+                <input
+                  id="rp-foto"
+                  data-testid="foto-arquivo-ponto"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  capture="environment"
+                  class="sr-only"
+                  [disabled]="enviandoFoto()"
+                  (change)="aoEscolherFoto($event)"
+                />
+                @if (aberto.existente?.photo) {
+                  <p-button
+                    data-testid="remover-foto-ponto"
+                    label="Remover"
+                    severity="secondary"
+                    [text]="true"
+                    size="small"
+                    [disabled]="enviandoFoto()"
+                    (onClick)="removerFoto()"
+                  />
+                }
+              </div>
             }
             <p data-testid="foto-ponto-erro" role="alert" class="erro">{{ erroDaFoto() }}</p>
           </div>
@@ -182,57 +264,125 @@
     </div>
 
     <div class="flex flex-wrap justify-end gap-2">
-      <p-button data-testid="voltar-a-lista" label="Voltar à lista" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" [loading]="salvando()" (onClick)="voltarALista()" />
+      <p-button
+        data-testid="voltar-a-lista"
+        label="Voltar à lista"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="salvando()"
+        (onClick)="voltarALista()"
+      />
+      @if (editavel()) {
+        <p-button
+          data-testid="salvar-e-adicionar"
+          label="Salvar e adicionar outro ponto"
+          icon="pi pi-plus"
+          [outlined]="true"
+          [loading]="salvando()"
+          (onClick)="salvarEAdicionar()"
+        />
+      }
     </div>
   </div>
 } @else {
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <p class="text-sm text-muted-color">
-        Os pontos de perigo da máquina, na ordem em que foram levantados. Só o que fica acima do aceitável vira tarefa do plano de ação.
+        Os pontos de perigo da máquina, na ordem em que foram levantados. Só o que fica acima do
+        aceitável vira tarefa do plano de ação.
       </p>
       @if (editavel() && pontos().length) {
-        <p-button data-testid="novo-ponto" label="Adicionar ponto" icon="pi pi-plus" [disabled]="!catalogos().pacote" (onClick)="novo()" />
+        <p-button
+          data-testid="novo-ponto"
+          label="Adicionar ponto"
+          icon="pi pi-plus"
+          [disabled]="!catalogos().pacote"
+          (onClick)="novo()"
+        />
       }
     </div>
 
     @if (pontos().length) {
       <ol class="pontos" data-testid="pontos">
         @for (p of pontos(); track p.id) {
-          <li class="ponto" [attr.data-testid]="'ponto-' + p.number">
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <div class="min-w-0">
-                <p class="font-medium">Ponto {{ p.number }} · {{ p.location ?? 'Sem local' }}</p>
-                @if (p.hazardConsequenceIds.length) {
-                  <p class="text-sm text-muted-color">{{ nomes(p.hazardConsequenceIds) }}</p>
+          <li class="ponto com-foto" [attr.data-testid]="'ponto-' + p.number">
+            <div class="miniatura" [attr.data-testid]="'miniatura-ponto-' + p.number">
+              @if (p.photo) {
+                <img
+                  [src]="p.photo.thumbnailUrl"
+                  [alt]="'Foto do Ponto ' + p.number"
+                  loading="lazy"
+                />
+              } @else {
+                <ng-icon name="lucideCamera" aria-hidden="true" />
+              }
+            </div>
+            <div class="ponto-conteudo">
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="font-medium">Ponto {{ p.number }} · {{ p.location ?? 'Sem local' }}</p>
+                  @if (p.hazardConsequenceIds.length) {
+                    <p class="text-sm text-muted-color">{{ nomes(p.hazardConsequenceIds) }}</p>
+                  }
+                </div>
+                <app-hrn-badge [resultado]="p.currentHrn?.result" [nivel]="p.currentHrn?.level" />
+              </div>
+              @if (p.suggestedSolution) {
+                <p class="solucao text-sm">{{ p.suggestedSolution }}</p>
+              }
+              <div class="flex flex-wrap items-center gap-2 text-xs text-muted-color">
+                <span
+                  >{{ p.violatedStandardIds.length }}
+                  {{
+                    p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma'
+                  }}</span
+                >
+                @if (p.safetyCategory) {
+                  <span>· Categoria {{ p.safetyCategory.category }}</span>
                 }
               </div>
-              <app-hrn-badge [resultado]="p.currentHrn?.result" [nivel]="p.currentHrn?.level" />
-            </div>
-            @if (p.suggestedSolution) {
-              <p class="solucao text-sm">{{ p.suggestedSolution }}</p>
-            }
-            <div class="flex flex-wrap items-center gap-2 text-xs text-muted-color">
-              <span>{{ p.violatedStandardIds.length }} {{ p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma' }}</span>
-              @if (p.safetyCategory) {
-                <span>· Categoria {{ p.safetyCategory.category }}</span>
-              }
-              @if (p.photo) {
-                <span>· com foto</span>
-              }
-            </div>
-            <div class="flex gap-1">
-              <p-button [attr.data-testid]="'abrir-ponto-' + p.number" [label]="editavel() ? 'Editar' : 'Ver'" severity="secondary" [outlined]="true" size="small" (onClick)="editar(p)" />
-              @if (editavel()) {
-                <p-button [attr.data-testid]="'duplicar-ponto-' + p.number" label="Duplicar" severity="secondary" [text]="true" size="small" [disabled]="!catalogos().pacote" (onClick)="duplicar(p)" />
-                <p-button [attr.data-testid]="'excluir-ponto-' + p.number" label="Excluir" severity="danger" [text]="true" size="small" (onClick)="excluindo.set(p)" />
-              }
+              <div class="flex gap-1">
+                <p-button
+                  [attr.data-testid]="'abrir-ponto-' + p.number"
+                  [label]="editavel() ? 'Editar' : 'Ver'"
+                  severity="secondary"
+                  [outlined]="true"
+                  size="small"
+                  (onClick)="editar(p)"
+                />
+                @if (editavel()) {
+                  <p-button
+                    [attr.data-testid]="'duplicar-ponto-' + p.number"
+                    label="Duplicar"
+                    severity="secondary"
+                    [text]="true"
+                    size="small"
+                    [disabled]="!catalogos().pacote"
+                    (onClick)="duplicar(p)"
+                  />
+                  <p-button
+                    [attr.data-testid]="'excluir-ponto-' + p.number"
+                    label="Excluir"
+                    severity="danger"
+                    [text]="true"
+                    size="small"
+                    (onClick)="excluindo.set(p)"
+                  />
+                }
+              </div>
             </div>
           </li>
         }
         @if (editavel()) {
           <li>
-            <button type="button" class="adicionar" data-testid="adicionar-outro" [disabled]="!catalogos().pacote" (click)="novo()">
+            <button
+              type="button"
+              class="adicionar"
+              data-testid="adicionar-outro"
+              [disabled]="!catalogos().pacote"
+              (click)="novo()"
+            >
               <ng-icon name="lucidePlus" size="1.125rem" />
               <span>Adicionar outro ponto de risco</span>
             </button>
@@ -244,13 +394,33 @@
         <span class="convite-icone"><ng-icon name="lucideTriangleAlert" size="1.75rem" /></span>
         <p class="text-base font-semibold">Nenhum ponto de risco levantado ainda</p>
         @if (editavel()) {
-          <p class="text-sm text-muted-color">Cada zona da máquina onde alguém pode se machucar é um ponto. Para cada um:</p>
+          <p class="text-sm text-muted-color">
+            Cada zona da máquina onde alguém pode se machucar é um ponto. Para cada um:
+          </p>
           <ol class="passos">
-            <li><ng-icon name="lucideMapPin" /><span><strong>Onde</strong> está o perigo, e o que pode acontecer</span></li>
-            <li><ng-icon name="lucideGauge" /><span><strong>O tamanho</strong> do risco, em quatro perguntas</span></li>
-            <li><ng-icon name="lucideWrench" /><span><strong>O que fazer</strong> para adequar, e a foto do antes</span></li>
+            <li>
+              <ng-icon name="lucideMapPin" /><span
+                ><strong>Onde</strong> está o perigo, e o que pode acontecer</span
+              >
+            </li>
+            <li>
+              <ng-icon name="lucideGauge" /><span
+                ><strong>O tamanho</strong> do risco, em quatro perguntas</span
+              >
+            </li>
+            <li>
+              <ng-icon name="lucideWrench" /><span
+                ><strong>O que fazer</strong> para adequar, e a foto do antes</span
+              >
+            </li>
           </ol>
-          <p-button data-testid="primeiro-ponto" label="Levantar o primeiro ponto" icon="pi pi-plus" [disabled]="!catalogos().pacote" (onClick)="novo()" />
+          <p-button
+            data-testid="primeiro-ponto"
+            label="Levantar o primeiro ponto"
+            icon="pi pi-plus"
+            [disabled]="!catalogos().pacote"
+            (onClick)="novo()"
+          />
         } @else {
           <p class="text-sm text-muted-color">A análise não tem ponto de risco.</p>
         }
@@ -272,11 +442,23 @@
   >
     <div class="space-y-4">
       <p class="text-sm text-surface-700 dark:text-surface-300">
-        O ponto sai do rascunho, com a foto, e os seguintes são renumerados para a lista não pular um número.
+        O ponto sai do rascunho, com a foto, e os seguintes são renumerados para a lista não pular
+        um número.
       </p>
       <div class="flex justify-end gap-2">
-        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="excluindo.set(null)" />
-        <p-button data-testid="confirmar-exclusao-ponto" label="Excluir" severity="danger" [loading]="processando()" (onClick)="confirmarExclusao()" />
+        <p-button
+          label="Cancelar"
+          severity="secondary"
+          [text]="true"
+          (onClick)="excluindo.set(null)"
+        />
+        <p-button
+          data-testid="confirmar-exclusao-ponto"
+          label="Excluir"
+          severity="danger"
+          [loading]="processando()"
+          (onClick)="confirmarExclusao()"
+        />
       </div>
     </div>
   </p-dialog>

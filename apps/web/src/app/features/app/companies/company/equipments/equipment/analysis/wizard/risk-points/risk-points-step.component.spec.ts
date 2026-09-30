@@ -217,6 +217,29 @@ describe('RiskPointsStepComponent', () => {
     req.flush(ponto({ id: 'p-2', number: 2 }));
   });
 
+  it('deve salvar o ponto e abrir outro em branco com "Salvar e adicionar outro"', () => {
+    abrir();
+    clicar('primeiro-ponto');
+    digitar('campo-local', 'Zona de prensagem');
+
+    clicar('salvar-e-adicionar');
+    const req = http.expectOne((r) => r.method === 'PUT' && /risk-points\/[0-9a-f-]{36}$/.test(r.url));
+    req.flush(ponto());
+    fixture.detectChanges();
+
+    expect(texto('aviso-ponto')).toContain('Ponto 1 salvo');
+    expect(el('editor')?.textContent).toContain('Novo ponto de risco');
+    expect((el('campo-local') as HTMLInputElement).value).toBe('');
+    expect(emitidos.at(-1)?.map((p) => p.number)).toEqual([1]);
+  });
+
+  it('deve mostrar a foto do ponto na lista, ou o lugar dela vazio', () => {
+    abrir([ponto({ photo: { url: 'u', thumbnailUrl: 'http://arq/t' } }), ponto({ id: 'p-2', number: 2 })]);
+
+    expect(el('miniatura-ponto-1')?.querySelector('img')?.getAttribute('src')).toBe('http://arq/t');
+    expect(el('miniatura-ponto-2')?.querySelector('img')).toBeNull();
+  });
+
   it('deve oferecer adicionar outro ponto no fim da lista', () => {
     abrir([ponto()]);
 

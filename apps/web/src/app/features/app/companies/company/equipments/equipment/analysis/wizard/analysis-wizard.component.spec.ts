@@ -269,6 +269,21 @@ describe('AnalysisWizardComponent', () => {
     expect(componente().analise()?.riskPoints.map((p) => p.location)).toEqual(['Zona de prensagem']);
   });
 
+  it('deve ter "Salvar e sair" na última etapa, voltando para a lista de análises, como no legado', async () => {
+    await abrir();
+    expect(el('salvar')?.textContent).toContain('Salvar');
+    expect(el('salvar')?.textContent).not.toContain('sair');
+
+    clicar('passo-pe');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+    expect(el('salvar')?.textContent).toContain('Salvar e sair');
+    clicar('salvar');
+    await harness.fixture.whenStable();
+
+    expect(TestBed.inject(Router).url).toBe(`/app/empresas/${BRF.slug}/equipamentos/eq-0001/analise`);
+  });
+
   it('deve dizer o que a sigla quer dizer no stepper', async () => {
     await abrir();
 

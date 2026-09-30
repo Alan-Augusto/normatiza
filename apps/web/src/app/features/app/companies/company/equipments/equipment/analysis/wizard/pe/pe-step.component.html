@@ -1,5 +1,10 @@
 @if (catalogos().erro) {
-  <p-message data-testid="erro-catalogos" severity="error" styleClass="w-full mb-4" text="Não foi possível carregar as normas. Recarregue a página para tentar de novo." />
+  <p-message
+    data-testid="erro-catalogos"
+    severity="error"
+    styleClass="w-full mb-4"
+    text="Não foi possível carregar as normas. Recarregue a página para tentar de novo."
+  />
 }
 @if (aviso()) {
   <p-message data-testid="aviso-pe" severity="success" styleClass="w-full mb-4" [text]="aviso()!" />
@@ -9,10 +14,18 @@
   <div class="space-y-6" data-testid="editor-pe">
     <div>
       <h3 class="text-base font-semibold">
-        {{ aberto.existente ? 'PE ' + aberto.existente.number : aberto.copiaDe ? 'Novo PE — cópia do PE ' + aberto.copiaDe : 'Novo PE' }}
+        {{
+          aberto.existente
+            ? 'PE ' + aberto.existente.number
+            : aberto.copiaDe
+              ? 'Novo PE — cópia do PE ' + aberto.copiaDe
+              : 'Novo PE'
+        }}
       </h3>
       @if (editavel()) {
-        <p class="text-xs text-muted-color">Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.</p>
+        <p class="text-xs text-muted-color">
+          Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.
+        </p>
       }
     </div>
 
@@ -24,8 +37,21 @@
       <section class="painel">
         <h4 class="titulo">O dispositivo</h4>
         <div class="space-y-4">
-          <app-campo para="pe-local" rotulo="Onde fica" ajuda="Opcional. Ajuda a achar o botão na máquina e no laudo." mensagemId="ajuda-pe-local">
-            <input pInputText id="pe-local" data-testid="campo-local-pe" class="w-full" formControlName="local" placeholder="Ex.: Botão da lateral esquerda" aria-describedby="ajuda-pe-local" />
+          <app-campo
+            para="pe-local"
+            rotulo="Onde fica"
+            ajuda="Opcional. Ajuda a achar o botão na máquina e no laudo."
+            mensagemId="ajuda-pe-local"
+          >
+            <input
+              pInputText
+              id="pe-local"
+              data-testid="campo-local-pe"
+              class="w-full"
+              formControlName="local"
+              placeholder="Ex.: Botão da lateral esquerda"
+              aria-describedby="ajuda-pe-local"
+            />
           </app-campo>
           <app-foto-do-item
             rotulo="Foto do ponto"
@@ -46,18 +72,25 @@
         <div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
           <h4 class="titulo !mb-0">Os quesitos</h4>
           @if (naoConformesNoEditor(); as n) {
-            <span class="nao-atende text-sm" data-testid="nao-atendem-pe">{{ n }} não {{ n === 1 ? 'atende' : 'atendem' }}</span>
+            <span class="nao-atende text-sm" data-testid="nao-atendem-pe"
+              >{{ n }} não {{ n === 1 ? 'atende' : 'atendem' }}</span
+            >
           } @else {
             <span class="atende text-sm" data-testid="nao-atendem-pe">Tudo atende</span>
           }
         </div>
         <p class="mb-4 text-sm text-muted-color">
-          Os quesitos já vêm em <strong>Não</strong> e <strong>Não atende NR-12</strong>: marque o que de fato é
-          <strong>Sim</strong> ou <strong>Atende</strong>.
+          Os quesitos já vêm em <strong>Não</strong> e <strong>Não atende NR-12</strong>: marque o
+          que de fato é <strong>Sim</strong> ou <strong>Atende</strong>.
         </p>
         <ol class="quesitos">
           @for (q of quesitos; track q.key; let i = $index) {
-            <li class="quesito" [class.nao-conforme]="!resposta(q.key).controls.nr12Compliant.value" [attr.data-testid]="'quesito-pe-' + q.key" [formGroupName]="q.key">
+            <li
+              class="quesito"
+              [class.nao-conforme]="!resposta(q.key).controls.nr12Compliant.value"
+              [attr.data-testid]="'quesito-pe-' + q.key"
+              [formGroupName]="q.key"
+            >
               <div class="quesito-texto">
                 <span class="quesito-numero">{{ i + 1 }}</span>
                 <p class="text-sm font-medium" [id]="'pe-' + q.key">{{ q.label }}</p>
@@ -92,26 +125,63 @@
       <section class="painel">
         <h4 class="titulo">Parecer técnico</h4>
         <p class="mb-3 text-sm text-muted-color">Os itens da 12.6 que o dispositivo descumpre.</p>
-        <app-normas-descumpridas inputId="pe-normas" formControlName="normas" [secoes]="secoesDeNorma()" />
+        <app-normas-descumpridas
+          inputId="pe-normas"
+          formControlName="normas"
+          [secoes]="secoesDeNorma()"
+        />
       </section>
 
       <section class="painel">
         <h4 class="titulo">Possíveis soluções</h4>
-        <app-campo para="pe-solucao" rotulo="O que fazer" ajuda="É o que o cliente vai ler para adequar: clara e acionável." mensagemId="ajuda-pe-solucao">
-          <textarea pTextarea id="pe-solucao" data-testid="campo-solucao-pe" class="w-full" rows="4" [autoResize]="true" formControlName="solucao" aria-describedby="ajuda-pe-solucao"></textarea>
+        <app-campo
+          para="pe-solucao"
+          rotulo="O que fazer"
+          ajuda="É o que o cliente vai ler para adequar: clara e acionável."
+          mensagemId="ajuda-pe-solucao"
+        >
+          <textarea
+            pTextarea
+            id="pe-solucao"
+            data-testid="campo-solucao-pe"
+            class="w-full"
+            rows="4"
+            [autoResize]="true"
+            formControlName="solucao"
+            aria-describedby="ajuda-pe-solucao"
+          ></textarea>
         </app-campo>
       </section>
     </div>
 
     <div class="flex flex-wrap justify-end gap-2">
-      <p-button data-testid="voltar-a-lista" label="Voltar à lista" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" [loading]="salvando()" (onClick)="voltarALista()" />
+      <p-button
+        data-testid="voltar-a-lista"
+        label="Voltar à lista"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="salvando()"
+        (onClick)="voltarALista()"
+      />
+      @if (editavel()) {
+        <p-button
+          data-testid="salvar-e-adicionar"
+          label="Salvar e adicionar outro PE"
+          icon="pi pi-plus"
+          [outlined]="true"
+          [loading]="salvando()"
+          (onClick)="salvarEAdicionar()"
+        />
+      }
     </div>
   </div>
 } @else {
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <p class="text-sm text-muted-color">
-        <strong>PE — {{ nome }}.</strong> Cada botão, cabo ou pedal de parada de emergência da máquina, com os oito quesitos avaliados.
+        <strong>PE — {{ nome }}.</strong> Cada botão, cabo ou pedal de parada de emergência da
+        máquina, com os oito quesitos avaliados.
       </p>
       @if (editavel() && pes().length) {
         <p-button data-testid="novo-pe" label="Adicionar PE" icon="pi pi-plus" (onClick)="novo()" />
@@ -121,34 +191,75 @@
     @if (pes().length) {
       <ol class="pontos" data-testid="pes">
         @for (p of pes(); track p.id) {
-          <li class="ponto" [attr.data-testid]="'pe-' + p.number">
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <p class="font-medium">PE {{ p.number }} · {{ p.location ?? 'Sem local' }}</p>
-              @if (naoConformidades(p); as n) {
-                <span class="selo selo-nao-conforme">{{ n }} {{ n === 1 ? 'não conformidade' : 'não conformidades' }}</span>
+          <li class="ponto com-foto" [attr.data-testid]="'pe-' + p.number">
+            <div class="miniatura" [attr.data-testid]="'miniatura-pe-' + p.number">
+              @if (p.photo) {
+                <img [src]="p.photo.thumbnailUrl" [alt]="'Foto do PE ' + p.number" loading="lazy" />
               } @else {
-                <span class="selo selo-conforme">Atende à NR-12</span>
+                <ng-icon name="lucideCamera" aria-hidden="true" />
               }
             </div>
-            @if (p.solution) {
-              <p class="solucao text-sm">{{ p.solution }}</p>
-            }
-            <div class="flex flex-wrap items-center gap-2 text-xs text-muted-color">
-              <span>{{ p.violatedStandardIds.length }} {{ p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma' }}</span>
-              <span>· {{ p.photo ? 'com foto' : 'sem foto' }}</span>
-            </div>
-            <div class="flex gap-1">
-              <p-button [attr.data-testid]="'abrir-pe-' + p.number" [label]="editavel() ? 'Editar' : 'Ver'" severity="secondary" [outlined]="true" size="small" (onClick)="editar(p)" />
-              @if (editavel()) {
-                <p-button [attr.data-testid]="'duplicar-pe-' + p.number" label="Duplicar" severity="secondary" [text]="true" size="small" (onClick)="duplicar(p)" />
-                <p-button [attr.data-testid]="'excluir-pe-' + p.number" label="Excluir" severity="danger" [text]="true" size="small" (onClick)="excluindo.set(p)" />
+            <div class="ponto-conteudo">
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <p class="font-medium">PE {{ p.number }} · {{ p.location ?? 'Sem local' }}</p>
+                @if (naoConformidades(p); as n) {
+                  <span class="selo selo-nao-conforme"
+                    >{{ n }} {{ n === 1 ? 'não conformidade' : 'não conformidades' }}</span
+                  >
+                } @else {
+                  <span class="selo selo-conforme">Atende à NR-12</span>
+                }
+              </div>
+              @if (p.solution) {
+                <p class="solucao text-sm">{{ p.solution }}</p>
               }
+              <div class="flex flex-wrap items-center gap-2 text-xs text-muted-color">
+                <span
+                  >{{ p.violatedStandardIds.length }}
+                  {{
+                    p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma'
+                  }}</span
+                >
+              </div>
+              <div class="flex gap-1">
+                <p-button
+                  [attr.data-testid]="'abrir-pe-' + p.number"
+                  [label]="editavel() ? 'Editar' : 'Ver'"
+                  severity="secondary"
+                  [outlined]="true"
+                  size="small"
+                  (onClick)="editar(p)"
+                />
+                @if (editavel()) {
+                  <p-button
+                    [attr.data-testid]="'duplicar-pe-' + p.number"
+                    label="Duplicar"
+                    severity="secondary"
+                    [text]="true"
+                    size="small"
+                    (onClick)="duplicar(p)"
+                  />
+                  <p-button
+                    [attr.data-testid]="'excluir-pe-' + p.number"
+                    label="Excluir"
+                    severity="danger"
+                    [text]="true"
+                    size="small"
+                    (onClick)="excluindo.set(p)"
+                  />
+                }
+              </div>
             </div>
           </li>
         }
         @if (editavel()) {
           <li>
-            <button type="button" class="adicionar" data-testid="adicionar-outro-pe" (click)="novo()">
+            <button
+              type="button"
+              class="adicionar"
+              data-testid="adicionar-outro-pe"
+              (click)="novo()"
+            >
               <ng-icon name="lucidePlus" size="1.125rem" />
               <span>Adicionar outro dispositivo de parada de emergência</span>
             </button>
@@ -161,14 +272,30 @@
         <p class="text-base font-semibold">Nenhum PE avaliado ainda</p>
         @if (editavel()) {
           <p class="text-sm text-muted-color">
-            PE são os dispositivos de <strong>{{ nome.toLowerCase() }}</strong>. Cada botão, cabo ou pedal de emergência é um PE. Para cada um:
+            PE são os dispositivos de <strong>{{ nome.toLowerCase() }}</strong
+            >. Cada botão, cabo ou pedal de emergência é um PE. Para cada um:
           </p>
           <ol class="passos">
-            <li><ng-icon name="lucideCamera" /><span><strong>A foto</strong> do dispositivo</span></li>
-            <li><ng-icon name="lucideListChecks" /><span><strong>Oito quesitos</strong>, já em "Não"</span></li>
-            <li><ng-icon name="lucideScale" /><span><strong>O parecer técnico</strong> e as possíveis soluções</span></li>
+            <li>
+              <ng-icon name="lucideCamera" /><span><strong>A foto</strong> do dispositivo</span>
+            </li>
+            <li>
+              <ng-icon name="lucideListChecks" /><span
+                ><strong>Oito quesitos</strong>, já em "Não"</span
+              >
+            </li>
+            <li>
+              <ng-icon name="lucideScale" /><span
+                ><strong>O parecer técnico</strong> e as possíveis soluções</span
+              >
+            </li>
           </ol>
-          <p-button data-testid="primeiro-pe" label="Avaliar a primeira parada de emergência" icon="pi pi-plus" (onClick)="novo()" />
+          <p-button
+            data-testid="primeiro-pe"
+            label="Avaliar a primeira parada de emergência"
+            icon="pi pi-plus"
+            (onClick)="novo()"
+          />
         } @else {
           <p class="text-sm text-muted-color">A análise não tem PE.</p>
         }
@@ -190,11 +317,23 @@
   >
     <div class="space-y-4">
       <p class="text-sm text-surface-700 dark:text-surface-300">
-        O PE sai do rascunho, com a foto, e os seguintes são renumerados para a lista não pular um número.
+        O PE sai do rascunho, com a foto, e os seguintes são renumerados para a lista não pular um
+        número.
       </p>
       <div class="flex justify-end gap-2">
-        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="excluindo.set(null)" />
-        <p-button data-testid="confirmar-exclusao-pe" label="Excluir" severity="danger" [loading]="processando()" (onClick)="confirmarExclusao()" />
+        <p-button
+          label="Cancelar"
+          severity="secondary"
+          [text]="true"
+          (onClick)="excluindo.set(null)"
+        />
+        <p-button
+          data-testid="confirmar-exclusao-pe"
+          label="Excluir"
+          severity="danger"
+          [loading]="processando()"
+          (onClick)="confirmarExclusao()"
+        />
       </div>
     </div>
   </p-dialog>

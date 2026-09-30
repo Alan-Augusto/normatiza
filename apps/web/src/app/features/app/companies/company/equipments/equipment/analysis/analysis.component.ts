@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
 
 import { ANALYSIS_EDITOR_ROLES, ANALYSIS_STATUS_LABEL, type AnalysisListItem, type AnalysisStatus } from '@normatiza/shared';
@@ -16,6 +17,7 @@ import { AnalysisService } from '@core/services/analysis.service';
 import { DataTable } from '../../../../../../../shared/components/data-table/data-table.component';
 import { AcaoPrimaria, AcaoVazia, CabecalhoDaTabela, LinhaDaTabela } from '../../../../../../../shared/components/data-table/data-table.directives';
 import { HrnBadgeComponent } from '../../../../../../../shared/components/hrn-badge/hrn-badge.component';
+import { RowActionComponent } from '../../../../../../../shared/components/row-action/row-action.component';
 import { EquipmentContext } from '../equipment-context';
 
 /**
@@ -41,6 +43,8 @@ import { EquipmentContext } from '../equipment-context';
     AcaoPrimaria,
     AcaoVazia,
     HrnBadgeComponent,
+    RowActionComponent,
+    Dialog,
   ],
   templateUrl: './analysis.component.html',
   styleUrl: './analysis.component.css',
@@ -56,6 +60,8 @@ export class EquipmentAnalysisComponent {
   readonly analises = signal<AnalysisListItem[] | null>(null);
   readonly erro = signal<string | null>(null);
   readonly abrindo = signal(false);
+  readonly descartando = signal<AnalysisListItem | null>(null);
+  readonly processando = signal(false);
 
   /** A consultoria alocada, com a máquina ativa numa empresa ativa. O servidor confere de novo. */
   readonly podeAbrir = computed(() => {
@@ -75,6 +81,7 @@ export class EquipmentAnalysisComponent {
    */
   readonly mostraConclusao = computed(() => this.lista().some((a) => a.concludedAt));
   readonly mostraEngenheiro = computed(() => this.lista().some((a) => a.responsibleEngineer));
+  readonly mostraAcoes = computed(() => this.lista().some((a) => a.actions.discard));
 
   constructor() {
     effect(() => {
@@ -109,6 +116,27 @@ export class EquipmentAnalysisComponent {
         this.abrindo.set(false);
         this.erro.set(mensagemDoServidor(erro, 'Não foi possível abrir a análise. Tente de novo.'));
         if (erro instanceof HttpErrorResponse && erro.status === 409) this.carregar(empresa.id, equipamento.code);
+      },
+    });
+  }
+
+  /** Só o rascunho se descarta; a análise concluída é congelada, e se corrige por revisão (D2). */
+  confirmarDescarte(): void {
+    const empresa = this.empresa();
+    const equipamento = this.equipamento();
+    const analise = this.descartando();
+    if (!empresa || !equipamento || !analise || this.processando()) return;
+    this.processando.set(true);
+    this.service.discard(empresa.id, equipamento.code, analise.number).subscribe({
+      next: () => {
+        this.processando.set(false);
+        this.descartando.set(null);
+        this.analises.update((lista) => lista?.filter((a) => a.id !== analise.id) ?? lista);
+      },
+      error: (erro: unknown) => {
+        this.processando.set(false);
+        this.descartando.set(null);
+        this.erro.set(mensagemDoServidor(erro, 'Não foi possível descartar o rascunho.'));
       },
     });
   }

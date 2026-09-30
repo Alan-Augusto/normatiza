@@ -364,7 +364,7 @@ Radiografia da máquina.
 
 **Rascunho.** Uma análise nasce rascunho, aberta pela consultoria (Engenheiro Responsável, Engenheiro da Consultoria ou Técnico), e só a consultoria a vê enquanto é rascunho — o cliente enxerga a análise quando ela é concluída.
 - **Um rascunho por equipamento.** Para abrir outra análise, conclui-se ou descarta-se a que está aberta: dois técnicos preenchendo análises paralelas da mesma máquina, sem saber um do outro, produziriam dois laudos que se contradizem.
-- **Rascunho se descarta; análise concluída, não.** Descartar apaga o rascunho e as fotos dele, com registro na auditoria. "Nenhum registro é apagado" vale para o que foi concluído: o rascunho abandonado não é prova de nada e só atrapalha a lista.
+- **Rascunho se descarta; análise concluída, não.** Descartar — no rodapé do assistente ou na linha do rascunho, na lista de análises — apaga o rascunho e as fotos dele, com registro na auditoria. "Nenhum registro é apagado" vale para o que foi concluído: o rascunho abandonado não é prova de nada e só atrapalha a lista.
 - **Quem levantou e quem assina.** O *técnico de campo* é quem abriu a análise, e pode ser trocado por outra pessoa da consultoria alocada na empresa. O *engenheiro que assina* — Engenheiro Responsável ou da Consultoria — e o número da **ART** são escolhidos ao concluir.
 - **Nada é obrigatório para salvar.** O rascunho guarda o que tiver, e o técnico volta depois. O que o laudo exige — as 4 fotos, entre outros — é conferido **ao concluir**.
 
@@ -453,7 +453,9 @@ Também nascem "Não" e "Não atende NR-12". No laudo do legado, as respostas do
 
 **Duplicar**, nos pontos de risco, no PAP e no PE, como no legado: abre um item novo com tudo do original — respostas, normas, solução —, **menos as fotos**, que são de outro lugar da máquina. A cópia é gravada ao sair do editor, como qualquer alteração.
 
-**Salvar no assistente.** Sair de onde se está sempre salva, como no legado: **Avançar**, **Voltar** e o clique numa etapa do stepper gravam a ficha, ou o ponto, PAP ou PE aberto no editor, antes de trocar de etapa; **Voltar à lista** no editor também grava. **Salvar**, no rodapé, grava e fica na tela. Não há "alterações não salvas?" dentro do assistente — a pergunta só aparece para quem sai da análise. As duas exceções: item novo deixado em branco não vira item, e ponto com HRN pela metade não sai do editor (a tela diz o que falta).
+**Salvar no assistente.** Sair de onde se está sempre salva, como no legado: **Avançar**, **Voltar** e o clique numa etapa do stepper gravam a ficha, ou o ponto, PAP ou PE aberto no editor, antes de trocar de etapa; **Voltar à lista** no editor também grava, e **Salvar e adicionar outro** grava e abre um em branco, para quem levanta vários em seguida. **Salvar**, no rodapé, grava e fica na tela — e na última etapa é **Salvar e sair**, que grava e volta para a lista de análises, como no legado.
+
+**As listas mostram a foto** de cada item, que é por onde se reconhece o ponto na máquina: uma no ponto de risco e no PE, e no PAP uma miniatura por seção que tem foto, uma em cima da outra, na ordem Partida, Parada, Rearme. Não há "alterações não salvas?" dentro do assistente — a pergunta só aparece para quem sai da análise. As duas exceções: item novo deixado em branco não vira item, e ponto com HRN pela metade não sai do editor (a tela diz o que falta).
 
 **Conclusão da análise:** revisão do resumo (pontos identificados, HRN por ponto, não conformidades PAP/PE) → confirmação → **congela a análise, gera as tarefas do plano de ação e notifica o cliente**.
 

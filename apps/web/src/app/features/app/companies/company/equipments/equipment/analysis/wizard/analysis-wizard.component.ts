@@ -43,7 +43,8 @@ import { EquipmentContext } from '../../equipment-context';
 import { linhasDaFicha } from '../../ficha-do-ativo';
 import { PapStepComponent } from './pap/pap-step.component';
 import { PeStepComponent } from './pe/pe-step.component';
-import { RiskPointsStepComponent, type AlvoDaAnalise, type ResultadoDoSalvar } from './risk-points/risk-points-step.component';
+import type { EtapaComEditor, ResultadoDoSalvar } from './etapa-com-editor';
+import { RiskPointsStepComponent, type AlvoDaAnalise } from './risk-points/risk-points-step.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
@@ -164,6 +165,22 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   private readonly etapaDoPap = viewChild(PapStepComponent);
   private readonly etapaDoPe = viewChild(PeStepComponent);
 
+  /** A etapa de lista com editor que está na tela — pontos, PAP ou PE —, se for uma. */
+  private readonly etapaComEditor = computed<EtapaComEditor | undefined>(() => {
+    const chave = this.etapaAtual().chave;
+    if (chave === 'pontos') return this.etapaDosPontos();
+    if (chave === 'pap') return this.etapaDoPap();
+    if (chave === 'pe') return this.etapaDoPe();
+    return undefined;
+  });
+
+  /** Com um item aberto, o rodapé troca de botões: salvar e voltar à lista, salvar e adicionar outro. */
+  readonly editorAberto = computed(() => !!this.etapaComEditor()?.editando());
+  readonly ocupadoNaEtapa = computed(() => this.ocupado() || !!this.etapaComEditor()?.salvando());
+
+  /** Como o item da etapa se chama no botão: "Salvar e adicionar outro ponto". */
+  readonly nomeDoItem = computed(() => ({ pontos: 'ponto', pap: 'PAP', pe: 'PE', ficha: '' })[this.etapaAtual().chave]);
+
   /** A análise na API, para a etapa dos pontos gravar direto. */
   readonly alvoDaAnalise = computed<AlvoDaAnalise | null>(() => this.alvo());
   readonly editavel = computed(() => !!this.analise()?.actions.edit);
@@ -228,24 +245,35 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     this.irPara(Math.max(1, this.passo() - 1));
   }
 
-  /** O Salvar do rodapé: grava o que está na tela e fica nela. */
+  /**
+   * O Salvar do rodapé: grava o que está na tela e fica nela. Na última etapa é
+   * "Salvar e sair", como no legado: grava e volta para a lista de análises.
+   */
   salvarAqui(): void {
     if (this.ocupado()) return;
     this.salvarEtapa().subscribe((r) => {
-      if (r === 'nada') this.aviso.set('Tudo salvo.');
+      if (r === 'erro') return;
+      if (this.ultimaEtapa()) void this.router.navigateByUrl(this.rotas()!.analise);
+      else if (r === 'nada') this.aviso.set('Tudo salvo.');
     });
+  }
+
+  salvarEVoltarALista(): void {
+    this.aviso.set(null);
+    this.etapaComEditor()?.voltarALista();
+  }
+
+  salvarEAdicionarOutro(): void {
+    this.aviso.set(null);
+    this.etapaComEditor()?.salvarEAdicionar();
   }
 
   /** O que a etapa atual tem por gravar: a ficha, ou o item aberto no editor. */
   private salvarEtapa(): Observable<ResultadoDoSalvar> {
     if (!this.editavel()) return of('nada');
     const chave = this.etapaAtual().chave;
-    let salvar$: Observable<ResultadoDoSalvar>;
-    if (chave === 'ficha') salvar$ = this.form.dirty ? this.salvarFicha() : of('nada');
-    else if (chave === 'pontos') salvar$ = this.etapaDosPontos()?.salvarAberto() ?? of('nada');
-    else if (chave === 'pap') salvar$ = this.etapaDoPap()?.salvarAberto() ?? of('nada');
-    else if (chave === 'pe') salvar$ = this.etapaDoPe()?.salvarAberto() ?? of('nada');
-    else salvar$ = of('nada');
+    const salvar$: Observable<ResultadoDoSalvar> =
+      chave === 'ficha' ? (this.form.dirty ? this.salvarFicha() : of('nada')) : (this.etapaComEditor()?.salvarAberto() ?? of('nada'));
     this.ocupado.set(true);
     this.aviso.set(null);
     return salvar$.pipe(finalize(() => this.ocupado.set(false)));
@@ -258,7 +286,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
 
   /** A ficha por salvar, ou um ponto ou PAP aberto no editor com alteração. */
   temAlteracoesNaoSalvas(): boolean {
-    return (this.form.dirty && !this.salvando()) || !!this.etapaDosPontos()?.temAlteracoes() || !!this.etapaDoPap()?.temAlteracoes() || !!this.etapaDoPe()?.temAlteracoes();
+    return (this.form.dirty && !this.salvando()) || !!this.etapaComEditor()?.temAlteracoes();
   }
 
   /** A etapa dos pontos gravou ou excluiu: a lista da análise passa a ser a dela. */

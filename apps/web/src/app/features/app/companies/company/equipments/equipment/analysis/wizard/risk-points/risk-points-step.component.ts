@@ -1,8 +1,8 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
-import { lucideGauge, lucideMapPin, lucidePlus, lucideTriangleAlert, lucideWrench } from '@ng-icons/lucide';
+import { lucideCamera, lucideGauge, lucideMapPin, lucidePlus, lucideTriangleAlert, lucideWrench } from '@ng-icons/lucide';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
@@ -30,15 +30,13 @@ import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { HrnBadgeComponent } from '../../../../../../../../../shared/components/hrn-badge/hrn-badge.component';
+import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
 import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
 import { HRN_VAZIO, HrnCalculatorComponent, type HrnEscolha } from '../../../../../../../../../shared/components/hrn-calculator/hrn-calculator.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
 const LIMITE_DE_ESPERA_MS = 20_000;
-
-/** O que salvar deu: gravou, não havia o que gravar, ou não gravou (a tela diz por quê). */
-export type ResultadoDoSalvar = 'salvo' | 'nada' | 'erro';
 
 /** A análise que a etapa escreve: quem é, na API. */
 export interface AlvoDaAnalise {
@@ -81,13 +79,14 @@ interface Grupo {
     HrnCalculatorComponent,
     NormasDescumpridasComponent,
   ],
-  providers: [provideIcons({ lucideTriangleAlert, lucidePlus, lucideMapPin, lucideGauge, lucideWrench })],
+  providers: [provideIcons({ lucideTriangleAlert, lucidePlus, lucideMapPin, lucideGauge, lucideWrench, lucideCamera })],
   templateUrl: './risk-points-step.component.html',
   styleUrl: './risk-points-step.component.css',
 })
-export class RiskPointsStepComponent {
+export class RiskPointsStepComponent implements EtapaComEditor {
   private readonly service = inject(AnalysisService);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly alvo = input.required<AlvoDaAnalise>();
   readonly pontos = input.required<RiskPointDto[]>();
@@ -281,6 +280,17 @@ export class RiskPointsStepComponent {
   }
 
   /** Voltar à lista salva antes, como no legado: sair nunca perde o que foi preenchido. */
+  /** Salva o que está aberto e abre um em branco — para quem levanta vários em seguida. */
+  salvarEAdicionar(): void {
+    this.salvarAberto().subscribe((r) => {
+      if (r === 'erro') return;
+      const aviso = this.aviso();
+      this.novo();
+      this.aviso.set(aviso);
+      this.host.nativeElement.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    });
+  }
+
   voltarALista(): void {
     this.salvarAberto().subscribe((r) => {
       if (r !== 'erro') this.fechar();
