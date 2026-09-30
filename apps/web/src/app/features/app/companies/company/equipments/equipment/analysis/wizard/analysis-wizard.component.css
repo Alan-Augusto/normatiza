@@ -147,3 +147,19 @@ dd {
   text-align: center;
   color: var(--p-text-color);
 }
+
+/* O nome por extenso embaixo da sigla: PAP e PE não dizem nada a quem chega. */
+@media (min-width: 640px) {
+  .etapa-titulo {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    text-align: left;
+  }
+}
+
+.etapa-legenda {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--p-text-muted-color);
+}

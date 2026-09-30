@@ -14,22 +14,22 @@ import { foto } from './risk-point-dto';
 
 type Arquivo = { id: string; storageKey: string; thumbnailKey: string | null } | null;
 
-export type PapComFotos = PapAssessment & { activationPhoto: Arquivo; resetPhoto: Arquivo; emergencyStopPhoto: Arquivo };
+export type PapComFotos = PapAssessment & { activationPhoto: Arquivo; stopPhoto: Arquivo; resetPhoto: Arquivo };
 
 /** A coluna da foto de cada seção, e o nome da relação que a carrega. */
 export const FOTO_DA_SEÇÃO = {
   activation: { coluna: 'activationPhotoFileId', relação: 'activationPhoto' },
+  stop: { coluna: 'stopPhotoFileId', relação: 'stopPhoto' },
   reset: { coluna: 'resetPhotoFileId', relação: 'resetPhoto' },
-  emergencyStop: { coluna: 'emergencyStopPhotoFileId', relação: 'emergencyStopPhoto' },
 } as const satisfies Record<PapSection, { coluna: keyof PapComFotos; relação: keyof PapComFotos }>;
 
 export const FOTOS_DO_PAP = {
   activationPhoto: { select: { id: true, storageKey: true, thumbnailKey: true } },
+  stopPhoto: { select: { id: true, storageKey: true, thumbnailKey: true } },
   resetPhoto: { select: { id: true, storageKey: true, thumbnailKey: true } },
-  emergencyStopPhoto: { select: { id: true, storageKey: true, thumbnailKey: true } },
 } as const;
 
-/** As três seções completas: o que não foi respondido fica nulo. */
+/** As três seções completas: o que não veio é "Não", como no legado. */
 export function respostasDoPap(entrada: PapUpsert['sections'] | unknown): Record<PapSection, PapAnswers> {
   const origem = (entrada ?? {}) as NonNullable<PapUpsert['sections']>;
   return Object.fromEntries(
@@ -37,7 +37,7 @@ export function respostasDoPap(entrada: PapUpsert['sections'] | unknown): Record
       const vindas = origem[s.key]?.answers ?? {};
       const respostas = emptyPapAnswers();
       for (const c of PAP_CRITERIA) {
-        respostas[c.key] = { physicalState: vindas[c.key]?.physicalState ?? null, nr12Compliant: vindas[c.key]?.nr12Compliant ?? null };
+        respostas[c.key] = { physicalState: vindas[c.key]?.physicalState === true, nr12Compliant: vindas[c.key]?.nr12Compliant === true };
       }
       return [s.key, respostas];
     }),

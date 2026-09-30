@@ -57,7 +57,7 @@ describe('PAP (e2e)', () => {
     return { base: `${base}/1`, token };
   }
 
-  it('deve gravar o PAP pelo id do aparelho, com as três seções completas', async () => {
+  it('deve gravar o PAP pelo id do aparelho, com as três seções completas e "Não" no que não veio', async () => {
     const { base, token } = await rascunho();
     const id = randomUUID();
 
@@ -67,8 +67,8 @@ describe('PAP (e2e)', () => {
       .send({
         location: '  Painel principal ',
         sections: {
-          activation: { answers: { installed: { physicalState: true, nr12Compliant: true }, extraLowVoltage: { physicalState: false, nr12Compliant: false } } },
-          emergencyStop: { answers: { installed: { physicalState: false, nr12Compliant: false } } },
+          activation: { answers: { installed: { physicalState: true, nr12Compliant: true }, ebt: { physicalState: true } } },
+          stop: { answers: { accidental: { nr12Compliant: true } } },
         },
         violatedStandardIds: [norma, norma],
         solution: 'Instalar botão de emergência tipo cogumelo.',
@@ -77,14 +77,14 @@ describe('PAP (e2e)', () => {
 
     const ativação = emptyPapAnswers();
     ativação.installed = { physicalState: true, nr12Compliant: true };
-    ativação.extraLowVoltage = { physicalState: false, nr12Compliant: false };
-    const emergência = emptyPapAnswers();
-    emergência.installed = { physicalState: false, nr12Compliant: false };
+    ativação.ebt = { physicalState: true, nr12Compliant: false };
+    const parada = emptyPapAnswers();
+    parada.accidental = { physicalState: false, nr12Compliant: true };
     expect(body).toEqual({
       id,
       number: 1,
       location: 'Painel principal',
-      sections: { activation: { answers: ativação }, reset: { answers: emptyPapAnswers() }, emergencyStop: { answers: emergência } },
+      sections: { activation: { answers: ativação }, stop: { answers: parada }, reset: { answers: emptyPapAnswers() } },
       violatedStandardIds: [norma],
       solution: 'Instalar botão de emergência tipo cogumelo.',
     });
@@ -103,12 +103,12 @@ describe('PAP (e2e)', () => {
 
     const { body } = await http().put(`${base}/paps/${id}`).set('Authorization', token).send({ location: 'Botoeira' }).expect(200);
 
-    expect(body.sections.reset.answers.antiFraud).toEqual({ physicalState: null, nr12Compliant: null });
+    expect(body.sections.reset.answers.antiFraud).toEqual({ physicalState: false, nr12Compliant: false });
     expect(body.violatedStandardIds).toEqual([]);
     expect(await ctx.prisma.papAssessment.count()).toBe(1);
   });
 
-  it('deve recusar resposta que não é sim, não ou vazio, quesito que não existe, e norma fora do catálogo', async () => {
+  it('deve recusar resposta que não é sim ou não, quesito que não existe, e norma fora do catálogo', async () => {
     const { base, token } = await rascunho();
     const url = `${base}/paps/${randomUUID()}`;
 
@@ -142,8 +142,8 @@ describe('PAP (e2e)', () => {
     await http().put(`${base}/paps/${id}`).set('Authorization', token).send({}).expect(200);
 
     await http().put(`${base}/paps/${id}/photos/activation`).set('Authorization', token).attach('file', jpeg, 'a.jpg').expect(200);
-    await http().put(`${base}/paps/${id}/photos/emergencyStop`).set('Authorization', token).attach('file', jpeg, 'e.jpg').expect(200);
-    await http().put(`${base}/paps/${id}/photos/emergencyStop`).set('Authorization', token).attach('file', jpeg, 'e2.jpg').expect(200);
+    await http().put(`${base}/paps/${id}/photos/stop`).set('Authorization', token).attach('file', jpeg, 'e.jpg').expect(200);
+    await http().put(`${base}/paps/${id}/photos/stop`).set('Authorization', token).attach('file', jpeg, 'e2.jpg').expect(200);
     await http().put(`${base}/paps/${id}/photos/painel`).set('Authorization', token).attach('file', jpeg, 'x.jpg').expect(404);
 
     const { body } = await http().get(base).set('Authorization', token).expect(200);

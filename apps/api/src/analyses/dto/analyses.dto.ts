@@ -155,21 +155,21 @@ export class RiskPointUpsertDto implements RiskPointUpsert {
   suggestedSolution?: string | null;
 }
 
-/** Um quesito: cada dimensão é sim, não ou nulo (ainda sem resposta). */
+/** Um quesito: cada dimensão é sim ou não. O que não vier é "Não", como no legado. */
 class ChecklistAnswerDto implements Partial<ChecklistAnswer> {
-  @IsOptional() @IsBoolean() physicalState?: boolean | null;
-  @IsOptional() @IsBoolean() nr12Compliant?: boolean | null;
+  @IsOptional() @IsBoolean() physicalState?: boolean;
+  @IsOptional() @IsBoolean() nr12Compliant?: boolean;
 }
 
 const Quesito = () => applyDecorators(IsOptional(), ValidateNested(), Type(() => ChecklistAnswerDto));
 
 class PapAnswersDto {
   @Quesito() installed?: ChecklistAnswerDto;
+  @Quesito() safeArea?: ChecklistAnswerDto;
   @Quesito() accidental?: ChecklistAnswerDto;
   @Quesito() antiFraud?: ChecklistAnswerDto;
-  @Quesito() safeArea?: ChecklistAnswerDto;
-  @Quesito() extraLowVoltage?: ChecklistAnswerDto;
   @Quesito() portuguese?: ChecklistAnswerDto;
+  @Quesito() ebt?: ChecklistAnswerDto;
 }
 
 class PapSectionInputDto {
@@ -183,8 +183,8 @@ const Seção = () => applyDecorators(IsOptional(), ValidateNested(), Type(() =>
 
 class PapSectionsDto {
   @Seção() activation?: PapSectionInputDto;
+  @Seção() stop?: PapSectionInputDto;
   @Seção() reset?: PapSectionInputDto;
-  @Seção() emergencyStop?: PapSectionInputDto;
 }
 
 export class PapUpsertDto implements PapUpsert {

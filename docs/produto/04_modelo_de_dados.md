@@ -368,25 +368,31 @@ PAP e PE são **listas** dentro da análise, como os pontos de risco: uma máqui
 
 > **Sem justificativa por quesito.** O legado não tem, e o que o laudo precisa dizer sobre um quesito que não atende já está nas normas descumpridas e na solução do conjunto. Uma justificativa por quesito seriam 18 campos de texto por PAP que ninguém preencheria em campo.
 
-> **As respostas ficam num JSON, não em 36 colunas.** Três seções × seis quesitos × duas dimensões. A API confere o formato na gravação e devolve sempre as três seções completas, com nulo no que não foi respondido.
+> **As respostas ficam num JSON, não em 36 colunas.** Três seções × seis quesitos × duas dimensões. A API confere o formato na gravação e devolve sempre as três seções completas, com "Não" no que não veio.
 
 ```typescript
-// Cada quesito é avaliado em duas dimensões independentes. Nulo = ainda sem
-// resposta: o rascunho guarda o que tiver.
+// PAP = dispositivos de Partida, Acionamento e Parada; PE = dispositivos de
+// Parada de Emergência — as siglas da tela do legado (03 §5.2).
+
+// Cada quesito é avaliado em duas dimensões, cada uma sim ou não. Nasce
+// "Não" e "Não atende", como no legado — não há "sem resposta".
 interface ChecklistAnswer {
-  physicalState: boolean | null;   // existe / está assim?
-  nr12Compliant: boolean | null;   // atende à norma?
+  physicalState: boolean;   // a afirmação do quesito vale? (Sim / Não)
+  nr12Compliant: boolean;   // atende à NR-12?
 }
 
-type PapSection = 'activation' | 'reset' | 'emergencyStop';
+// Na ordem do legado. A chave é a coluna dele: activation*, stop*, reset*.
+type PapSection = 'activation' | 'stop' | 'reset';   // Partida, Parada, Rearme
 
+// Na ordem e com o texto da tela do legado. Em `accidental` e `antiFraud`,
+// "Sim" é o ruim ("Passível de…").
 type PapCriterion =
-  | 'installed'          // o dispositivo existe?
-  | 'accidental'         // proteção contra toque involuntário?
-  | 'antiFraud'          // difícil de burlar ou travar?
-  | 'safeArea'           // aciona sem expor as mãos?
-  | 'extraLowVoltage'    // tensão de comando segura (máx. 24V)?
-  | 'portuguese';        // sinalização clara em português?
+  | 'installed'     // Instalado
+  | 'safeArea'      // Localizado em zona segura
+  | 'accidental'    // Passível de acionamento acidental
+  | 'antiFraud'     // Passível de burla
+  | 'portuguese'    // Está identificado em língua portuguesa
+  | 'ebt';          // Acionado em EBT ou por dupla isolação
 
 // Um PAP é um conjunto de comando da máquina — um painel, uma botoeira —,
 // com as três seções avaliadas juntas
@@ -398,16 +404,22 @@ interface PapAssessment {
   location?: string;               // "Painel principal", "Botoeira da descarga"
   sections: Record<PapSection, {
     answers: Record<PapCriterion, ChecklistAnswer>;
-    photoFileId?: string;          // foto do botão ou painel daquela seção
+    photoFileId?: string;          // sem foto, a seção não foi avaliada e não entra no laudo
   }>;
-  violatedStandardIds: string[];
-  solution?: string;               // uma para o conjunto, como no legado
+  violatedStandardIds: string[];   // parecer técnico: itens da seção 12.4
+  solution?: string;               // possíveis soluções, uma para o conjunto
 }
 
+// Na ordem e com o texto da tela do legado (colunas de `pe`).
 type PeCriterion =
-  | 'STARTUP_DEVICE_WEAR' | 'LOW_VOLTAGE_ABSENT' | 'FIXED_SWITCH_RESET'
-  | 'PORTUGUESE_SIGNAGE' | 'TAMPERED_CONTROLS' | 'OPEN_GUARDS_NO_INTERLOCK'
-  | 'TRIGGERED_BY_ANOTHER' | 'NO_POWER_LOSS_RETENTION';
+  | 'installedDevices'    // Há dispositivos de seg. instalados
+  | 'startupDevice'       // O dispositivo é usado para partida
+  | 'triggeredByAnother'  // Pode ser acionado por outro operador
+  | 'antiFraud'           // É passível de burla
+  | 'portuguese'          // Está identificado em língua portuguesa
+  | 'manualReset'         // Exige rearme manual
+  | 'retention'           // Apresenta retenção após acionado
+  | 'lowVoltage';         // Acionado em extrabaixa tensão
 
 interface PeAssessment {
   id: string;
@@ -416,9 +428,9 @@ interface PeAssessment {
   number: number;                  // 1, 2, 3... na análise
   location?: string;
   answers: Record<PeCriterion, ChecklistAnswer>;
-  violatedStandardIds: string[];
+  violatedStandardIds: string[];   // parecer técnico: itens da seção 12.6
   solution?: string;
-  photoFileId?: string;
+  photoFileId?: string;            // no laudo do legado, as respostas do PE saem com ou sem foto
 }
 ```
 

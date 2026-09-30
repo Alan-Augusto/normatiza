@@ -9,9 +9,14 @@
   <!-- O editor ocupa o lugar da lista: um ponto por vez. -->
   <div class="space-y-6" data-testid="editor">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h3 class="text-base font-semibold">
-        {{ aberto.existente ? 'Ponto ' + aberto.existente.number : 'Novo ponto de risco' }}
-      </h3>
+      <div>
+        <h3 class="text-base font-semibold">
+          {{ aberto.existente ? 'Ponto ' + aberto.existente.number : 'Novo ponto de risco' }}
+        </h3>
+        @if (editavel()) {
+          <p class="text-xs text-muted-color">Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.</p>
+        }
+      </div>
     </div>
 
     @if (erro()) {
@@ -177,10 +182,7 @@
     </div>
 
     <div class="flex flex-wrap justify-end gap-2">
-      <p-button data-testid="cancelar-ponto" label="Voltar à lista" severity="secondary" [text]="true" (onClick)="fechar()" />
-      @if (editavel()) {
-        <p-button data-testid="salvar-ponto" label="Salvar ponto" [loading]="salvando()" (onClick)="salvar()" />
-      }
+      <p-button data-testid="voltar-a-lista" label="Voltar à lista" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" [loading]="salvando()" (onClick)="voltarALista()" />
     </div>
   </div>
 } @else {

@@ -6,6 +6,12 @@ export function catalogosDeTeste(): AnalysisCatalogsDto {
     version: 'v-teste',
     standardSections: [
       {
+        id: 'sec-12-4',
+        norm: 'NR-12',
+        name: '12.4 Dispositivos de partida, acionamento e parada',
+        standards: [{ id: 'std-pap', itemCode: '12.4.1', text: 'Conforme item 12.4.1, os dispositivos de partida devem…' }],
+      },
+      {
         id: 'sec-12-5',
         norm: 'NR-12',
         name: '12.5 Sistemas de segurança',

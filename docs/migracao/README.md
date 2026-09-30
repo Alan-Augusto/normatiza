@@ -407,8 +407,8 @@ O mapeamento completo sai com a feature da análise. O que os dados já decidira
 - **Categoria NBR 14153:** quando `useCategory`, `severityCategory`, `frequencyCategory` e `possibilityCategory` → `safetyCategory`. Usada em 47.008 pontos (16%). Com `useCategory` falso, as três colunas são ignoradas.
 - **Residual estimado:** quando `useHrnResidual`, `hrn*Residual` → `estimatedResidualHrn`, somente leitura. São só **112 pontos**. Não vira `residualHrn`: aquele é o verificado depois da obra, e não houve obra.
 - **Escolha múltipla:** `risk_origin`, `risk_consequence`, `risk_security` e `risk_standard` → `hazardOriginIds`, `hazardConsequenceIds`, `existingProtectionIds`, `violatedStandardIds`, via `legacy_refs` dos catálogos. 95% dos pontos têm várias origens, e há ponto com 134 normas.
-- **PAP:** cada linha de `pap` vira um `PapAssessment`. As colunas `activation*`, `reset*` e `stop*` vão para as três seções, cada par `X`/`XNr12` para `physicalState`/`nr12Compliant`, e `pap_standard` para `violatedStandardIds`. Sem `location` (o legado não tem) e sem `justification` nas respostas.
-- **PE:** cada linha de `pe` vira um `PeAssessment`, pelo mesmo padrão, com `pe_standard`.
+- **PAP:** cada linha de `pap` vira um `PapAssessment`. As colunas `activation*`, `stop*` e `reset*` vão para as seções `activation`, `stop` e `reset` (Partida, Parada, Rearme), e `activationPhotoId`/`stopPhotoId`/`resetPhotoId` para a foto de cada uma. Cada par `X`/`XNr12` vai para `physicalState`/`nr12Compliant`, com a chave do quesito em camelCase (`Installed` → `installed`, `SafeArea` → `safeArea`, `Ebt` → `ebt`…), e `pap_standard` para `violatedStandardIds`. Sem `location` (o legado não tem). A seção sem foto migra com as respostas como estão, mas continua fora do laudo, como no legado.
+- **PE:** cada linha de `pe` vira um `PeAssessment`, pelo mesmo padrão (`InstalledDevices` → `installedDevices`, `LowVoltage` → `lowVoltage`…), com `photoId` e `pe_standard`.
 - **Número do ponto, do PAP e do PE:** o `sequencial` do legado, dentro da análise.
 
 ---

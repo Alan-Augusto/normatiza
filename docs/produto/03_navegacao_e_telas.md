@@ -417,33 +417,41 @@ Lista dinâmica de pontos identificados, numerados na ordem em que foram levanta
 
 **Gatilho:** ponto com HRN **acima** do limite aceitável (`> 1,0`) gera automaticamente uma tarefa no Plano de Ação ao concluir a análise. Ponto na faixa *Aceitável* fica registrado na análise e no Laudo de Apreciação, mas não gera tarefa — não há o que adequar.
 
-**Etapa 3 — PAP (Pontos de Análise de Perigo)**
+**Etapa 3 — PAP (dispositivos de Partida, Acionamento e Parada)**
 
-Lista dinâmica, como a dos pontos de risco: **um PAP por conjunto de comando** da máquina — o painel principal, a botoeira da descarga. Cada PAP tem um *local* opcional e três seções — **Acionamento**, **Rearme**, **Parada de Emergência** — cada uma com 6 quesitos, avaliados em duas dimensões: *estado físico* (existe / está assim?) e *conformidade NR-12* (atende?).
+> **As siglas são as da tela do legado:** "Dispositivos de PAP (Partida Acionamento e Parada)" e "Dispositivos de PE (Parada de Emergência)". Nomes como "Pontos de Análise de Perigo" e "Pontos de Entropia" vieram de documentação escrita sobre o legado, não do sistema. O stepper escreve o nome por extenso embaixo de cada sigla.
 
-1. **Instalação** — o dispositivo existe?
-2. **Prevenção de acionamento involuntário** — tem proteção contra toque acidental?
-3. **Antifraude** — é difícil burlar ou travar permanentemente?
-4. **Área segura** — aciona sem expor as mãos a partes móveis?
-5. **Extrabaixa tensão** — opera em tensão de comando segura (máx. 24V)?
-6. **Sinalização em português** — identificação clara e legível?
+Lista dinâmica, como a dos pontos de risco: **um PAP por conjunto de comando** da máquina — o painel principal, a botoeira da descarga. Cada PAP tem um *local* opcional e três seções, na ordem do legado — **Partida**, **Parada**, **Rearme** —, cada uma com a foto do dispositivo e 6 quesitos, avaliados em duas dimensões: *estado físico* (Sim / Não) e *conformidade* (Atende NR-12 / Não atende NR-12). Os textos são os do legado, ao pé da letra — as respostas migradas precisam significar o mesmo:
 
-Cada seção tem a foto do botão auditado. O PAP tem uma solução e as normas descumpridas, para o conjunto.
+1. Instalado
+2. Localizado em zona segura
+3. Passível de acionamento acidental
+4. Passível de burla
+5. Está identificado em língua portuguesa
+6. Acionado em EBT ou por dupla isolação
 
-**Etapa 4 — PE (Pontos de Entropia)**
+> Em "Passível de acionamento acidental" e "Passível de burla", **"Sim" é o ruim**. Reescrever como pergunta positiva inverteria o sentido dos dados migrados.
 
-Lista dinâmica, como a do PAP: um PE por parte da máquina avaliada. Checklist de desgaste, envelhecimento e violação. Cada item avaliado em estado físico e conformidade NR-12:
+- **Tudo nasce "Não" e "Não atende NR-12"**, como no legado: quem avalia marca o que de fato é "Sim" ou "Atende". Não há "sem resposta" — e o quesito que ninguém olhou sai como não conformidade, não calado.
+- **A foto abre a seção.** Os quesitos de uma seção aparecem depois da foto do dispositivo dela, e seção sem foto não entra no laudo (o laudo do legado só preenche a seção que tem foto). É o caso do conjunto que não tem aquele dispositivo — uma botoeira sem rearme.
+- O PAP tem um **parecer técnico** (itens da NR-12, só da seção **12.4 — Dispositivos de partida, acionamento e parada**, como no legado) e **possíveis soluções**, para o conjunto.
 
-- Dispositivo de partida com desgaste
-- Ausência de controle em baixa tensão no circuito exposto
-- Rearme por comutador fixo em vez de manual momentâneo
-- Ausência ou má conservação de sinalização em português
-- Dispositivos de controle burlados ou danificados
-- Proteções abertas sem intertravamento ativo
-- Acionamento de um motor disparando outro circuito perigoso
-- Ausência de retenção elétrica de segurança em queda de energia
+**Etapa 4 — PE (dispositivos de Parada de Emergência)**
 
-Local opcional, campo de solução, normas descumpridas e foto do painel elétrico ou parte desgastada.
+Lista dinâmica, como a do PAP: um PE por dispositivo de parada de emergência avaliado. Uma foto, e 8 quesitos nas mesmas duas dimensões, com o texto e a ordem do legado:
+
+1. Há dispositivos de seg. instalados
+2. O dispositivo é usado para partida
+3. Pode ser acionado por outro operador
+4. É passível de burla
+5. Está identificado em língua portuguesa
+6. Exige rearme manual
+7. Apresenta retenção após acionado
+8. Acionado em extrabaixa tensão
+
+Também nascem "Não" e "Não atende NR-12". No laudo do legado, as respostas do PE saem com ou sem foto. Local opcional, **parecer técnico** (só da seção **12.6 — Dispositivos de parada de emergência**) e **possíveis soluções**.
+
+**Salvar no assistente.** Sair de onde se está sempre salva, como no legado: **Avançar**, **Voltar** e o clique numa etapa do stepper gravam a ficha, ou o ponto, PAP ou PE aberto no editor, antes de trocar de etapa; **Voltar à lista** no editor também grava. **Salvar**, no rodapé, grava e fica na tela. Não há "alterações não salvas?" dentro do assistente — a pergunta só aparece para quem sai da análise. As duas exceções: item novo deixado em branco não vira item, e ponto com HRN pela metade não sai do editor (a tela diz o que falta).
 
 **Conclusão da análise:** revisão do resumo (pontos identificados, HRN por ponto, não conformidades PAP/PE) → confirmação → **congela a análise, gera as tarefas do plano de ação e notifica o cliente**.
 

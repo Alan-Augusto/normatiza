@@ -1,48 +1,61 @@
 /**
- * PAP — Pontos de Análise de Perigo (docs/produto/03 §5.2, 04 §4): um por
- * conjunto de comando da máquina, com três seções e os mesmos seis quesitos em
- * cada uma. Cada quesito se responde em duas dimensões independentes.
+ * PAP — dispositivos de Partida, Acionamento e Parada (docs/produto/03 §5.2,
+ * 04 §4): um por conjunto de comando da máquina, com três seções e os mesmos
+ * seis quesitos em cada uma. Nomes, ordem e textos são os da tela do legado:
+ * as respostas migradas precisam significar o mesmo.
  */
 
 import type { RecognitionPhoto } from './dto';
 
+/** O nome por extenso, para quem não conhece a sigla. */
+export const PAP_NAME = 'Partida, acionamento e parada';
+
 /**
- * Um quesito respondido. Nulo = ainda sem resposta: o rascunho guarda o que
- * tiver. As duas dimensões são independentes — o botão pode existir e não
- * atender, e o legado as grava separadas.
+ * Um quesito respondido nas duas dimensões do legado, cada uma sim ou não.
+ * Nasce "Não" e "Não atende": quem avalia marca o que de fato é "Sim" ou
+ * "Atende" — e o que ficou sem olhar sai como não conformidade, não calado.
  */
 export interface ChecklistAnswer {
-  /** Existe / está assim? */
-  physicalState: boolean | null;
+  /** A afirmação do quesito vale para o dispositivo? */
+  physicalState: boolean;
   /** Atende à NR-12? */
-  nr12Compliant: boolean | null;
+  nr12Compliant: boolean;
 }
 
-export type PapSection = 'activation' | 'reset' | 'emergencyStop';
+export type PapSection = 'activation' | 'stop' | 'reset';
 
 export const PAP_SECTIONS: ReadonlyArray<{ key: PapSection; label: string }> = [
-  { key: 'activation', label: 'Acionamento' },
+  { key: 'activation', label: 'Partida' },
+  { key: 'stop', label: 'Parada' },
   { key: 'reset', label: 'Rearme' },
-  { key: 'emergencyStop', label: 'Parada de Emergência' },
 ];
 
-export type PapCriterion = 'installed' | 'accidental' | 'antiFraud' | 'safeArea' | 'extraLowVoltage' | 'portuguese';
+export type PapCriterion = 'installed' | 'safeArea' | 'accidental' | 'antiFraud' | 'portuguese' | 'ebt';
 
-/** Os seis quesitos, na ordem e com o sentido do legado (03 §5.2). */
-export const PAP_CRITERIA: ReadonlyArray<{ key: PapCriterion; label: string; question: string }> = [
-  { key: 'installed', label: 'Instalação', question: 'O dispositivo existe?' },
-  { key: 'accidental', label: 'Prevenção de acionamento involuntário', question: 'Tem proteção contra toque acidental?' },
-  { key: 'antiFraud', label: 'Antifraude', question: 'É difícil burlar ou travar permanentemente?' },
-  { key: 'safeArea', label: 'Área segura', question: 'Aciona sem expor as mãos a partes móveis?' },
-  { key: 'extraLowVoltage', label: 'Extrabaixa tensão', question: 'Opera em tensão de comando segura (máx. 24 V)?' },
-  { key: 'portuguese', label: 'Sinalização em português', question: 'A identificação é clara e legível?' },
+/**
+ * Os seis quesitos, com o texto do legado. Atenção ao sentido: em "Passível de
+ * acionamento acidental" e "Passível de burla", "Sim" é o ruim.
+ */
+export const PAP_CRITERIA: ReadonlyArray<{ key: PapCriterion; label: string }> = [
+  { key: 'installed', label: 'Instalado' },
+  { key: 'safeArea', label: 'Localizado em zona segura' },
+  { key: 'accidental', label: 'Passível de acionamento acidental' },
+  { key: 'antiFraud', label: 'Passível de burla' },
+  { key: 'portuguese', label: 'Está identificado em língua portuguesa' },
+  { key: 'ebt', label: 'Acionado em EBT ou por dupla isolação' },
 ];
+
+/** O item de norma de onde saem as normas do PAP: 12.4, como no legado. */
+export const PAP_STANDARD_SECTION = '12.4';
 
 export type PapAnswers = Record<PapCriterion, ChecklistAnswer>;
 
 export interface PapSectionDto {
   answers: PapAnswers;
-  /** A foto do botão ou do painel daquela seção. */
+  /**
+   * A foto do dispositivo daquela seção. É ela que diz que a seção foi
+   * avaliada: sem foto, o laudo não traz a seção (como no legado).
+   */
   photo?: RecognitionPhoto;
 }
 
@@ -60,7 +73,8 @@ export interface PapDto {
 
 /**
  * Corpo de `PUT …/analyses/:number/paps/:id`, com o id gerado no aparelho.
- * O PAP inteiro: o que não vier é limpo. As fotos vão por rota própria.
+ * O PAP inteiro: o que não vier é limpo (volta a "Não"). As fotos vão por
+ * rota própria.
  */
 export interface PapUpsert {
   location?: string | null;
@@ -70,13 +84,18 @@ export interface PapUpsert {
 }
 
 export function emptyPapAnswers(): PapAnswers {
-  return Object.fromEntries(PAP_CRITERIA.map((c) => [c.key, { physicalState: null, nr12Compliant: null }])) as PapAnswers;
+  return Object.fromEntries(PAP_CRITERIA.map((c) => [c.key, { physicalState: false, nr12Compliant: false }])) as PapAnswers;
 }
 
-/** Os quesitos que não atendem à NR-12, nas três seções. É o que o laudo aponta. */
+/** As seções avaliadas: as que têm foto. */
+export function papAssessedSections(pap: Pick<PapDto, 'sections'>): PapSection[] {
+  return PAP_SECTIONS.filter((s) => !!pap.sections[s.key].photo).map((s) => s.key);
+}
+
+/** Os quesitos que não atendem à NR-12, nas seções avaliadas. É o que o laudo aponta. */
 export function papNonConformities(pap: Pick<PapDto, 'sections'>): number {
-  return PAP_SECTIONS.reduce(
-    (total, s) => total + PAP_CRITERIA.filter((c) => pap.sections[s.key].answers[c.key].nr12Compliant === false).length,
+  return papAssessedSections(pap).reduce(
+    (total, s) => total + PAP_CRITERIA.filter((c) => !pap.sections[s].answers[c.key].nr12Compliant).length,
     0,
   );
 }

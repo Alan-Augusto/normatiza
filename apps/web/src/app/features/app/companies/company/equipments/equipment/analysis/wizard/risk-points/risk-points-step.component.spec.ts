@@ -95,7 +95,7 @@ describe('RiskPointsStepComponent', () => {
     escolher({ consequencias: ['hc-esmagamento'], hrn: { fe: 2.5, pe: 8, mpl: 6, np: 1 } });
     expect(texto('resultado-hrn')).toContain('120 Risco Muito Alto');
 
-    clicar('salvar-ponto');
+    clicar('voltar-a-lista');
     const req = http.expectOne((r) => r.url.startsWith(`${ANALISE}/risk-points/`));
     expect(req.request.method).toBe('PUT');
     expect(req.request.url).toMatch(/risk-points\/[0-9a-f-]{36}$/);
@@ -114,15 +114,26 @@ describe('RiskPointsStepComponent', () => {
     expect(texto('ponto-1')).toContain('120 Risco Muito Alto');
   });
 
-  it('não deve gravar HRN pela metade', () => {
+  it('deve voltar à lista sem gravar o ponto novo deixado em branco', () => {
+    abrir();
+    clicar('primeiro-ponto');
+
+    clicar('voltar-a-lista');
+
+    expect(el('sem-pontos')).not.toBeNull();
+    expect(emitidos).toEqual([]);
+  });
+
+  it('deve ficar no editor, dizendo o que falta, quando o HRN está pela metade', () => {
     abrir();
     clicar('primeiro-ponto');
 
     escolher({ hrn: { fe: 2.5, pe: 8, mpl: null, np: null } });
     expect(texto('resultado-hrn')).toContain('Faltam 2 fatores');
-    clicar('salvar-ponto');
+    clicar('voltar-a-lista');
 
     expect(texto('erro-ponto')).toContain('quatro fatores');
+    expect(el('editor')).not.toBeNull();
   });
 
   it('deve mostrar a ajuda de aplicação da probabilidade escolhida', () => {
@@ -144,7 +155,7 @@ describe('RiskPointsStepComponent', () => {
     responder('frequencia', 'F2');
     responder('possibilidade', 'P1');
     expect(texto('resultado-categoria')).toBe('Categoria 3');
-    clicar('salvar-ponto');
+    clicar('voltar-a-lista');
 
     const req = http.expectOne((r) => r.url.startsWith(`${ANALISE}/risk-points/`));
     expect(req.request.body.safetyCategory).toEqual({ severity: 2, frequency: 2, possibility: 1 });
@@ -223,7 +234,8 @@ describe('RiskPointsStepComponent', () => {
     expect(el('excluir-ponto-1')).toBeNull();
     clicar('abrir-ponto-1');
 
-    expect(el('salvar-ponto')).toBeNull();
     expect((el('campo-local') as HTMLInputElement).disabled).toBe(true);
+    clicar('voltar-a-lista');
+    expect(el('pontos')).not.toBeNull();
   });
 });

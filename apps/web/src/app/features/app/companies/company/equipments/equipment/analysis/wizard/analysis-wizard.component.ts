@@ -12,10 +12,12 @@ import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Step, StepList, Stepper } from 'primeng/stepper';
-import { map, timeout } from 'rxjs';
+import { Observable, catchError, finalize, map, of, timeout } from 'rxjs';
 
 import {
   ANALYSIS_STATUS_LABEL,
+  PAP_NAME,
+  PE_NAME,
   RECOGNITION_VIEWS,
   RECOGNITION_VIEW_LABEL,
   SAFETY_MANAGEMENT_QUESTIONS,
@@ -39,7 +41,7 @@ import { NumeroComponent } from '../../../../../../../../shared/components/form/
 import { EquipmentContext } from '../../equipment-context';
 import { linhasDaFicha } from '../../ficha-do-ativo';
 import { PapStepComponent } from './pap/pap-step.component';
-import { RiskPointsStepComponent, type AlvoDaAnalise } from './risk-points/risk-points-step.component';
+import { RiskPointsStepComponent, type AlvoDaAnalise, type ResultadoDoSalvar } from './risk-points/risk-points-step.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
@@ -49,6 +51,8 @@ interface Etapa {
   valor: number;
   chave: 'ficha' | 'pontos' | 'pap' | 'pe';
   titulo: string;
+  /** O que a sigla quer dizer, embaixo dela. */
+  legenda?: string;
   icone: string;
   /** Ainda não construída: a etapa aparece, e diz que chega depois. */
   futura?: boolean;
@@ -57,8 +61,8 @@ interface Etapa {
 const ETAPAS: readonly Etapa[] = [
   { valor: 1, chave: 'ficha', titulo: 'Ficha técnica', icone: 'lucideClipboardList' },
   { valor: 2, chave: 'pontos', titulo: 'Pontos de risco', icone: 'lucideTriangleAlert' },
-  { valor: 3, chave: 'pap', titulo: 'PAP', icone: 'lucidePower' },
-  { valor: 4, chave: 'pe', titulo: 'PE', icone: 'lucideWrench', futura: true },
+  { valor: 3, chave: 'pap', titulo: 'PAP', legenda: PAP_NAME, icone: 'lucidePower' },
+  { valor: 4, chave: 'pe', titulo: 'PE', legenda: PE_NAME, icone: 'lucideWrench', futura: true },
 ];
 
 /** Sim, não — e, sem nenhum dos dois marcado, sem resposta. */
@@ -71,9 +75,10 @@ const SIM_OU_NÃO = [
  * O assistente da análise — Contexto 3 (docs/produto/03 §5.2).
  *
  * Nada é obrigatório para salvar: o rascunho guarda o que tiver, e o que o
- * laudo exige se confere ao concluir. As fotos sobem na hora em que são
- * escolhidas — são pesadas, e perder quatro fotos num clique em "Sair" seria o
- * pior tipo de perda. Os campos esperam o **Salvar**.
+ * laudo exige se confere ao concluir. **Sair de onde se está sempre salva**,
+ * como no legado: Avançar, Voltar e o clique no stepper gravam a ficha ou o
+ * item aberto no editor antes de trocar de etapa, e o Salvar grava e fica.
+ * As fotos sobem na hora em que são escolhidas.
  */
 @Component({
   selector: 'app-analysis-wizard',
@@ -124,13 +129,14 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   readonly erro = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
   readonly salvando = signal(false);
+  /** Salvando para sair da etapa, ou pelo Salvar do rodapé. */
+  readonly ocupado = signal(false);
   readonly passo = signal(1);
   /** A vista cuja foto está subindo, para o botão dela mostrar que está ocupado. */
   readonly enviando = signal<RecognitionView | null>(null);
   readonly erroDaFoto = signal<string | null>(null);
   readonly descartando = signal(false);
   readonly confirmandoDescarte = signal(false);
-  private readonly fichaAlterada = signal(false);
 
   private readonly numero = toSignal(this.route.paramMap.pipe(map((p) => Number(p.get('numero')))), {
     initialValue: Number(this.route.snapshot?.paramMap.get('numero')),
@@ -184,8 +190,6 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
       const numero = this.numero();
       if (empresa && equipamento && Number.isInteger(numero)) this.carregar(empresa.id, equipamento.code, numero);
     });
-    // O `dirty` do formulário não avisa ninguém; o botão de avançar precisa saber.
-    this.form.valueChanges.subscribe(() => this.fichaAlterada.set(this.form.dirty));
   }
 
   rotuloDoStatus(): string {
@@ -201,36 +205,47 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     return this.form.controls[chave];
   }
 
-  /**
-   * Trocar de etapa com um ponto aberto no editor e alterado perderia o
-   * ponto: pergunta antes, como a guarda de saída da tela.
-   */
+  /** Trocar de etapa — pelo stepper, por Avançar ou por Voltar — salva antes; se não salvou, fica. */
   irPara(valor: number | undefined): void {
-    if (!valor || valor === this.passo()) return;
-    if (this.etapaDosPontos()?.temAlteracoes() && !window.confirm('O ponto aberto tem alterações não salvas. Trocar de etapa mesmo assim?')) {
-      return;
-    }
-    if (this.etapaDoPap()?.temAlteracoes() && !window.confirm('O PAP aberto tem alterações não salvas. Trocar de etapa mesmo assim?')) {
-      return;
-    }
-    this.passo.set(valor);
-    this.aviso.set(null);
+    if (!valor || valor === this.passo() || this.ocupado()) return;
+    this.salvarEtapa().subscribe((r) => {
+      if (r === 'erro') return;
+      this.passo.set(valor);
+      this.aviso.set(null);
+    });
   }
 
   readonly primeiraEtapa = computed(() => this.passo() === 1);
   readonly ultimaEtapa = computed(() => this.passo() === ETAPAS.length);
 
-  /** Na ficha com alteração, avançar salva antes: ninguém sai da etapa sem gravar sem perceber. */
-  readonly avancarSalva = computed(() => this.etapaAtual().chave === 'ficha' && this.editavel() && this.fichaAlterada());
-
   avancar(): void {
-    const proxima = Math.min(this.passo() + 1, ETAPAS.length);
-    if (this.avancarSalva()) this.salvar(() => this.irPara(proxima));
-    else this.irPara(proxima);
+    this.irPara(Math.min(this.passo() + 1, ETAPAS.length));
   }
 
   voltar(): void {
     this.irPara(Math.max(1, this.passo() - 1));
+  }
+
+  /** O Salvar do rodapé: grava o que está na tela e fica nela. */
+  salvarAqui(): void {
+    if (this.ocupado()) return;
+    this.salvarEtapa().subscribe((r) => {
+      if (r === 'nada') this.aviso.set('Tudo salvo.');
+    });
+  }
+
+  /** O que a etapa atual tem por gravar: a ficha, ou o item aberto no editor. */
+  private salvarEtapa(): Observable<ResultadoDoSalvar> {
+    if (!this.editavel()) return of('nada');
+    const chave = this.etapaAtual().chave;
+    let salvar$: Observable<ResultadoDoSalvar>;
+    if (chave === 'ficha') salvar$ = this.form.dirty ? this.salvarFicha() : of('nada');
+    else if (chave === 'pontos') salvar$ = this.etapaDosPontos()?.salvarAberto() ?? of('nada');
+    else if (chave === 'pap') salvar$ = this.etapaDoPap()?.salvarAberto() ?? of('nada');
+    else salvar$ = of('nada');
+    this.ocupado.set(true);
+    this.aviso.set(null);
+    return salvar$.pipe(finalize(() => this.ocupado.set(false)));
   }
 
   /** Enter num campo não salva: salvar é um clique, como nos cadastros. */
@@ -252,30 +267,25 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     this.analise.update((a) => (a ? { ...a, paps } : a));
   }
 
-  salvar(depois?: () => void): void {
-    const empresa = this.empresa();
-    const equipamento = this.equipamento();
-    const analise = this.analise();
-    if (!empresa || !equipamento || !analise || this.salvando()) return;
-
+  private salvarFicha(): Observable<ResultadoDoSalvar> {
+    const alvo = this.alvo();
+    if (!alvo || this.salvando()) return of('erro');
     this.salvando.set(true);
     this.erro.set(null);
-    this.aviso.set(null);
-    this.service
-      .updateSheet(empresa.id, equipamento.code, analise.number, this.corpo())
-      .pipe(timeout(LIMITE_DE_ESPERA_MS))
-      .subscribe({
-        next: (salva) => {
-          this.salvando.set(false);
-          this.preencher(salva);
-          this.aviso.set('Rascunho salvo.');
-          depois?.();
-        },
-        error: (erro: unknown) => {
-          this.salvando.set(false);
-          this.erro.set(mensagemDoServidor(erro, 'Não foi possível salvar. Confira a conexão e tente de novo.'));
-        },
-      });
+    return this.service.updateSheet(alvo.companyId, alvo.code, alvo.number, this.corpo()).pipe(
+      timeout(LIMITE_DE_ESPERA_MS),
+      map((salva): ResultadoDoSalvar => {
+        this.salvando.set(false);
+        this.preencher(salva);
+        this.aviso.set('Rascunho salvo.');
+        return 'salvo';
+      }),
+      catchError((erro: unknown) => {
+        this.salvando.set(false);
+        this.erro.set(mensagemDoServidor(erro, 'Não foi possível salvar. Confira a conexão e tente de novo.'));
+        return of<ResultadoDoSalvar>('erro');
+      }),
+    );
   }
 
   aoEscolherFoto(vista: RecognitionView, evento: Event): void {
@@ -371,7 +381,6 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
 
   private preencher(a: AnalysisDetail): void {
     this.analise.set(a);
-    this.fichaAlterada.set(false);
     this.form.reset({
       tecnico: a.fieldTechnician?.id ?? null,
       ciclo: a.sheet.times.cycleTimeSec ?? null,

@@ -537,16 +537,16 @@ model FileAsset {
   capturedAt       DateTime?
   capturedByUserId String?
 
-  logoOf             Company?       @relation("CompanyLogo")
-  mainPhotoOf        Equipment?     @relation("EquipmentMainPhoto")
-  frontOf            Analysis?      @relation("AnalysisFrontPhoto")
-  leftSideOf         Analysis?      @relation("AnalysisLeftSidePhoto")
-  rightSideOf        Analysis?      @relation("AnalysisRightSidePhoto")
-  rearOf             Analysis?      @relation("AnalysisRearPhoto")
-  hazardOf           RiskPoint?     @relation("RiskPointHazardPhoto")
-  papActivationOf    PapAssessment? @relation("PapActivationPhoto")
-  papResetOf         PapAssessment? @relation("PapResetPhoto")
-  papEmergencyStopOf PapAssessment? @relation("PapEmergencyStopPhoto")
+  logoOf          Company?       @relation("CompanyLogo")
+  mainPhotoOf     Equipment?     @relation("EquipmentMainPhoto")
+  frontOf         Analysis?      @relation("AnalysisFrontPhoto")
+  leftSideOf      Analysis?      @relation("AnalysisLeftSidePhoto")
+  rightSideOf     Analysis?      @relation("AnalysisRightSidePhoto")
+  rearOf          Analysis?      @relation("AnalysisRearPhoto")
+  hazardOf        RiskPoint?     @relation("RiskPointHazardPhoto")
+  papActivationOf PapAssessment? @relation("PapActivationPhoto")
+  papResetOf      PapAssessment? @relation("PapResetPhoto")
+  papStopOf       PapAssessment? @relation("PapStopPhoto")
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -993,15 +993,16 @@ model PapAssessment {
 
   /// As três seções × seis quesitos × {physicalState, nr12Compliant}, no
   /// formato de `PapAnswers` por seção (`@normatiza/shared`). Validado na
-  /// gravação; nulo = ainda sem resposta.
+  /// gravação; o que não veio é "Não", como no legado.
   answers Json
 
-  activationPhotoFileId    String?    @unique
-  activationPhoto          FileAsset? @relation("PapActivationPhoto", fields: [activationPhotoFileId], references: [id])
-  resetPhotoFileId         String?    @unique
-  resetPhoto               FileAsset? @relation("PapResetPhoto", fields: [resetPhotoFileId], references: [id])
-  emergencyStopPhotoFileId String?    @unique
-  emergencyStopPhoto       FileAsset? @relation("PapEmergencyStopPhoto", fields: [emergencyStopPhotoFileId], references: [id])
+  /// A foto de cada seção é o que diz que ela foi avaliada (como no legado).
+  activationPhotoFileId String?    @unique
+  activationPhoto       FileAsset? @relation("PapActivationPhoto", fields: [activationPhotoFileId], references: [id])
+  resetPhotoFileId      String?    @unique
+  resetPhoto            FileAsset? @relation("PapResetPhoto", fields: [resetPhotoFileId], references: [id])
+  stopPhotoFileId       String?    @unique
+  stopPhoto             FileAsset? @relation("PapStopPhoto", fields: [stopPhotoFileId], references: [id])
 
   violatedStandardIds String[] @default([])
   solution            String?

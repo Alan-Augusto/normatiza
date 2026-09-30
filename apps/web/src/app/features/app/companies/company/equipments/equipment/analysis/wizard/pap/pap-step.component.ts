@@ -13,8 +13,11 @@ import { Observable, catchError, map, of, startWith, switchMap, timeout } from '
 
 import {
   PAP_CRITERIA,
+  PAP_NAME,
   PAP_SECTIONS,
+  PAP_STANDARD_SECTION,
   emptyPapAnswers,
+  papAssessedSections,
   papNonConformities,
   type AnalysisCatalogsDto,
   type PapCriterion,
@@ -30,26 +33,24 @@ import { CatalogsService } from '@core/services/catalogs.service';
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { FotoDoItemComponent } from '../foto/foto-do-item.component';
 import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
-import type { AlvoDaAnalise } from '../risk-points/risk-points-step.component';
+import type { AlvoDaAnalise, ResultadoDoSalvar } from '../risk-points/risk-points-step.component';
 
 const LIMITE_DE_ESPERA_MS = 20_000;
 
-type Resposta = FormGroup<{ physicalState: FormControl<boolean | null>; nr12Compliant: FormControl<boolean | null> }>;
+type Resposta = FormGroup<{ physicalState: FormControl<boolean>; nr12Compliant: FormControl<boolean> }>;
 type Secao = FormGroup<Record<PapCriterion, Resposta>>;
 
-/** O que uma seção tem até agora: quantos respondidos e quantos não atendem. */
-export interface ResumoDaSecao {
-  respondidos: number;
-  naoConformes: number;
-}
 
 /**
- * Etapa 3 do assistente — os PAP (docs/produto/03 §5.2): um por conjunto de
- * comando da máquina. Mesma forma da etapa dos pontos: a lista, e um editor de
- * cada vez no lugar dela, gravado inteiro pelo id gerado aqui (D11).
+ * Etapa 3 do assistente — os PAP, dispositivos de partida, acionamento e parada
+ * (docs/produto/03 §5.2): um por conjunto de comando da máquina. Mesma forma da
+ * etapa dos pontos: a lista, e um editor de cada vez no lugar dela, gravado
+ * inteiro pelo id gerado aqui (D11).
  *
- * As três seções ficam em abas: dezoito quesitos em fila não cabem no celular,
- * e a aba diz quanto de cada seção já foi respondido e quanto não atende.
+ * Segue a tela do legado: as seções Partida, Parada e Rearme, os quesitos com o
+ * texto dele, tudo nascendo "Não" e "Não atende", e os quesitos de uma seção
+ * aparecendo depois da foto dela — a foto é o que diz que a seção foi avaliada.
+ * As seções ficam em abas: dezoito quesitos em fila não cabem no celular.
  */
 @Component({
   selector: 'app-pap-step',
@@ -81,6 +82,7 @@ export class PapStepComponent {
   readonly editavel = input(false);
   readonly papsChange = output<PapDto[]>();
 
+  readonly nome = PAP_NAME;
   readonly secoes = PAP_SECTIONS;
   readonly quesitos = PAP_CRITERIA;
   readonly opcoesFisico = [
@@ -88,8 +90,8 @@ export class PapStepComponent {
     { label: 'Não', value: false },
   ];
   readonly opcoesNr12 = [
-    { label: 'Atende', value: true },
-    { label: 'Não atende', value: false },
+    { label: 'Atende NR-12', value: true },
+    { label: 'Não atende NR-12', value: false },
   ];
 
   readonly catalogos = toSignal(
@@ -100,6 +102,11 @@ export class PapStepComponent {
         catchError(() => of({ pacote: null, erro: true })),
       ),
     { initialValue: { pacote: null, erro: false } },
+  );
+
+  /** As normas do PAP saem da 12.4, como no legado. */
+  readonly secoesDeNorma = computed(() =>
+    (this.catalogos().pacote?.standardSections ?? []).filter((s) => s.name.startsWith(`${PAP_STANDARD_SECTION} `)),
   );
 
   readonly editando = signal<{ id: string; existente: PapDto | null } | null>(null);
@@ -126,21 +133,12 @@ export class PapStepComponent {
     initialValue: this.form.getRawValue(),
   });
 
-  /** O resumo de cada aba, enquanto se responde. */
-  readonly resumo = computed(() => {
+  /** O que não atende em cada aba, enquanto se responde. */
+  readonly naoConformesPorSecao = computed(() => {
     const secoes = this.valores().secoes;
     return Object.fromEntries(
-      PAP_SECTIONS.map((s) => {
-        const respostas = Object.values(secoes[s.key]);
-        return [
-          s.key,
-          {
-            respondidos: respostas.filter((r) => r.physicalState !== null || r.nr12Compliant !== null).length,
-            naoConformes: respostas.filter((r) => r.nr12Compliant === false).length,
-          },
-        ];
-      }),
-    ) as Record<PapSection, ResumoDaSecao>;
+      PAP_SECTIONS.map((s) => [s.key, Object.values(secoes[s.key]).filter((r) => !r.nr12Compliant).length]),
+    ) as Record<PapSection, number>;
   });
 
   // ── Leitura da lista ─────────────────────────────────────────────────────
@@ -149,21 +147,19 @@ export class PapStepComponent {
     return papNonConformities(pap);
   }
 
-  /** Os quesitos sem nenhuma das duas respostas, nas três seções. */
-  semResposta(pap: PapDto): number {
-    return PAP_SECTIONS.reduce(
-      (total, s) =>
-        total + PAP_CRITERIA.filter((c) => pap.sections[s.key].answers[c.key].physicalState === null && pap.sections[s.key].answers[c.key].nr12Compliant === null).length,
-      0,
-    );
+  /** Nulo quando a seção não foi avaliada (sem foto): ela não entra no laudo. */
+  naoConformesNaSecao(pap: PapDto, secao: PapSection): number | null {
+    if (!pap.sections[secao].photo) return null;
+    return PAP_CRITERIA.filter((c) => !pap.sections[secao].answers[c.key].nr12Compliant).length;
   }
 
-  naoConformesNaSecao(pap: PapDto, secao: PapSection): number {
-    return PAP_CRITERIA.filter((c) => pap.sections[secao].answers[c.key].nr12Compliant === false).length;
+  avaliadas(pap: PapDto): number {
+    return papAssessedSections(pap).length;
   }
 
-  fotos(pap: PapDto): number {
-    return PAP_SECTIONS.filter((s) => pap.sections[s.key].photo).length;
+  /** A foto da seção no editor: é ela que abre os quesitos. */
+  fotoDaSecao(secao: PapSection) {
+    return this.editando()?.existente?.sections[secao].photo;
   }
 
   resposta(secao: PapSection, quesito: PapCriterion): Resposta {
@@ -190,15 +186,26 @@ export class PapStepComponent {
     this.erroDaFoto.set(null);
   }
 
-  salvar(): void {
+  /**
+   * Salva o PAP aberto, se há o que salvar — o que o assistente chama antes de
+   * trocar de etapa, e o que "Voltar à lista" faz. PAP novo em branco não vira PAP.
+   */
+  salvarAberto(): Observable<ResultadoDoSalvar> {
     const aberto = this.editando();
-    if (!aberto || this.salvando()) return;
-    this.gravar(aberto.id).subscribe({
-      next: (pap) => {
+    if (!aberto || !this.editavel() || !this.form.dirty) return of('nada');
+    if (this.salvando()) return of('erro');
+    return this.gravar(aberto.id).pipe(
+      map((pap): ResultadoDoSalvar => {
         this.aviso.set(`PAP ${pap.number} salvo.`);
-        this.fechar();
-      },
-      error: () => undefined,
+        return 'salvo';
+      }),
+      catchError(() => of<ResultadoDoSalvar>('erro')),
+    );
+  }
+
+  voltarALista(): void {
+    this.salvarAberto().subscribe((r) => {
+      if (r !== 'erro') this.fechar();
     });
   }
 
@@ -283,7 +290,7 @@ export class PapStepComponent {
       Object.fromEntries(
         PAP_CRITERIA.map((c) => [
           c.key,
-          this.fb.group({ physicalState: this.fb.control<boolean | null>(null), nr12Compliant: this.fb.control<boolean | null>(null) }),
+          this.fb.group({ physicalState: this.fb.control(false), nr12Compliant: this.fb.control(false) }),
         ]),
       ) as Record<PapCriterion, Resposta>,
     );

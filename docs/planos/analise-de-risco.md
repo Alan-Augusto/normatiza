@@ -34,7 +34,8 @@ O assistente de análise do equipamento, nas 4 etapas de 03 §5.2 — ficha téc
 | D12 | **HRN: os quatro fatores ou nenhum** | No rascunho o ponto pode ficar sem HRN, mas não pela metade: três fatores sem o quarto não são um risco. O servidor recusa peso fora da tabela e calcula resultado e faixa com a tabela da análise (`calculateHrn`), guardando os dois para a lista mostrar o pior HRN sem recalcular |
 | D13 | **Catálogos por id, em listas** | Origens, consequências, proteções e normas são listas de ids nas colunas do ponto (`String[]`), conferidas contra o catálogo na gravação. O catálogo nunca apaga item (migracao §7), então a lista não fica apontando para o vazio, e o app offline grava o ponto de uma vez só |
 | D14 | **Cores de risco são as do laudo do legado** | Uma por faixa, em tokens do design system (`--color-risk-*`), para a tela e o laudo falarem a mesma língua. `app-hrn-badge` é o único jeito de mostrar um HRN |
-| D15 | **PAP e PE sem justificativa por quesito** | Cada quesito tem só as duas respostas (estado físico e NR-12), cada uma sim, não ou sem resposta. O porquê de um "não atende" está nas normas descumpridas e na solução, que são do conjunto. O legado não tem justificativa, e 18 campos de texto por PAP ninguém preencheria em campo (04 §4) |
+| D15 | **PAP e PE como no legado** | Siglas, seções, quesitos, textos e ordem são os da tela do legado (03 §5.2): PAP é Partida, Acionamento e Parada; PE é Parada de Emergência. Cada quesito tem as duas respostas, cada uma sim ou não, e tudo nasce "Não" e "Não atende NR-12" — sem "sem resposta" e sem justificativa por quesito (o porquê está no parecer técnico e nas possíveis soluções, do conjunto). Na seção do PAP, a foto é o que diz que ela foi avaliada: sem foto, fica fora do laudo. O parecer técnico só oferece a seção de normas do legado: 12.4 no PAP, 12.6 no PE |
+| D16 | **Sair sempre salva** | No assistente, Avançar, Voltar, o clique no stepper e "Voltar à lista" gravam o que está aberto (a ficha, ou o item no editor) antes de sair; Salvar grava e fica. Sem "alterações não salvas?" dentro do assistente, como no legado. Não salva, e fica: item novo em branco (não vira item) e ponto com HRN pela metade (D12) |
 
 ## 3. Fatias
 
@@ -60,13 +61,13 @@ O passo a passo de cada uma se escreve aqui quando ela começar.
 - [x] Testes do painel.
 
 ### Fatia 3 — PAP e PE
-- [x] Shared: `ChecklistAnswer`, as 3 seções e os 6 quesitos com o texto de 03 §5.2, `PapDto`/`PapUpsert`, `papNonConformities`. O detalhe da análise ganha `paps`.
+- [x] Shared: `ChecklistAnswer`, as 3 seções e os 6 quesitos com o texto do legado (D15), `PapDto`/`PapUpsert`, `papNonConformities` (só as seções com foto). O detalhe da análise ganha `paps`.
 - [x] Prisma: `PapAssessment` (número, local, respostas em JSON, uma foto por seção, normas, solução).
-- [x] API: `PUT`/`DELETE …/analyses/:number/paps/:id` pelo id do aparelho (como D11), com renumeração; foto por seção em `…/paps/:id/photos/:section`. As respostas voltam sempre com as três seções completas (D15).
+- [x] API: `PUT`/`DELETE …/analyses/:number/paps/:id` pelo id do aparelho (como D11), com renumeração; foto por seção em `…/paps/:id/photos/:section`. As respostas voltam sempre com as três seções completas, com "Não" no que não veio (D15).
 - [x] Testes de API.
-- [x] Painel: etapa 3 com a lista (não conformidades por seção, quesitos sem resposta) e o editor com as seções em abas, cada aba com o progresso e o que não atende; o seletor de normas e a foto viram componentes da análise, usados também pelos pontos.
+- [x] Painel: etapa 3 com a lista (não conformidades por seção, seção sem foto) e o editor com as seções em abas — a foto abre os quesitos, e a aba diz o que não atende; o seletor de normas e a foto viram componentes da análise, usados também pelos pontos. O stepper escreve o nome por extenso de PAP e PE, e o assistente passa a salvar ao sair (D16).
 - [x] Testes do painel.
-- [ ] PE: o mesmo desenho, com um checklist só, de 8 quesitos, e uma foto.
+- [ ] PE: o mesmo desenho, com um checklist só, de 8 quesitos do legado, uma foto e o parecer da 12.6.
 - [ ] Aceite no homelab: Fernando avalia dois conjuntos de comando, com fotos por seção; exclui o primeiro e o outro sobe.
 
 ### Próximas

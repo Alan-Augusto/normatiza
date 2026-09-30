@@ -95,7 +95,7 @@ const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
       min-height: 1rem;
       font-size: var(--text-xs);
       line-height: 1rem;
-      color: var(--p-red-500);
+      color: var(--color-danger);
     }
   `,
 })

@@ -36,7 +36,12 @@
                   (click)="irPara(etapa.valor)"
                 >
                   <span class="etapa-icone"><ng-icon [name]="etapa.icone" /></span>
-                  <span class="etapa-titulo">{{ etapa.titulo }}</span>
+                  <span class="etapa-titulo">
+                    {{ etapa.titulo }}
+                    @if (etapa.legenda) {
+                      <span class="etapa-legenda">{{ etapa.legenda }}</span>
+                    }
+                  </span>
                 </button>
               </ng-template>
             </p-step>
@@ -207,22 +212,14 @@
         </div>
         <div class="flex items-center gap-2">
           @if (!primeiraEtapa()) {
-            <p-button data-testid="voltar" type="button" label="Voltar" severity="secondary" [outlined]="true" (onClick)="voltar()" />
+            <p-button data-testid="voltar" type="button" label="Voltar" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" [disabled]="ocupado()" (onClick)="voltar()" />
           }
-          <!-- Os pontos se salvam um a um, no editor deles: aqui o botão é da ficha. -->
-          @if (a.actions.edit && etapaAtual().chave === 'ficha') {
-            <p-button data-testid="salvar" type="button" label="Salvar rascunho" severity="secondary" [outlined]="true" [loading]="salvando()" (onClick)="salvar()" />
+          <!-- Salvar grava o que está na tela e fica; Avançar e Voltar gravam e saem. -->
+          @if (a.actions.edit) {
+            <p-button data-testid="salvar" type="button" label="Salvar" severity="secondary" [outlined]="true" [loading]="ocupado()" (onClick)="salvarAqui()" />
           }
           @if (!ultimaEtapa()) {
-            <p-button
-              data-testid="avancar"
-              type="button"
-              [label]="avancarSalva() ? 'Salvar e avançar' : 'Avançar'"
-              icon="pi pi-arrow-right"
-              iconPos="right"
-              [loading]="salvando() && avancarSalva()"
-              (onClick)="avancar()"
-            />
+            <p-button data-testid="avancar" type="button" label="Avançar" icon="pi pi-arrow-right" iconPos="right" [disabled]="ocupado()" (onClick)="avancar()" />
           }
         </div>
       </div>

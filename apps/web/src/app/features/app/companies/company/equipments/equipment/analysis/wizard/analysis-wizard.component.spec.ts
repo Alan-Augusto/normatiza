@@ -210,11 +210,10 @@ describe('AnalysisWizardComponent', () => {
     expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('ficha');
   });
 
-  it('deve salvar a ficha alterada antes de avançar', async () => {
+  it('deve salvar a ficha alterada ao avançar, como no legado', async () => {
     await abrir();
 
     digitar('campo-regime', '3 turnos');
-    expect(el('avancar')?.textContent).toContain('Salvar e avançar');
     clicar('avancar');
     const req = http.expectOne(`${ANALISE}/sheet`);
     expect(req.request.body.shiftRegime).toBe('3 turnos');
@@ -224,6 +223,57 @@ describe('AnalysisWizardComponent', () => {
     harness.detectChanges();
 
     expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('pontos');
+  });
+
+  it('deve salvar a ficha também ao trocar de etapa pelo stepper', async () => {
+    await abrir();
+
+    digitar('campo-regime', '3 turnos');
+    clicar('passo-pap');
+    http.expectOne(`${ANALISE}/sheet`).flush(detalheDeAnalise());
+    harness.detectChanges();
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('pap');
+  });
+
+  it('deve ficar na etapa quando salvar falha, sem perder o que foi preenchido', async () => {
+    await abrir();
+
+    digitar('campo-regime', '3 turnos');
+    clicar('avancar');
+    http.expectOne(`${ANALISE}/sheet`).flush({ message: 'Fora do ar' }, { status: 503, statusText: 'Indisponível' });
+    harness.detectChanges();
+
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('ficha');
+    expect(entrada('campo-regime').value).toBe('3 turnos');
+    expect(el('erro')).not.toBeNull();
+  });
+
+  it('deve salvar o ponto aberto no editor ao avançar', async () => {
+    await abrir();
+    clicar('avancar');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+    clicar('primeiro-ponto');
+    digitar('campo-local', 'Zona de prensagem');
+
+    clicar('avancar');
+    const req = http.expectOne((r) => r.url.startsWith(`${ANALISE}/risk-points/`));
+    expect(req.request.body.location).toBe('Zona de prensagem');
+    req.flush({ id: 'p-1', number: 1, location: 'Zona de prensagem', hazardOriginIds: [], hazardConsequenceIds: [], existingProtectionIds: [], violatedStandardIds: [] });
+    harness.detectChanges();
+
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('pap');
+    expect(componente().analise()?.riskPoints.map((p) => p.location)).toEqual(['Zona de prensagem']);
+  });
+
+  it('deve dizer o que a sigla quer dizer no stepper', async () => {
+    await abrir();
+
+    expect(el('passo-pap')?.textContent).toContain('Partida, acionamento e parada');
+    expect(el('passo-pe')?.textContent).toContain('Parada de emergência');
   });
 
   it('deve anunciar as etapas que ainda não existem, sem esconder o caminho', async () => {

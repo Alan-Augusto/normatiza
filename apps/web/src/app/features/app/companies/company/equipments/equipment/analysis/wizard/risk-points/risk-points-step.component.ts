@@ -37,6 +37,9 @@ const FOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
 const LIMITE_DE_ESPERA_MS = 20_000;
 
+/** O que salvar deu: gravou, não havia o que gravar, ou não gravou (a tela diz por quê). */
+export type ResultadoDoSalvar = 'salvo' | 'nada' | 'erro';
+
 /** A análise que a etapa escreve: quem é, na API. */
 export interface AlvoDaAnalise {
   companyId: string;
@@ -246,25 +249,36 @@ export class RiskPointsStepComponent {
     }
   }
 
-  salvar(fechar = true): void {
+  /**
+   * Salva o ponto aberto, se há o que salvar — é o que o assistente chama antes
+   * de trocar de etapa, e o que "Voltar à lista" faz. Ponto novo em branco não
+   * vira ponto; HRN pela metade não sai daqui (D12): a tela diz o que falta.
+   */
+  salvarAberto(): Observable<ResultadoDoSalvar> {
     const aberto = this.editando();
-    if (!aberto || this.salvando()) return;
+    if (!aberto || !this.editavel() || !this.form.dirty) return of('nada');
+    if (this.salvando()) return of('erro');
     if (this.hrn() === 'incompleto') {
       this.erro.set('Escolha os quatro fatores do HRN, ou limpe os que já escolheu.');
-      return;
+      return of('erro');
     }
     if (this.categoria() === 'incompleta') {
       this.erro.set('Responda a categoria NBR 14153 até o fim, ou desligue a chave.');
-      return;
+      return of('erro');
     }
-
-    this.gravar(aberto.id).subscribe({
-      next: (ponto) => {
+    return this.gravar(aberto.id).pipe(
+      map((ponto): ResultadoDoSalvar => {
         this.aviso.set(`Ponto ${ponto.number} salvo.`);
-        if (fechar) this.fechar();
-      },
-      // A mensagem já está na tela (`gravar`); aqui só não deixar o erro solto.
-      error: () => undefined,
+        return 'salvo';
+      }),
+      catchError(() => of<ResultadoDoSalvar>('erro')),
+    );
+  }
+
+  /** Voltar à lista salva antes, como no legado: sair nunca perde o que foi preenchido. */
+  voltarALista(): void {
+    this.salvarAberto().subscribe((r) => {
+      if (r !== 'erro') this.fechar();
     });
   }
 
