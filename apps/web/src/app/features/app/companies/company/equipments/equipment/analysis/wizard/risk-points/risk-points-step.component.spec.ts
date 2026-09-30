@@ -80,19 +80,19 @@ describe('RiskPointsStepComponent', () => {
   }
   const texto = (testid: string) => el(testid)?.textContent?.replace(/\s+/g, ' ').trim();
 
-  it('deve dizer que não há ponto ainda, e oferecer adicionar', () => {
+  it('deve convidar a levantar o primeiro ponto, dizendo o que é um ponto', () => {
     abrir();
 
-    expect(el('sem-pontos')).not.toBeNull();
-    expect(el('novo-ponto')).not.toBeNull();
+    expect(el('sem-pontos')?.textContent).toContain('Nenhum ponto de risco levantado ainda');
+    expect(el('primeiro-ponto')).not.toBeNull();
   });
 
   it('deve calcular o HRN na tela, e gravar o ponto novo pelo id gerado aqui', () => {
     abrir();
-    clicar('novo-ponto');
+    clicar('primeiro-ponto');
 
     digitar('campo-local', 'Zona de prensagem');
-    escolher({ consequencias: ['hc-esmagamento'], fe: 2.5, pe: 8, mpl: 6, np: 1 });
+    escolher({ consequencias: ['hc-esmagamento'], hrn: { fe: 2.5, pe: 8, mpl: 6, np: 1 } });
     expect(texto('resultado-hrn')).toContain('120 Risco Muito Alto');
 
     clicar('salvar-ponto');
@@ -116,10 +116,10 @@ describe('RiskPointsStepComponent', () => {
 
   it('não deve gravar HRN pela metade', () => {
     abrir();
-    clicar('novo-ponto');
+    clicar('primeiro-ponto');
 
-    escolher({ fe: 2.5, pe: 8 });
-    expect(texto('resultado-hrn')).toContain('Escolha os quatro fatores');
+    escolher({ hrn: { fe: 2.5, pe: 8, mpl: null, np: null } });
+    expect(texto('resultado-hrn')).toContain('Faltam 2 fatores');
     clicar('salvar-ponto');
 
     expect(texto('erro-ponto')).toContain('quatro fatores');
@@ -127,16 +127,16 @@ describe('RiskPointsStepComponent', () => {
 
   it('deve mostrar a ajuda de aplicação da probabilidade escolhida', () => {
     abrir();
-    clicar('novo-ponto');
+    clicar('primeiro-ponto');
 
-    escolher({ pe: 8 });
+    escolher({ hrn: { fe: null, pe: 8, mpl: null, np: null } });
 
     expect(tela().textContent).toContain('O operador realiza atividades muito próximo ao ponto');
   });
 
   it('deve calcular a categoria NBR 14153 e mandá-la com o ponto', () => {
     abrir();
-    clicar('novo-ponto');
+    clicar('primeiro-ponto');
 
     escolher({ usaCategoria: true });
     // Pelos botões da tela: foi clicando que a primeira versão, com rádios, não gravava a escolha.
@@ -153,7 +153,7 @@ describe('RiskPointsStepComponent', () => {
 
   it('deve fechar frequência e possibilidade quando o ferimento é leve', () => {
     abrir();
-    clicar('novo-ponto');
+    clicar('primeiro-ponto');
     escolher({ usaCategoria: true });
 
     responder('gravidade', 'S2');
@@ -167,7 +167,7 @@ describe('RiskPointsStepComponent', () => {
 
   it('deve mostrar o texto de cada item de norma escolhido, sem o "Conforme item"', () => {
     abrir();
-    clicar('novo-ponto');
+    clicar('primeiro-ponto');
 
     escolher({ normas: ['std-1'] });
 
@@ -176,7 +176,7 @@ describe('RiskPointsStepComponent', () => {
 
   it('deve gravar o ponto novo antes de enviar a foto dele', () => {
     abrir();
-    clicar('novo-ponto');
+    clicar('primeiro-ponto');
     digitar('campo-local', 'Zona');
 
     const campo = el('foto-arquivo-ponto') as HTMLInputElement;
@@ -190,6 +190,14 @@ describe('RiskPointsStepComponent', () => {
     fixture.detectChanges();
 
     expect(el('foto-ponto')?.getAttribute('src')).toBe('http://arq/p-thumb');
+  });
+
+  it('deve oferecer adicionar outro ponto no fim da lista', () => {
+    abrir([ponto()]);
+
+    clicar('adicionar-outro');
+
+    expect(el('editor')?.textContent).toContain('Novo ponto de risco');
   });
 
   it('deve renumerar os seguintes ao excluir um ponto', () => {

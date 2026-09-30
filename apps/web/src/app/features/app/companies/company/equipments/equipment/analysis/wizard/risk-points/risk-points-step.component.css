@@ -151,3 +151,80 @@
   text-align: center;
   color: var(--p-text-color);
 }
+
+/* O convite do primeiro ponto: diz o que é um ponto antes de pedir um. */
+.convite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--p-border-radius-xl);
+  border: 1px dashed color-mix(in srgb, var(--p-primary-color) 45%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--p-primary-color) 4%, var(--p-content-background));
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--p-text-color);
+}
+
+.convite-icone {
+  display: inline-flex;
+  width: 3.5rem;
+  height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+
+.passos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1.5rem;
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.passos li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--p-text-muted-color);
+}
+
+.passos ng-icon {
+  color: var(--p-primary-color);
+}
+
+.passos strong {
+  color: var(--p-text-color);
+}
+
+/* No fim da lista, onde o olho termina: o próximo ponto é o próximo passo. */
+.adicionar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--p-border-radius-lg);
+  border: 1px dashed var(--p-content-border-color);
+  padding: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--p-primary-color);
+  cursor: pointer;
+  transition: border-color 120ms, background-color 120ms;
+}
+
+.adicionar:hover:not(:disabled) {
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 6%, transparent);
+}
+
+.adicionar:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

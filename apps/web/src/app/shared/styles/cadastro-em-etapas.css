@@ -20,10 +20,14 @@
  * Colado ao fim da área rolável. As margens negativas desfazem o padding do
  * `<main>` (p-6, e p-4 a partir de md) para a barra ir de borda a borda; a
  * margem de cima automática a empurra para o fim quando a etapa é curta.
+ *
+ * O `bottom` negativo é pelo mesmo padding: o `sticky` se prende dentro dele,
+ * e com `bottom: 0` a barra parava uma faixa acima do fim da tela, com o
+ * conteúdo rolando visível por baixo dela.
  */
 .rodape {
   position: sticky;
-  bottom: 0;
+  bottom: -1.5rem;
   z-index: 1;
   margin: auto -1.5rem -1.5rem;
   padding: 0.75rem 1.5rem;
@@ -33,6 +37,7 @@
 
 @media (min-width: 768px) {
   .rodape {
+    bottom: -1rem;
     margin: auto -1rem -1rem;
     padding: 0.75rem 1rem;
   }

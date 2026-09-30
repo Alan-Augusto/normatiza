@@ -12,6 +12,7 @@ import { API_BASE_URL } from '../../../../../../../../core/auth/api.config';
 import { AuthService } from '../../../../../../../../core/auth/auth.service';
 import { BRF, respostaDeLogin, sessão, vínculo } from '../../../../../../../../core/auth/testing/sessao';
 import { CARLA, FERNANDO, SÓ_LEITURA, detalheDeAnalise } from '../../../../../../../../core/services/testing/analises';
+import { catalogosDeTeste } from '../../../../../../../../core/services/testing/catalogos';
 import { detalheDeEquipamento } from '../../../../../../../../core/services/testing/equipamentos';
 import { EquipmentContext } from '../../equipment-context';
 import { AnalysisWizardComponent } from './analysis-wizard.component';
@@ -195,6 +196,34 @@ describe('AnalysisWizardComponent', () => {
     expect(link.getAttribute('href')).toBe(
       `/app/empresas/${BRF.slug}/equipamentos/eq-0001/editar?voltar=${encodeURIComponent(TELA)}`,
     );
+  });
+
+  it('deve avançar para os pontos de risco pelo botão do rodapé, e voltar', async () => {
+    await abrir();
+
+    clicar('avancar');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('pontos');
+    clicar('voltar');
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('ficha');
+  });
+
+  it('deve salvar a ficha alterada antes de avançar', async () => {
+    await abrir();
+
+    digitar('campo-regime', '3 turnos');
+    expect(el('avancar')?.textContent).toContain('Salvar e avançar');
+    clicar('avancar');
+    const req = http.expectOne(`${ANALISE}/sheet`);
+    expect(req.request.body.shiftRegime).toBe('3 turnos');
+    req.flush(detalheDeAnalise({ sheet: { times: {}, shiftRegime: '3 turnos', safetyManagement: detalheDeAnalise().sheet.safetyManagement } }));
+    harness.detectChanges();
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+
+    expect(el('etapa-atual')?.getAttribute('data-etapa')).toBe('pontos');
   });
 
   it('deve anunciar as etapas que ainda não existem, sem esconder o caminho', async () => {

@@ -111,6 +111,8 @@ As oito faixas do HRN têm cor própria, e ela é a do **laudo do sistema anteri
 | Extremo | `--color-risk-extreme` | vinho `#800000` |
 | Inaceitável | `--color-risk-unacceptable` | roxo `#660066` |
 
+**Para escolher um HRN, `app-hrn-calculator`** (um `ControlValueAccessor` com os quatro fatores): cada fator é uma pergunta em linguagem de campo, com as opções em cartões do menor para o maior peso; a conta aparece montada (`FE 2,5 × PE 8 × MPL 6 × NP 1 = 120`), com `?` no que falta, e a régua das oito faixas marca onde o resultado caiu, com uma frase dizendo se o ponto vira tarefa. Por baixo são rádios nativos, um grupo por fator: as setas do teclado andam entre as opções. Selects não servem aqui — pediam quatro números, e o técnico em campo precisa entender a conta.
+
 Nenhuma tela usa esses tokens direto: **todo HRN aparece por `app-hrn-badge`**, que escreve o número **e o nome da faixa** ("120 Risco Muito Alto"). A cor nunca fala sozinha — quem não distingue cores e a impressão em preto e branco leem o nome. Sem HRN, o componente mostra "—".
 
 ---

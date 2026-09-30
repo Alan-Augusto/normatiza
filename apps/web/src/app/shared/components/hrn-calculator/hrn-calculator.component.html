@@ -1,0 +1,77 @@
+<div class="calculadora">
+  @for (f of fatores; track f.chave) {
+    <fieldset class="fator" [attr.data-testid]="'fator-' + f.chave" [disabled]="desabilitado()">
+      <legend>
+        <span class="sigla">{{ f.sigla }}</span>
+        <span class="nome">{{ f.nome }}</span>
+      </legend>
+      <p class="pergunta">{{ f.pergunta }}</p>
+
+      <div class="opcoes">
+        @for (o of opcoes(f.chave); track o.weight) {
+          <label class="opcao" [class.escolhida]="escolhido(f.chave) === o.weight" [attr.data-testid]="'opcao-' + f.chave + '-' + o.weight">
+            <input
+              type="radio"
+              class="sr-only"
+              [name]="grupo + '-' + f.chave"
+              [value]="o.weight"
+              [checked]="escolhido(f.chave) === o.weight"
+              (change)="escolher(f.chave, o.weight)"
+            />
+            <span class="peso tabular-nums">{{ o.peso }}</span>
+            <span class="rotulo">{{ o.label }}</span>
+            <!-- O degrau: quanto mais à direita, mais pesa. -->
+            <span class="degrau" aria-hidden="true"><span [style.width.%]="o.degrau * 100"></span></span>
+          </label>
+        }
+      </div>
+
+      @if (ajuda(f.chave); as texto) {
+        <p class="ajuda" [attr.data-testid]="'ajuda-' + f.chave">{{ texto }}</p>
+      }
+    </fieldset>
+  }
+
+  <!-- A conta, montada: o que falta aparece como "?". -->
+  <section class="conta" data-testid="resultado-hrn" aria-live="polite">
+    <div class="equacao">
+      @for (f of fatores; track f.chave; let ultimo = $last) {
+        <span class="termo" [class.vazio]="escolhido(f.chave) === null">
+          <span class="termo-sigla">{{ f.sigla }}</span>&ngsp;<span class="termo-valor tabular-nums">{{ pesoNaConta(f.chave) }}</span>
+        </span>
+        @if (!ultimo) {
+          <span class="operador" aria-hidden="true">×</span>
+        }
+      }
+      <span class="operador" aria-hidden="true">=</span>
+      @if (resultado(); as r) {
+        <app-hrn-badge [resultado]="r.result" [nivel]="r.level" />
+      } @else {
+        <span class="text-sm text-muted-color">
+          {{ faltam() === 4 ? 'Responda as quatro perguntas.' : faltam() === 1 ? 'Falta 1 fator.' : 'Faltam ' + faltam() + ' fatores.' }}
+        </span>
+      }
+    </div>
+
+    <!-- A régua das oito faixas, nas cores do laudo. -->
+    <div class="regua" aria-hidden="true">
+      @for (fx of faixas(); track fx.level; let i = $index) {
+        <span class="faixa" [attr.data-level]="fx.level" [class.atual]="faixa()?.indice === i" [attr.title]="fx.label + ': ' + fx.limites"></span>
+      }
+    </div>
+    @if (faixa(); as fx) {
+      <p class="explicacao" data-testid="explicacao-hrn">
+        <strong>{{ fx.label }}</strong> — HRN {{ fx.limites }}.
+        @if (viraTarefa()) {
+          Acima do aceitável: ao concluir a análise, este ponto vira tarefa no plano de ação.
+        } @else {
+          Fica registrado no laudo, e não vira tarefa: não há o que adequar.
+        }
+      </p>
+    }
+
+    @if (!desabilitado() && faltam() < 4) {
+      <button type="button" class="limpar" data-testid="limpar-hrn" (click)="limpar()">Limpar HRN</button>
+    }
+  </section>
+</div>

@@ -127,6 +127,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   readonly erroDaFoto = signal<string | null>(null);
   readonly descartando = signal(false);
   readonly confirmandoDescarte = signal(false);
+  private readonly fichaAlterada = signal(false);
 
   private readonly numero = toSignal(this.route.paramMap.pipe(map((p) => Number(p.get('numero')))), {
     initialValue: Number(this.route.snapshot?.paramMap.get('numero')),
@@ -179,6 +180,8 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
       const numero = this.numero();
       if (empresa && equipamento && Number.isInteger(numero)) this.carregar(empresa.id, equipamento.code, numero);
     });
+    // O `dirty` do formulário não avisa ninguém; o botão de avançar precisa saber.
+    this.form.valueChanges.subscribe(() => this.fichaAlterada.set(this.form.dirty));
   }
 
   rotuloDoStatus(): string {
@@ -194,8 +197,33 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     return this.form.controls[chave];
   }
 
+  /**
+   * Trocar de etapa com um ponto aberto no editor e alterado perderia o
+   * ponto: pergunta antes, como a guarda de saída da tela.
+   */
   irPara(valor: number | undefined): void {
-    if (valor) this.passo.set(valor);
+    if (!valor || valor === this.passo()) return;
+    if (this.etapaDosPontos()?.temAlteracoes() && !window.confirm('O ponto aberto tem alterações não salvas. Trocar de etapa mesmo assim?')) {
+      return;
+    }
+    this.passo.set(valor);
+    this.aviso.set(null);
+  }
+
+  readonly primeiraEtapa = computed(() => this.passo() === 1);
+  readonly ultimaEtapa = computed(() => this.passo() === ETAPAS.length);
+
+  /** Na ficha com alteração, avançar salva antes: ninguém sai da etapa sem gravar sem perceber. */
+  readonly avancarSalva = computed(() => this.etapaAtual().chave === 'ficha' && this.editavel() && this.fichaAlterada());
+
+  avancar(): void {
+    const proxima = Math.min(this.passo() + 1, ETAPAS.length);
+    if (this.avancarSalva()) this.salvar(() => this.irPara(proxima));
+    else this.irPara(proxima);
+  }
+
+  voltar(): void {
+    this.irPara(Math.max(1, this.passo() - 1));
   }
 
   /** Enter num campo não salva: salvar é um clique, como nos cadastros. */
@@ -213,7 +241,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     this.analise.update((a) => (a ? { ...a, riskPoints: pontos, riskPointsCount: pontos.length } : a));
   }
 
-  salvar(): void {
+  salvar(depois?: () => void): void {
     const empresa = this.empresa();
     const equipamento = this.equipamento();
     const analise = this.analise();
@@ -230,6 +258,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
           this.salvando.set(false);
           this.preencher(salva);
           this.aviso.set('Rascunho salvo.');
+          depois?.();
         },
         error: (erro: unknown) => {
           this.salvando.set(false);
@@ -331,6 +360,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
 
   private preencher(a: AnalysisDetail): void {
     this.analise.set(a);
+    this.fichaAlterada.set(false);
     this.form.reset({
       tecnico: a.fieldTechnician?.id ?? null,
       ciclo: a.sheet.times.cycleTimeSec ?? null,

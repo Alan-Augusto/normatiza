@@ -90,37 +90,11 @@
       </section>
 
       <section class="painel">
-        <h4 class="titulo">HRN</h4>
-        <p class="mb-4 text-sm text-muted-color">HRN = FE × PE × MPL × NP, com a tabela da análise. Os quatro fatores, ou nenhum.</p>
-        <div class="grade sm:grid-cols-2">
-          @for (f of fatores; track f.chave) {
-            <app-campo [para]="'rp-' + f.chave" [rotulo]="f.sigla + ' — ' + f.rotulo" [ajuda]="ajudaDoFator(f.chave)" [mensagemId]="'ajuda-' + f.chave">
-              <p-select
-                [inputId]="'rp-' + f.chave"
-                [attr.data-testid]="'campo-' + f.chave"
-                [formControlName]="f.chave"
-                [options]="opcoesDoFator(f.chave)"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Escolha"
-                styleClass="w-full"
-                appendTo="body"
-              />
-            </app-campo>
-          }
-        </div>
-        <div class="mt-2 flex flex-wrap items-center gap-3" data-testid="resultado-hrn">
-          @if (hrn() === 'incompleto') {
-            <span class="text-sm text-muted-color">Escolha os quatro fatores para calcular.</span>
-          } @else if (hrnCalculado(); as h) {
-            <span class="text-sm">Resultado:</span>&ngsp;<app-hrn-badge [resultado]="h.result" [nivel]="h.level" />
-          } @else {
-            <span class="text-sm text-muted-color">Sem HRN ainda.</span>
-          }
-          @if (hrn() !== null && editavel()) {
-            <p-button data-testid="limpar-hrn" label="Limpar HRN" severity="secondary" [text]="true" size="small" (onClick)="limparHrn()" />
-          }
-        </div>
+        <h4 class="titulo">HRN — o tamanho do risco</h4>
+        <p class="mb-4 text-sm text-muted-color">Quatro perguntas sobre o ponto. O sistema multiplica as respostas e mostra em que faixa o risco cai.</p>
+        @if (catalogos().pacote; as c) {
+          <app-hrn-calculator formControlName="hrn" [tabela]="c.hrnTable" />
+        }
       </section>
 
       <section class="painel">
@@ -246,8 +220,8 @@
       <p class="text-sm text-muted-color">
         Os pontos de perigo da máquina, na ordem em que foram levantados. Só o que fica acima do aceitável vira tarefa do plano de ação.
       </p>
-      @if (editavel()) {
-        <p-button data-testid="novo-ponto" label="Adicionar ponto" [disabled]="!catalogos().pacote" (onClick)="novo()" />
+      @if (editavel() && pontos().length) {
+        <p-button data-testid="novo-ponto" label="Adicionar ponto" icon="pi pi-plus" [disabled]="!catalogos().pacote" (onClick)="novo()" />
       }
     </div>
 
@@ -284,12 +258,29 @@
             </div>
           </li>
         }
+        @if (editavel()) {
+          <li>
+            <button type="button" class="adicionar" data-testid="adicionar-outro" [disabled]="!catalogos().pacote" (click)="novo()">
+              <ng-icon name="lucidePlus" size="1.125rem" />
+              <span>Adicionar outro ponto de risco</span>
+            </button>
+          </li>
+        }
       </ol>
     } @else {
-      <div data-testid="sem-pontos" class="vazio">
-        <p class="font-medium">Nenhum ponto de risco levantado ainda.</p>
+      <div data-testid="sem-pontos" class="convite">
+        <span class="convite-icone"><ng-icon name="lucideTriangleAlert" size="1.75rem" /></span>
+        <p class="text-base font-semibold">Nenhum ponto de risco levantado ainda</p>
         @if (editavel()) {
-          <p class="text-sm text-muted-color">Adicione cada zona de perigo da máquina, com o HRN e a solução sugerida.</p>
+          <p class="text-sm text-muted-color">Cada zona da máquina onde alguém pode se machucar é um ponto. Para cada um:</p>
+          <ol class="passos">
+            <li><ng-icon name="lucideMapPin" /><span><strong>Onde</strong> está o perigo, e o que pode acontecer</span></li>
+            <li><ng-icon name="lucideGauge" /><span><strong>O tamanho</strong> do risco, em quatro perguntas</span></li>
+            <li><ng-icon name="lucideWrench" /><span><strong>O que fazer</strong> para adequar, e a foto do antes</span></li>
+          </ol>
+          <p-button data-testid="primeiro-ponto" label="Levantar o primeiro ponto" icon="pi pi-plus" [disabled]="!catalogos().pacote" (onClick)="novo()" />
+        } @else {
+          <p class="text-sm text-muted-color">A análise não tem ponto de risco.</p>
         }
       </div>
     }

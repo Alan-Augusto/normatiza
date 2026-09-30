@@ -1,12 +1,13 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import { lucideGauge, lucideMapPin, lucidePlus, lucideTriangleAlert, lucideWrench } from '@ng-icons/lucide';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { MultiSelect } from 'primeng/multiselect';
-import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Textarea } from 'primeng/textarea';
 import { ToggleSwitch } from 'primeng/toggleswitch';
@@ -17,7 +18,6 @@ import {
   calculateHrn,
   safetyCategory,
   type AnalysisCatalogsDto,
-  type HrnFactor,
   type HrnScore,
   type RiskPointDto,
   type RiskPointUpsert,
@@ -30,6 +30,7 @@ import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { HrnBadgeComponent } from '../../../../../../../../../shared/components/hrn-badge/hrn-badge.component';
+import { HRN_VAZIO, HrnCalculatorComponent, type HrnEscolha } from '../../../../../../../../../shared/components/hrn-calculator/hrn-calculator.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
 const FOTO_TIPOS = ['image/png', 'image/jpeg', 'image/webp'];
@@ -46,13 +47,6 @@ interface Grupo {
   label: string;
   items: { label: string; value: string }[];
 }
-
-const FATORES: { chave: HrnFactor; rotulo: string; sigla: string }[] = [
-  { chave: 'fe', rotulo: 'Frequência de exposição', sigla: 'FE' },
-  { chave: 'pe', rotulo: 'Probabilidade de ocorrência', sigla: 'PE' },
-  { chave: 'mpl', rotulo: 'Máxima perda possível', sigla: 'MPL' },
-  { chave: 'np', rotulo: 'Pessoas expostas', sigla: 'NP' },
-];
 
 /** "Conforme item 12.38.1, as zonas de perigo…" → "as zonas de perigo…": o código já vem ao lado. */
 function textoDoItem(texto: string): string {
@@ -79,13 +73,15 @@ function textoDoItem(texto: string): string {
     InputText,
     Message,
     MultiSelect,
-    Select,
+    NgIconComponent,
     SelectButton,
     Textarea,
     ToggleSwitch,
     CampoComponent,
     HrnBadgeComponent,
+    HrnCalculatorComponent,
   ],
+  providers: [provideIcons({ lucideTriangleAlert, lucidePlus, lucideMapPin, lucideGauge, lucideWrench })],
   templateUrl: './risk-points-step.component.html',
   styleUrl: './risk-points-step.component.css',
 })
@@ -99,7 +95,6 @@ export class RiskPointsStepComponent {
   /** A lista como ficou depois de gravar ou excluir: quem guarda a análise é o assistente. */
   readonly pontosChange = output<RiskPointDto[]>();
 
-  readonly fatores = FATORES;
   /** As três perguntas da NBR 14153, com o texto da tela do legado. */
   readonly perguntasDaCategoria: { campo: 'gravidade' | 'frequencia' | 'possibilidade'; titulo: string; opcoes: { value: 1 | 2; code: string; label: string }[] }[] = [
     { campo: 'gravidade', titulo: 'Gravidade do ferimento', opcoes: [...SAFETY_CATEGORY_OPTIONS.severity] },
@@ -134,10 +129,7 @@ export class RiskPointsStepComponent {
     consequencias: this.fb.control<string[]>([]),
     protecoes: this.fb.control<string[]>([]),
     normas: this.fb.control<string[]>([]),
-    fe: this.fb.control<number | null>(null),
-    pe: this.fb.control<number | null>(null),
-    mpl: this.fb.control<number | null>(null),
-    np: this.fb.control<number | null>(null),
+    hrn: this.fb.control<HrnEscolha>({ ...HRN_VAZIO }),
     usaCategoria: false,
     gravidade: this.fb.control<1 | 2 | null>(null),
     frequencia: this.fb.control<1 | 2 | null>(null),
@@ -201,29 +193,16 @@ export class RiskPointsStepComponent {
       .filter((n): n is { id: string; itemCode: string; text: string; secao: string } => !!n.itemCode),
   );
 
-  opcoesDoFator(fator: HrnFactor) {
-    return (this.catalogos().pacote?.hrnTable.factors[fator] ?? []).map((o) => ({
-      label: `${o.label} (${String(o.weight).replace('.', ',')})`,
-      value: o.weight,
-    }));
-  }
-
-  /** A ajuda de aplicação da opção escolhida — o legado a mostrava ao lado do PE. */
-  ajudaDoFator(fator: HrnFactor): string | null {
-    const peso = this.valores()[fator];
-    return this.catalogos().pacote?.hrnTable.factors[fator].find((o) => o.weight === peso)?.helpText ?? null;
-  }
-
   // ── O que se calcula enquanto se escolhe ──────────────────────────────────
 
   /** Os quatro fatores, ou nenhum (D12): a tela diz qual dos dois estados. */
   readonly hrn = computed<HrnScore | 'incompleto' | null>(() => {
-    const v = this.valores();
-    const escolhidos = FATORES.filter((f) => v[f.chave] !== null).length;
+    const e = this.valores().hrn;
+    const escolhidos = Object.values(e).filter((peso) => peso !== null).length;
     if (escolhidos === 0) return null;
     if (escolhidos < 4) return 'incompleto';
     const tabela = this.catalogos().pacote?.hrnTable;
-    return tabela ? calculateHrn({ fe: v.fe!, pe: v.pe!, mpl: v.mpl!, np: v.np! }, tabela) : null;
+    return tabela ? calculateHrn({ fe: e.fe!, pe: e.pe!, mpl: e.mpl!, np: e.np! }, tabela) : null;
   });
 
   readonly hrnCalculado = computed(() => {
@@ -267,11 +246,6 @@ export class RiskPointsStepComponent {
     this.editando.set(null);
     this.erro.set(null);
     this.erroDaFoto.set(null);
-  }
-
-  limparHrn(): void {
-    this.form.patchValue({ fe: null, pe: null, mpl: null, np: null });
-    this.form.markAsDirty();
   }
 
   constructor() {
@@ -406,10 +380,9 @@ export class RiskPointsStepComponent {
       consequencias: p?.hazardConsequenceIds ?? [],
       protecoes: p?.existingProtectionIds ?? [],
       normas: p?.violatedStandardIds ?? [],
-      fe: p?.currentHrn?.fe ?? null,
-      pe: p?.currentHrn?.pe ?? null,
-      mpl: p?.currentHrn?.mpl ?? null,
-      np: p?.currentHrn?.np ?? null,
+      hrn: p?.currentHrn
+        ? { fe: p.currentHrn.fe, pe: p.currentHrn.pe, mpl: p.currentHrn.mpl, np: p.currentHrn.np }
+        : { ...HRN_VAZIO },
       usaCategoria: !!p?.safetyCategory,
       gravidade: p?.safetyCategory?.severity ?? null,
       frequencia: p?.safetyCategory?.frequency ?? null,
