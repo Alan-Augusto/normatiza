@@ -178,6 +178,9 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   readonly editorAberto = computed(() => !!this.etapaComEditor()?.editando());
   readonly ocupadoNaEtapa = computed(() => this.ocupado() || !!this.etapaComEditor()?.salvando());
 
+  /** No celular, os botões do rodapé encurtam: "Salvar e voltar à lista" vira "Lista". */
+  readonly estreito = signal(false);
+
   /** Como o item da etapa se chama no botão: "Salvar e adicionar outro ponto". */
   readonly nomeDoItem = computed(() => ({ pontos: 'ponto', pap: 'PAP', pe: 'PE', ficha: '' })[this.etapaAtual().chave]);
 
@@ -203,6 +206,11 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   });
 
   constructor() {
+    const celular = typeof window !== 'undefined' ? window.matchMedia?.('(max-width: 639px)') : undefined;
+    if (celular) {
+      this.estreito.set(celular.matches);
+      celular.addEventListener?.('change', (e) => this.estreito.set(e.matches));
+    }
     effect(() => {
       const empresa = this.empresa();
       const equipamento = this.equipamento();

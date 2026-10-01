@@ -31,6 +31,7 @@ import { AnalysisService } from '@core/services/analysis.service';
 import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
+import { RowActionComponent } from '../../../../../../../../../shared/components/row-action/row-action.component';
 import { FotoDoItemComponent } from '../foto/foto-do-item.component';
 import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
 import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
@@ -68,6 +69,7 @@ type Secao = FormGroup<Record<PapCriterion, Resposta>>;
     Textarea,
     CampoComponent,
     FotoDoItemComponent,
+    RowActionComponent,
     NormasDescumpridasComponent,
   ],
   providers: [provideIcons({ lucidePower, lucidePlus, lucideListChecks, lucideScale, lucideCamera })],

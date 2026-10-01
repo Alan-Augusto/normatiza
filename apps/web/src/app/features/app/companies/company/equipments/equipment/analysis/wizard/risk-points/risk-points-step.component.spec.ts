@@ -61,6 +61,15 @@ describe('RiskPointsStepComponent', () => {
     alvo.click();
     fixture.detectChanges();
   }
+  /** Os botões "Salvar e voltar à lista" e "Salvar e adicionar outro" ficam no rodapé do assistente. */
+  function voltarALista() {
+    fixture.componentInstance.voltarALista();
+    fixture.detectChanges();
+  }
+  function salvarEAdicionar() {
+    fixture.componentInstance.salvarEAdicionar();
+    fixture.detectChanges();
+  }
   function digitar(testid: string, valor: string) {
     const campo = el(testid) as HTMLInputElement;
     campo.value = valor;
@@ -95,7 +104,7 @@ describe('RiskPointsStepComponent', () => {
     escolher({ consequencias: ['hc-esmagamento'], hrn: { fe: 2.5, pe: 8, mpl: 6, np: 1 } });
     expect(texto('resultado-hrn')).toContain('120 Risco Muito Alto');
 
-    clicar('voltar-a-lista');
+    voltarALista();
     const req = http.expectOne((r) => r.url.startsWith(`${ANALISE}/risk-points/`));
     expect(req.request.method).toBe('PUT');
     expect(req.request.url).toMatch(/risk-points\/[0-9a-f-]{36}$/);
@@ -118,7 +127,7 @@ describe('RiskPointsStepComponent', () => {
     abrir();
     clicar('primeiro-ponto');
 
-    clicar('voltar-a-lista');
+    voltarALista();
 
     expect(el('sem-pontos')).not.toBeNull();
     expect(emitidos).toEqual([]);
@@ -130,7 +139,7 @@ describe('RiskPointsStepComponent', () => {
 
     escolher({ hrn: { fe: 2.5, pe: 8, mpl: null, np: null } });
     expect(texto('resultado-hrn')).toContain('Faltam 2 fatores');
-    clicar('voltar-a-lista');
+    voltarALista();
 
     expect(texto('erro-ponto')).toContain('quatro fatores');
     expect(el('editor')).not.toBeNull();
@@ -155,7 +164,7 @@ describe('RiskPointsStepComponent', () => {
     responder('frequencia', 'F2');
     responder('possibilidade', 'P1');
     expect(texto('resultado-categoria')).toBe('Categoria 3');
-    clicar('voltar-a-lista');
+    voltarALista();
 
     const req = http.expectOne((r) => r.url.startsWith(`${ANALISE}/risk-points/`));
     expect(req.request.body.safetyCategory).toEqual({ severity: 2, frequency: 2, possibility: 1 });
@@ -210,7 +219,7 @@ describe('RiskPointsStepComponent', () => {
     expect(el('editor')?.textContent).toContain('cópia do Ponto 1');
     expect(el('foto-ponto')).toBeNull();
 
-    clicar('voltar-a-lista');
+    voltarALista();
     const req = http.expectOne((r) => r.method === 'PUT' && /risk-points\/[0-9a-f-]{36}$/.test(r.url));
     expect(req.request.url).not.toContain('p-1');
     expect(req.request.body).toMatchObject({ location: 'Zona de prensagem', hazardConsequenceIds: ['hc-esmagamento'], hrn: { fe: 2.5, pe: 8, mpl: 6, np: 1 } });
@@ -222,7 +231,7 @@ describe('RiskPointsStepComponent', () => {
     clicar('primeiro-ponto');
     digitar('campo-local', 'Zona de prensagem');
 
-    clicar('salvar-e-adicionar');
+    salvarEAdicionar();
     const req = http.expectOne((r) => r.method === 'PUT' && /risk-points\/[0-9a-f-]{36}$/.test(r.url));
     req.flush(ponto());
     fixture.detectChanges();
@@ -272,7 +281,7 @@ describe('RiskPointsStepComponent', () => {
     clicar('abrir-ponto-1');
 
     expect((el('campo-local') as HTMLInputElement).disabled).toBe(true);
-    clicar('voltar-a-lista');
+    voltarALista();
     expect(el('pontos')).not.toBeNull();
   });
 });

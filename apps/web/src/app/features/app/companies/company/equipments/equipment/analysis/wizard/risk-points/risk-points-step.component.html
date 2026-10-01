@@ -31,7 +31,7 @@
         </h3>
         @if (editavel()) {
           <p class="text-xs text-muted-color">
-            Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.
+            Salvo ao sair, por qualquer botão do rodapé ou pelo stepper.
           </p>
         }
       </div>
@@ -262,28 +262,6 @@
         </div>
       </section>
     </div>
-
-    <div class="flex flex-wrap justify-end gap-2">
-      <p-button
-        data-testid="voltar-a-lista"
-        label="Voltar à lista"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        [outlined]="true"
-        [disabled]="salvando()"
-        (onClick)="voltarALista()"
-      />
-      @if (editavel()) {
-        <p-button
-          data-testid="salvar-e-adicionar"
-          label="Salvar e adicionar outro ponto"
-          icon="pi pi-plus"
-          [outlined]="true"
-          [loading]="salvando()"
-          (onClick)="salvarEAdicionar()"
-        />
-      }
-    </div>
   </div>
 } @else {
   <div class="space-y-4">
@@ -304,9 +282,9 @@
     </div>
 
     @if (pontos().length) {
-      <ol class="pontos" data-testid="pontos">
+      <ol class="cartoes" data-testid="pontos">
         @for (p of pontos(); track p.id) {
-          <li class="ponto com-foto" [attr.data-testid]="'ponto-' + p.number">
+          <li class="cartao" [attr.data-testid]="'ponto-' + p.number" (click)="editar(p)">
             <div class="miniatura" [attr.data-testid]="'miniatura-ponto-' + p.number">
               @if (p.photo) {
                 <img
@@ -318,59 +296,46 @@
                 <ng-icon name="lucideCamera" aria-hidden="true" />
               }
             </div>
-            <div class="ponto-conteudo">
-              <div class="flex flex-wrap items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <p class="font-medium">Ponto {{ p.number }} · {{ p.location ?? 'Sem local' }}</p>
-                  @if (p.hazardConsequenceIds.length) {
-                    <p class="text-sm text-muted-color">{{ nomes(p.hazardConsequenceIds) }}</p>
-                  }
-                </div>
-                <app-hrn-badge [resultado]="p.currentHrn?.result" [nivel]="p.currentHrn?.level" />
-              </div>
-              @if (p.suggestedSolution) {
-                <p class="solucao text-sm">{{ p.suggestedSolution }}</p>
-              }
-              <div class="flex flex-wrap items-center gap-2 text-xs text-muted-color">
-                <span
-                  >{{ p.violatedStandardIds.length }}
-                  {{
-                    p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma'
-                  }}</span
-                >
+            <div class="cartao-texto">
+              <button
+                type="button"
+                class="cartao-titulo"
+                [attr.data-testid]="'abrir-ponto-' + p.number"
+                (click)="$event.stopPropagation(); editar(p)"
+              >
+                Ponto {{ p.number }} · {{ p.location ?? 'Sem local' }}
+              </button>
+              <p class="cartao-linha">
+                {{ nomes(p.hazardConsequenceIds) || 'Sem consequência escolhida' }}
+              </p>
+              <p class="cartao-meta">
+                {{ p.violatedStandardIds.length }}
+                {{ p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma' }}
                 @if (p.safetyCategory) {
-                  <span>· Categoria {{ p.safetyCategory.category }}</span>
+                  · Categoria {{ p.safetyCategory.category }}
                 }
-              </div>
-              <div class="flex gap-1">
-                <p-button
-                  [attr.data-testid]="'abrir-ponto-' + p.number"
-                  [label]="editavel() ? 'Editar' : 'Ver'"
-                  severity="secondary"
-                  [outlined]="true"
-                  size="small"
-                  (onClick)="editar(p)"
-                />
-                @if (editavel()) {
-                  <p-button
+              </p>
+            </div>
+            <!-- Os ícones não abrem o item: o clique para aqui. -->
+            <div class="cartao-lado" (click)="$event.stopPropagation()">
+              <app-hrn-badge [resultado]="p.currentHrn?.result" [nivel]="p.currentHrn?.level" />
+              @if (editavel()) {
+                <div class="cartao-acoes">
+                  <app-row-action
                     [attr.data-testid]="'duplicar-ponto-' + p.number"
-                    label="Duplicar"
-                    severity="secondary"
-                    [text]="true"
-                    size="small"
-                    [disabled]="!catalogos().pacote"
-                    (onClick)="duplicar(p)"
+                    icon="lucideCopy"
+                    [label]="'Duplicar o Ponto ' + p.number"
+                    (acionar)="duplicar(p)"
                   />
-                  <p-button
+                  <app-row-action
                     [attr.data-testid]="'excluir-ponto-' + p.number"
-                    label="Excluir"
+                    icon="lucideTrash2"
+                    [label]="'Excluir o Ponto ' + p.number"
                     severity="danger"
-                    [text]="true"
-                    size="small"
-                    (onClick)="excluindo.set(p)"
+                    (acionar)="excluindo.set(p)"
                   />
-                }
-              </div>
+                </div>
+              }
             </div>
           </li>
         }

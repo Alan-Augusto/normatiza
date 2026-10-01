@@ -250,7 +250,7 @@ As regras:
    "Remover da empresa", nunca "Excluir".
 2. **Um ícone por significado, no sistema inteiro.** O vocabulário é fechado em
    `RowActionIcon`: olho é ver, lápis é editar, `power` é desativar, seta
-   circular é reativar, envelope é convite. Ícone novo entra na lista antes de
+   circular é reativar, envelope é convite, duas folhas é duplicar. Ícone novo entra na lista antes de
    entrar numa linha.
 3. **Link quando a ação é ir; botão quando ela acontece aqui.** Editar abre uma
    página e tem endereço; desativar abre um diálogo.

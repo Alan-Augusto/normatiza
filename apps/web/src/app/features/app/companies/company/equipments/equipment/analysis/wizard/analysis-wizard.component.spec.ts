@@ -284,6 +284,61 @@ describe('AnalysisWizardComponent', () => {
     expect(TestBed.inject(Router).url).toBe(`/app/empresas/${BRF.slug}/equipamentos/eq-0001/analise`);
   });
 
+  it('deve trocar os botões do rodapé com um ponto aberto no editor, e tirar o Salvar das listas', async () => {
+    await abrir();
+    expect(el('salvar')).not.toBeNull();
+    clicar('avancar');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+
+    expect(el('salvar')).toBeNull();
+    expect(el('voltar')).not.toBeNull();
+    expect(el('salvar-e-voltar-a-lista')).toBeNull();
+
+    clicar('primeiro-ponto');
+    expect(el('voltar')).toBeNull();
+    expect(el('salvar-e-voltar-a-lista')?.textContent).toContain('Salvar e voltar à lista');
+    expect(el('salvar-e-adicionar')?.textContent).toContain('Salvar e adicionar outro ponto');
+    expect(el('avancar')).not.toBeNull();
+  });
+
+  it('deve salvar o ponto e voltar à lista pelo rodapé', async () => {
+    await abrir();
+    clicar('avancar');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+    clicar('primeiro-ponto');
+    digitar('campo-local', 'Zona de prensagem');
+
+    clicar('salvar-e-voltar-a-lista');
+    http
+      .expectOne((r) => r.url.startsWith(`${ANALISE}/risk-points/`))
+      .flush({ id: 'p-1', number: 1, location: 'Zona de prensagem', hazardOriginIds: [], hazardConsequenceIds: [], existingProtectionIds: [], violatedStandardIds: [] });
+    harness.detectChanges();
+
+    expect(el('ponto-1')).not.toBeNull();
+    expect(el('salvar-e-voltar-a-lista')).toBeNull();
+  });
+
+  it('deve salvar o ponto e abrir outro em branco pelo rodapé', async () => {
+    await abrir();
+    clicar('avancar');
+    http.expectOne(`${API}/catalogs/analysis`).flush(catalogosDeTeste());
+    harness.detectChanges();
+    clicar('primeiro-ponto');
+    digitar('campo-local', 'Zona de prensagem');
+
+    clicar('salvar-e-adicionar');
+    http
+      .expectOne((r) => r.url.startsWith(`${ANALISE}/risk-points/`))
+      .flush({ id: 'p-1', number: 1, location: 'Zona de prensagem', hazardOriginIds: [], hazardConsequenceIds: [], existingProtectionIds: [], violatedStandardIds: [] });
+    harness.detectChanges();
+
+    expect(el('editor')?.textContent).toContain('Novo ponto de risco');
+    expect(entrada('campo-local').value).toBe('');
+    expect(componente().analise()?.riskPoints.length).toBe(1);
+  });
+
   it('deve dizer o que a sigla quer dizer no stepper', async () => {
     await abrir();
 

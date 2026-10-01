@@ -141,15 +141,42 @@
   background: color-mix(in srgb, var(--color-success) 12%, transparent);
 }
 
-.resumo-secoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 1rem;
-  font-size: 0.8125rem;
-}
 
 @media (max-width: 639px) {
   .abas {
     grid-template-columns: 1fr;
+  }
+}
+
+/* O monte de fotos do PAP: cada camada um pouco mais abaixo e à direita, no
+   espaço de uma miniatura. No hover o monte se abre e mostra as três. */
+.monte {
+  position: relative;
+  width: calc(4rem + 8px);
+  height: calc(4rem + 8px);
+  flex-shrink: 0;
+}
+
+.monte > .miniatura:not(.camada) {
+  position: absolute;
+  inset: 0 8px 8px 0;
+}
+
+.camada {
+  position: absolute;
+  top: calc(var(--camada) * 4px);
+  left: calc(var(--camada) * 4px);
+  z-index: calc(3 - var(--camada));
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--p-text-color) 20%, transparent);
+  transition: transform 180ms ease-out;
+}
+
+.monte:hover .camada {
+  transform: translate(calc(var(--camada) * (4rem + 0.25rem) - var(--camada) * 4px), calc(var(--camada) * -4px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camada {
+    transition: none;
   }
 }

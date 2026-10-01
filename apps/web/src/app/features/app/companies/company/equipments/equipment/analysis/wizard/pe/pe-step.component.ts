@@ -28,6 +28,7 @@ import { AnalysisService } from '@core/services/analysis.service';
 import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
+import { RowActionComponent } from '../../../../../../../../../shared/components/row-action/row-action.component';
 import { FotoDoItemComponent } from '../foto/foto-do-item.component';
 import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
 import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
@@ -59,6 +60,7 @@ type Resposta = FormGroup<{ physicalState: FormControl<boolean>; nr12Compliant: 
     Textarea,
     CampoComponent,
     FotoDoItemComponent,
+    RowActionComponent,
     NormasDescumpridasComponent,
   ],
   providers: [provideIcons({ lucideOctagonX, lucidePlus, lucideListChecks, lucideScale, lucideCamera })],

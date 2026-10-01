@@ -453,9 +453,19 @@ Também nascem "Não" e "Não atende NR-12". No laudo do legado, as respostas do
 
 **Duplicar**, nos pontos de risco, no PAP e no PE, como no legado: abre um item novo com tudo do original — respostas, normas, solução —, **menos as fotos**, que são de outro lugar da máquina. A cópia é gravada ao sair do editor, como qualquer alteração.
 
-**Salvar no assistente.** Sair de onde se está sempre salva, como no legado: **Avançar**, **Voltar** e o clique numa etapa do stepper gravam a ficha, ou o ponto, PAP ou PE aberto no editor, antes de trocar de etapa; **Voltar à lista** no editor também grava, e **Salvar e adicionar outro** grava e abre um em branco, para quem levanta vários em seguida. **Salvar**, no rodapé, grava e fica na tela — e na última etapa é **Salvar e sair**, que grava e volta para a lista de análises, como no legado.
+**Salvar no assistente.** Sair de onde se está sempre salva, como no legado, e todos os botões ficam num rodapé só, que muda com o que está aberto:
 
-**As listas mostram a foto** de cada item, que é por onde se reconhece o ponto na máquina: uma no ponto de risco e no PE, e no PAP uma miniatura por seção que tem foto, uma em cima da outra, na ordem Partida, Parada, Rearme. Não há "alterações não salvas?" dentro do assistente — a pergunta só aparece para quem sai da análise. As duas exceções: item novo deixado em branco não vira item, e ponto com HRN pela metade não sai do editor (a tela diz o que falta).
+| Onde | Rodapé |
+| :-- | :-- |
+| Ficha técnica | Salvar · Avançar |
+| Lista de pontos ou de PAP | Voltar · Avançar |
+| Editando um ponto ou PAP | Salvar e voltar à lista · Salvar e adicionar outro · Avançar |
+| Lista de PE (última etapa) | Voltar · Salvar e sair |
+| Editando um PE | Salvar e voltar à lista · Salvar e adicionar outro · Salvar e sair |
+
+Avançar, Voltar, Salvar e sair e o clique numa etapa do stepper gravam o que está aberto antes de sair; Salvar e sair volta para a lista de análises. Nas listas não há Salvar: cada item já foi salvo ao sair do editor. Não há "alterações não salvas?" dentro do assistente — a pergunta só aparece para quem sai da análise. As duas exceções: item novo deixado em branco não vira item, e ponto com HRN pela metade não sai do editor (a tela diz o que falta). "Voltar às análises" e "Descartar rascunho" ficam no cabeçalho da análise, não no rodapé.
+
+**Os cartões das listas são enxutos:** a foto — por onde se reconhece o ponto na máquina —, três linhas de texto da mesma altura dela (o título, o que é, e as normas) e, à direita, o selo (o HRN no ponto; as não conformidades no PAP e no PE) e as ações Duplicar e Excluir, em ícone. O cartão inteiro abre o item. No PAP, as fotos das seções formam um monte, uma em cima da outra, com a da Partida no topo; o monte se abre ao passar o mouse.
 
 **Conclusão da análise:** revisão do resumo (pontos identificados, HRN por ponto, não conformidades PAP/PE) → confirmação → **congela a análise, gera as tarefas do plano de ação e notifica o cliente**.
 

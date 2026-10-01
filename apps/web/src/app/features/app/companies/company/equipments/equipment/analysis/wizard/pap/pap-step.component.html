@@ -29,7 +29,7 @@
       </h3>
       @if (editavel()) {
         <p class="text-xs text-muted-color">
-          Salvo ao voltar à lista, ao trocar de etapa e no Salvar do rodapé.
+          Salvo ao sair, por qualquer botão do rodapé ou pelo stepper.
         </p>
       }
     </div>
@@ -195,28 +195,6 @@
         </app-campo>
       </section>
     </div>
-
-    <div class="flex flex-wrap justify-end gap-2">
-      <p-button
-        data-testid="voltar-a-lista"
-        label="Voltar à lista"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        [outlined]="true"
-        [disabled]="salvando()"
-        (onClick)="voltarALista()"
-      />
-      @if (editavel()) {
-        <p-button
-          data-testid="salvar-e-adicionar"
-          label="Salvar e adicionar outro PAP"
-          icon="pi pi-plus"
-          [outlined]="true"
-          [loading]="salvando()"
-          (onClick)="salvarEAdicionar()"
-        />
-      }
-    </div>
   </div>
 } @else {
   <div class="space-y-4">
@@ -236,88 +214,76 @@
     </div>
 
     @if (paps().length) {
-      <ol class="pontos" data-testid="paps">
+      <ol class="cartoes" data-testid="paps">
         @for (p of paps(); track p.id) {
-          <li class="ponto com-foto" [attr.data-testid]="'pap-' + p.number">
-            <!-- Uma miniatura por seção com foto, uma em cima da outra, na ordem Partida, Parada, Rearme. -->
-            <div class="miniaturas" [attr.data-testid]="'miniaturas-pap-' + p.number">
-              @for (f of fotosDoPap(p); track f.secao) {
-                <div class="miniatura pequena" [attr.title]="f.rotulo">
+          <li class="cartao" [attr.data-testid]="'pap-' + p.number" (click)="editar(p)">
+            <!-- Um monte de fotos, uma em cima da outra: a de cima é a da Partida. Abre no hover. -->
+            <div class="monte" [attr.data-testid]="'miniaturas-pap-' + p.number">
+              @for (f of fotosDoPap(p); track f.secao; let i = $index) {
+                <div class="miniatura camada" [style.--camada]="i" [attr.title]="f.rotulo">
                   <img [src]="f.foto.thumbnailUrl" [alt]="'Foto — ' + f.rotulo" loading="lazy" />
                 </div>
               } @empty {
                 <div class="miniatura"><ng-icon name="lucideCamera" aria-hidden="true" /></div>
               }
             </div>
-            <div class="ponto-conteudo">
-              <div class="flex flex-wrap items-start justify-between gap-2">
-                <p class="font-medium">PAP {{ p.number }} · {{ p.location ?? 'Sem local' }}</p>
-                @if (!avaliadas(p)) {
-                  <span class="selo">Sem seção avaliada</span>
-                } @else if (naoConformidades(p); as n) {
-                  <span class="selo selo-nao-conforme"
-                    >{{ n }} {{ n === 1 ? 'não conformidade' : 'não conformidades' }}</span
-                  >
-                } @else {
-                  <span class="selo selo-conforme">Atende à NR-12</span>
+            <div class="cartao-texto">
+              <button
+                type="button"
+                class="cartao-titulo"
+                [attr.data-testid]="'abrir-pap-' + p.number"
+                (click)="$event.stopPropagation(); editar(p)"
+              >
+                PAP {{ p.number }} · {{ p.location ?? 'Sem local' }}
+              </button>
+              <p class="cartao-linha">
+                @for (s of secoes; track s.key; let ultima = $last) {
+                  {{ s.label }}&ngsp;
+                  @if (naoConformesNaSecao(p, s.key); as n) {
+                    <span class="nao-atende">{{ n }} não {{ n === 1 ? 'atende' : 'atendem' }}</span>
+                  } @else if (naoConformesNaSecao(p, s.key) === 0) {
+                    <span class="atende">atende</span>
+                  } @else {
+                    sem foto
+                  }
+                  @if (!ultima) {
+                    &ngsp;·&ngsp;
+                  }
                 }
-              </div>
-              <ul class="resumo-secoes">
-                @for (s of secoes; track s.key) {
-                  <li>
-                    <span class="text-muted-color">{{ s.label }}</span
-                    >&ngsp;
-                    @if (naoConformesNaSecao(p, s.key); as n) {
-                      <strong class="nao-atende"
-                        >{{ n }} não {{ n === 1 ? 'atende' : 'atendem' }}</strong
-                      >
-                    } @else if (naoConformesNaSecao(p, s.key) === 0) {
-                      <strong class="atende">atende</strong>
-                    } @else {
-                      <span class="text-muted-color">sem foto</span>
-                    }
-                  </li>
-                }
-              </ul>
-              @if (p.solution) {
-                <p class="solucao text-sm">{{ p.solution }}</p>
-              }
-              <div class="flex flex-wrap items-center gap-2 text-xs text-muted-color">
-                <span
-                  >{{ p.violatedStandardIds.length }}
-                  {{
-                    p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma'
-                  }}</span
+              </p>
+              <p class="cartao-meta">
+                {{ p.violatedStandardIds.length }}
+                {{ p.violatedStandardIds.length === 1 ? 'item de norma' : 'itens de norma' }}
+              </p>
+            </div>
+            <!-- Os ícones não abrem o item: o clique para aqui. -->
+            <div class="cartao-lado" (click)="$event.stopPropagation()">
+              @if (!avaliadas(p)) {
+                <span class="selo">Sem seção avaliada</span>
+              } @else if (naoConformidades(p); as n) {
+                <span class="selo selo-nao-conforme"
+                  >{{ n }} {{ n === 1 ? 'não conformidade' : 'não conformidades' }}</span
                 >
-              </div>
-              <div class="flex gap-1">
-                <p-button
-                  [attr.data-testid]="'abrir-pap-' + p.number"
-                  [label]="editavel() ? 'Editar' : 'Ver'"
-                  severity="secondary"
-                  [outlined]="true"
-                  size="small"
-                  (onClick)="editar(p)"
-                />
-                @if (editavel()) {
-                  <p-button
+              } @else {
+                <span class="selo selo-conforme">Atende à NR-12</span>
+              }
+              @if (editavel()) {
+                <div class="cartao-acoes">
+                  <app-row-action
                     [attr.data-testid]="'duplicar-pap-' + p.number"
-                    label="Duplicar"
-                    severity="secondary"
-                    [text]="true"
-                    size="small"
-                    (onClick)="duplicar(p)"
+                    icon="lucideCopy"
+                    [label]="'Duplicar o PAP ' + p.number"
+                    (acionar)="duplicar(p)"
                   />
-                  <p-button
+                  <app-row-action
                     [attr.data-testid]="'excluir-pap-' + p.number"
-                    label="Excluir"
+                    icon="lucideTrash2"
+                    [label]="'Excluir o PAP ' + p.number"
                     severity="danger"
-                    [text]="true"
-                    size="small"
-                    (onClick)="excluindo.set(p)"
+                    (acionar)="excluindo.set(p)"
                   />
-                }
-              </div>
+                </div>
+              }
             </div>
           </li>
         }

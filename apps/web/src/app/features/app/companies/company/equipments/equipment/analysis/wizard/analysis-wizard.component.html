@@ -22,6 +22,32 @@
         <span class="text-sm text-muted-color"
           >aberta em {{ a.startedAt | date: 'dd/MM/yyyy' }}</span
         >
+        <!-- Sair e descartar ficam aqui em cima: o rodapé é só da navegação entre etapas. -->
+        <div class="ml-auto flex items-center gap-1">
+          @if (rotas(); as r) {
+            <a
+              pButton
+              [text]="true"
+              size="small"
+              severity="secondary"
+              data-testid="voltar-lista"
+              [routerLink]="r.analise"
+            >
+              <span pButtonLabel>Voltar às análises</span>
+            </a>
+          }
+          @if (a.actions.discard) {
+            <p-button
+              data-testid="descartar"
+              type="button"
+              label="Descartar rascunho"
+              severity="danger"
+              size="small"
+              [text]="true"
+              (onClick)="confirmandoDescarte.set(true)"
+            />
+          }
+        </div>
       </div>
 
       @if (erro()) {
@@ -287,62 +313,80 @@
       </section>
     </div>
 
+    <!-- Um rodapé só, com toda a navegação; os botões mudam com o item aberto no editor. -->
     <footer class="rodape">
-      <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          @if (rotas(); as r) {
-            <a pButton [text]="true" data-testid="voltar-lista" [routerLink]="r.analise">
-              <span pButtonLabel>Voltar às análises</span>
-            </a>
-          }
-          @if (a.actions.discard) {
-            <p-button
-              data-testid="descartar"
-              type="button"
-              label="Descartar rascunho"
-              severity="danger"
-              [text]="true"
-              (onClick)="confirmandoDescarte.set(true)"
-            />
-          }
-        </div>
-        <div class="flex items-center gap-2">
-          @if (!primeiraEtapa()) {
-            <p-button
-              data-testid="voltar"
-              type="button"
-              label="Voltar"
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              [outlined]="true"
-              [disabled]="ocupado()"
-              (onClick)="voltar()"
-            />
-          }
-          <!-- Salvar grava o que está na tela e fica; Avançar e Voltar gravam e saem. -->
+      <div
+        class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-end gap-2"
+        data-testid="rodape"
+      >
+        @if (editorAberto()) {
+          <p-button
+            data-testid="salvar-e-voltar-a-lista"
+            type="button"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="ocupadoNaEtapa()"
+            [label]="
+              estreito() ? 'Lista' : a.actions.edit ? 'Salvar e voltar à lista' : 'Voltar à lista'
+            "
+            (onClick)="salvarEVoltarALista()"
+          />
           @if (a.actions.edit) {
             <p-button
-              data-testid="salvar"
+              data-testid="salvar-e-adicionar"
               type="button"
-              [label]="ultimaEtapa() ? 'Salvar e sair' : 'Salvar'"
-              [severity]="ultimaEtapa() ? undefined : 'secondary'"
-              [outlined]="!ultimaEtapa()"
-              [loading]="ocupado()"
-              (onClick)="salvarAqui()"
+              icon="pi pi-plus"
+              severity="secondary"
+              [outlined]="true"
+              [disabled]="ocupadoNaEtapa()"
+              [label]="estreito() ? 'Outro' : 'Salvar e adicionar outro ' + nomeDoItem()"
+              (onClick)="salvarEAdicionarOutro()"
             />
           }
-          @if (!ultimaEtapa()) {
-            <p-button
-              data-testid="avancar"
-              type="button"
-              label="Avançar"
-              icon="pi pi-arrow-right"
-              iconPos="right"
-              [disabled]="ocupado()"
-              (onClick)="avancar()"
-            />
-          }
-        </div>
+        } @else if (!primeiraEtapa()) {
+          <p-button
+            data-testid="voltar"
+            type="button"
+            label="Voltar"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="ocupado()"
+            (onClick)="voltar()"
+          />
+        }
+        <!-- Salvar sozinho só na ficha: nas listas, cada item já foi salvo ao sair do editor. -->
+        @if (a.actions.edit && etapaAtual().chave === 'ficha') {
+          <p-button
+            data-testid="salvar"
+            type="button"
+            label="Salvar"
+            severity="secondary"
+            [outlined]="true"
+            [loading]="ocupado()"
+            (onClick)="salvarAqui()"
+          />
+        }
+        @if (!ultimaEtapa()) {
+          <p-button
+            data-testid="avancar"
+            type="button"
+            label="Avançar"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [disabled]="ocupadoNaEtapa()"
+            (onClick)="avancar()"
+          />
+        } @else if (a.actions.edit) {
+          <p-button
+            data-testid="salvar"
+            type="button"
+            label="Salvar e sair"
+            [loading]="ocupadoNaEtapa()"
+            (onClick)="salvarAqui()"
+          />
+        }
       </div>
     </footer>
   </form>

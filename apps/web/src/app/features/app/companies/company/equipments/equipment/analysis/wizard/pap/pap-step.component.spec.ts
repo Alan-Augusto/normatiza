@@ -62,6 +62,15 @@ describe('PapStepComponent', () => {
     alvo.click();
     fixture.detectChanges();
   }
+  /** Os botões "Salvar e voltar à lista" e "Salvar e adicionar outro" ficam no rodapé do assistente. */
+  function voltarALista() {
+    fixture.componentInstance.voltarALista();
+    fixture.detectChanges();
+  }
+  function salvarEAdicionar() {
+    fixture.componentInstance.salvarEAdicionar();
+    fixture.detectChanges();
+  }
   function digitar(testid: string, valor: string) {
     const campo = el(testid) as HTMLInputElement;
     campo.value = valor;
@@ -125,7 +134,7 @@ describe('PapStepComponent', () => {
     expect(el('quesito-activation-installed')?.classList).not.toContain('nao-conforme');
     expect(texto('aba-activation')).toContain('4 não atendem');
 
-    clicar('voltar-a-lista');
+    voltarALista();
     const req = http.expectOne(`${ANALISE}/paps/pap-1`);
     const partida = emptyPapAnswers();
     partida.installed = { physicalState: true, nr12Compliant: true };
@@ -162,7 +171,7 @@ describe('PapStepComponent', () => {
     clicar('abrir-pap-1');
     digitar('campo-local-pap', 'Botoeira');
 
-    clicar('salvar-e-adicionar');
+    salvarEAdicionar();
     http.expectOne(`${ANALISE}/paps/pap-1`).flush(pap({ location: 'Botoeira' }));
     fixture.detectChanges();
 
@@ -175,7 +184,7 @@ describe('PapStepComponent', () => {
     abrir();
     clicar('primeiro-pap');
 
-    clicar('voltar-a-lista');
+    voltarALista();
 
     expect(el('sem-paps')).not.toBeNull();
   });
@@ -189,7 +198,7 @@ describe('PapStepComponent', () => {
     expect(texto('editor-pap')).toContain('cópia do PAP 1');
     expect(el('sem-foto-activation')).not.toBeNull();
 
-    clicar('voltar-a-lista');
+    voltarALista();
     const req = http.expectOne((r) => r.method === 'PUT' && /paps\/[0-9a-f-]{36}$/.test(r.url));
     expect(req.request.body.sections.activation.answers.installed).toEqual({ physicalState: true, nr12Compliant: true });
     expect(req.request.body.solution).toBe('Trocar a botoeira.');
@@ -266,7 +275,7 @@ describe('PapStepComponent', () => {
 
     expect((el('campo-local-pap') as HTMLInputElement).disabled).toBe(true);
     expect(el('foto-activation-arquivo')).toBeNull();
-    clicar('voltar-a-lista');
+    voltarALista();
     expect(el('paps')).not.toBeNull();
   });
 });

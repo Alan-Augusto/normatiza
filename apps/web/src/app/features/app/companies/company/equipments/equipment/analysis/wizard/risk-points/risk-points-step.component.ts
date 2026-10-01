@@ -29,6 +29,7 @@ import { AnalysisService } from '@core/services/analysis.service';
 import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
+import { RowActionComponent } from '../../../../../../../../../shared/components/row-action/row-action.component';
 import { HrnBadgeComponent } from '../../../../../../../../../shared/components/hrn-badge/hrn-badge.component';
 import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
 import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
@@ -77,6 +78,7 @@ interface Grupo {
     CampoComponent,
     HrnBadgeComponent,
     HrnCalculatorComponent,
+    RowActionComponent,
     NormasDescumpridasComponent,
   ],
   providers: [provideIcons({ lucideTriangleAlert, lucidePlus, lucideMapPin, lucideGauge, lucideWrench, lucideCamera })],

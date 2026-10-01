@@ -61,6 +61,15 @@ describe('PeStepComponent', () => {
     alvo.click();
     fixture.detectChanges();
   }
+  /** Os botões "Salvar e voltar à lista" e "Salvar e adicionar outro" ficam no rodapé do assistente. */
+  function voltarALista() {
+    fixture.componentInstance.voltarALista();
+    fixture.detectChanges();
+  }
+  function salvarEAdicionar() {
+    fixture.componentInstance.salvarEAdicionar();
+    fixture.detectChanges();
+  }
   function digitar(testid: string, valor: string) {
     const campo = el(testid) as HTMLInputElement;
     campo.value = valor;
@@ -108,7 +117,7 @@ describe('PeStepComponent', () => {
     responder('nr12-pe-manualReset', 'Atende NR-12');
     expect(texto('nao-atendem-pe')).toBe('7 não atendem');
 
-    clicar('voltar-a-lista');
+    voltarALista();
     const req = http.expectOne((r) => r.method === 'PUT' && /pes\/[0-9a-f-]{36}$/.test(r.url));
     const respostas = emptyPeAnswers();
     respostas.manualReset = { physicalState: true, nr12Compliant: true };
@@ -126,7 +135,7 @@ describe('PeStepComponent', () => {
     clicar('primeiro-pe');
     digitar('campo-local-pe', 'Botão');
 
-    clicar('salvar-e-adicionar');
+    salvarEAdicionar();
     http.expectOne((r) => r.method === 'PUT' && /pes\/[0-9a-f-]{36}$/.test(r.url)).flush(pe({ location: 'Botão' }));
     fixture.detectChanges();
 
@@ -145,7 +154,7 @@ describe('PeStepComponent', () => {
     abrir();
     clicar('primeiro-pe');
 
-    clicar('voltar-a-lista');
+    voltarALista();
 
     expect(el('sem-pes')).not.toBeNull();
   });
@@ -159,7 +168,7 @@ describe('PeStepComponent', () => {
     expect(texto('editor-pe')).toContain('cópia do PE 1');
     expect(el('foto-pe')).toBeNull();
 
-    clicar('voltar-a-lista');
+    voltarALista();
     const req = http.expectOne((r) => r.method === 'PUT' && /pes\/[0-9a-f-]{36}$/.test(r.url));
     expect(req.request.url).not.toContain('pe-1');
     expect(req.request.body).toEqual({ location: 'Botão da lateral', answers: respostas, violatedStandardIds: [], solution: 'Trocar o botão.' });
@@ -217,7 +226,7 @@ describe('PeStepComponent', () => {
 
     expect((el('campo-local-pe') as HTMLInputElement).disabled).toBe(true);
     expect(el('foto-pe-arquivo')).toBeNull();
-    clicar('voltar-a-lista');
+    voltarALista();
     expect(el('pes')).not.toBeNull();
   });
 });
