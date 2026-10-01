@@ -1,0 +1,60 @@
+<div class="seletor">
+  <span class="busca">
+    <ng-icon name="lucideSearch" aria-hidden="true" />
+    <input
+      pInputText
+      type="search"
+      data-testid="busca-de-itens"
+      class="w-full"
+      [placeholder]="buscaPlaceholder()"
+      [value]="busca()"
+      (input)="busca.set($any($event.target).value)"
+      aria-label="Buscar"
+    />
+  </span>
+
+  <div class="lista" data-testid="itens">
+    @for (g of visiveis(); track g.titulo) {
+      <section class="grupo">
+        <button type="button" class="grupo-titulo" [attr.aria-expanded]="aberto(g.titulo)" [attr.data-testid]="'grupo-' + g.titulo" (click)="alternarGrupo(g.titulo)">
+          <ng-icon name="lucideChevronRight" class="seta" [class.aberta]="aberto(g.titulo)" aria-hidden="true" />
+          <span class="flex-1">{{ g.titulo }}</span>
+          @if (marcadosNoGrupo(g); as n) {
+            <span class="contagem">{{ n }}</span>
+          }
+        </button>
+        @if (aberto(g.titulo)) {
+          <ul>
+            @for (i of g.itens; track i.id) {
+              <li>
+                <label class="item" [class.marcado]="marcados().has(i.id)" [attr.data-testid]="'item-' + i.id">
+                  <input type="checkbox" [checked]="marcados().has(i.id)" (change)="alternar(i.id)" />
+                  @if (i.codigo) {
+                    <span class="codigo">{{ i.codigo }}</span>&ngsp;
+                  }
+                  <span class="texto">{{ i.texto }}</span>
+                </label>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    } @empty {
+      <p class="nada text-sm text-muted-color">
+        {{ grupos().length ? 'Nada encontrado para "' + busca() + '".' : 'Carregando o catálogo…' }}
+      </p>
+    }
+  </div>
+
+  <div class="rodape">
+    <span class="text-sm" data-testid="quantos-escolhidos">
+      <strong>{{ quantos() }}</strong> {{ quantos() === 1 ? 'escolhido' : 'escolhidos' }}
+    </span>
+    @if (quantos()) {
+      <p-button label="Limpar" severity="secondary" [text]="true" size="small" (onClick)="limpar()" />
+    }
+    <span class="flex-1"></span>
+    <p-button data-testid="cancelar-escolha" label="Cancelar" severity="secondary" [text]="true" (onClick)="ref.fechar()" />
+    <p-button data-testid="confirmar-escolha" label="Confirmar" (onClick)="confirmar()" />
+  </div>
+</div>

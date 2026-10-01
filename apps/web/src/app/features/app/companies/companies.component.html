@@ -136,13 +136,13 @@
         <!-- "Ver" existe para todos: ler o cadastro não é administrá-lo. -->
         <td>
             <div class="flex justify-end gap-0.5">
-              <app-row-action data-testid="acao-ver" icon="lucideEye" label="Ver dados da empresa" (acionar)="vendo.set(empresa)" />
+              <app-row-action data-testid="acao-ver" icon="lucideEye" label="Ver dados da empresa" (acionar)="ver(empresa)" />
               @if (podeConvidarGestor(empresa)) {
                 <app-row-action
                   data-testid="acao-convidar-gestor"
                   icon="lucideUserPlus"
                   label="Convidar o Gestor"
-                  (acionar)="convidandoGestor.set(empresa)"
+                  (acionar)="convidarGestor(empresa)"
                 />
               }
               @if (conviteParaReenviar(empresa); as gestor) {
@@ -170,7 +170,7 @@
                   icon="lucidePower"
                   label="Desativar"
                   severity="danger"
-                  (acionar)="desativando.set(empresa)"
+                  (acionar)="desativar(empresa)"
                 />
               }
             </div>
@@ -188,72 +188,3 @@
     }
   </app-data-table>
 </div>
-
-@if (desativando(); as empresa) {
-  <p-dialog
-    [header]="'Desativar ' + empresa.tradeName"
-    [visible]="true"
-    (visibleChange)="desativando.set(null)"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '32rem' }"
-  >
-    <div class="space-y-4">
-      <p class="text-sm text-surface-700 dark:text-surface-300">
-        A {{ empresa.tradeName }} fica em <strong>modo leitura</strong>: ninguém perde o acesso e
-        os laudos continuam disponíveis, mas nada mais é alterado nela — cadastro, convites,
-        análises e plano de ação. Dá para reativar depois.
-      </p>
-      <div class="flex justify-end gap-2">
-        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="desativando.set(null)" />
-        <p-button
-          data-testid="confirmar-desativar"
-          label="Desativar empresa"
-          severity="danger"
-          [loading]="processando()"
-          (onClick)="confirmarDesativar()"
-        />
-      </div>
-    </div>
-  </p-dialog>
-}
-
-@if (convidandoGestor(); as empresa) {
-  <!--
-    O convite do Gestor sem sair da lista. Papel e empresa já estão decididos:
-    sobra o que é pergunta de verdade — quem é a pessoa.
-  -->
-  <p-dialog
-    [header]="'Convidar o Gestor da ' + empresa.tradeName"
-    [visible]="true"
-    (visibleChange)="convidandoGestor.set(null)"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '40rem' }"
-    [breakpoints]="{ '640px': '95vw' }"
-  >
-    <app-invite-form
-      [roles]="papelDoGestor"
-      [fixedCompanyId]="empresa.id"
-      (created)="aoConvidarGestor($event)"
-    />
-  </p-dialog>
-}
-
-@if (vendo(); as empresa) {
-  <p-dialog
-    header="Dados da empresa"
-    [visible]="true"
-    (visibleChange)="vendo.set(null)"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [dismissableMask]="true"
-    [style]="{ width: '40rem' }"
-    [breakpoints]="{ '640px': '95vw' }"
-  >
-    <app-company-info [companyId]="empresa.id" />
-  </p-dialog>
-}

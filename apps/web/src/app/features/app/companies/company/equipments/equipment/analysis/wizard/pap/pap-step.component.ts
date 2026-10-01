@@ -4,12 +4,11 @@ import { FormControl, FormGroup, FormsModule, NonNullableFormBuilder, ReactiveFo
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideCamera, lucideListChecks, lucidePlus, lucidePower, lucideScale } from '@ng-icons/lucide';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { SelectButton } from 'primeng/selectbutton';
 import { Textarea } from 'primeng/textarea';
-import { Observable, catchError, map, of, startWith, switchMap, timeout } from 'rxjs';
+import { Observable, catchError, map, of, startWith, switchMap, tap, timeout } from 'rxjs';
 
 import {
   PAP_CRITERIA,
@@ -27,13 +26,15 @@ import {
 } from '@normatiza/shared';
 
 import { mensagemDoServidor } from '@core/http/mensagem-de-erro';
+import { ModalService } from '@core/modal/modal.service';
 import { AnalysisService } from '@core/services/analysis.service';
 import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { RowActionComponent } from '../../../../../../../../../shared/components/row-action/row-action.component';
 import { FotoDoItemComponent } from '../foto/foto-do-item.component';
-import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
+import { EscolhaMultiplaComponent } from '../../../../../../../../../shared/components/escolha-multipla/escolha-multipla.component';
+import { gruposDeNorma } from '../normas/normas';
 import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
 import type { AlvoDaAnalise } from '../risk-points/risk-points-step.component';
 
@@ -61,7 +62,6 @@ type Secao = FormGroup<Record<PapCriterion, Resposta>>;
     FormsModule,
     ReactiveFormsModule,
     Button,
-    Dialog,
     InputText,
     Message,
     NgIconComponent,
@@ -70,7 +70,7 @@ type Secao = FormGroup<Record<PapCriterion, Resposta>>;
     CampoComponent,
     FotoDoItemComponent,
     RowActionComponent,
-    NormasDescumpridasComponent,
+    EscolhaMultiplaComponent,
   ],
   providers: [provideIcons({ lucidePower, lucidePlus, lucideListChecks, lucideScale, lucideCamera })],
   templateUrl: './pap-step.component.html',
@@ -78,6 +78,7 @@ type Secao = FormGroup<Record<PapCriterion, Resposta>>;
 })
 export class PapStepComponent implements EtapaComEditor {
   private readonly service = inject(AnalysisService);
+  private readonly modal = inject(ModalService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -113,6 +114,8 @@ export class PapStepComponent implements EtapaComEditor {
     (this.catalogos().pacote?.standardSections ?? []).filter((s) => s.name.startsWith(`${PAP_STANDARD_SECTION} `)),
   );
 
+  readonly gruposDeNorma = computed(() => gruposDeNorma(this.secoesDeNorma()));
+
   /** O PAP aberto no editor: um que existe, ou um novo — em branco ou cópia de outro. */
   readonly editando = signal<{ id: string; existente: PapDto | null; copiaDe?: number } | null>(null);
   readonly secaoAberta = signal<PapSection>('activation');
@@ -122,8 +125,6 @@ export class PapStepComponent implements EtapaComEditor {
   /** A seção cuja foto está subindo. */
   readonly enviandoFoto = signal<PapSection | null>(null);
   readonly erroDaFoto = signal<{ secao: PapSection; texto: string } | null>(null);
-  readonly excluindo = signal<PapDto | null>(null);
-  readonly processando = signal(false);
 
   readonly form = this.fb.group({
     local: '',
@@ -287,28 +288,31 @@ export class PapStepComponent implements EtapaComEditor {
     });
   }
 
-  confirmarExclusao(): void {
-    const pap = this.excluindo();
-    if (!pap || this.processando()) return;
+  /** Pergunta antes; os seguintes sobem um, como no servidor (D11). */
+  excluir(pap: PapDto): void {
     const { companyId, code, number } = this.alvo();
-    this.processando.set(true);
-    this.service.removePap(companyId, code, number, pap.id).subscribe({
-      next: () => {
-        this.processando.set(false);
-        this.excluindo.set(null);
-        this.papsChange.emit(
-          this.paps()
-            .filter((p) => p.id !== pap.id)
-            .map((p) => (p.number > pap.number ? { ...p, number: p.number - 1 } : p)),
-        );
-        this.aviso.set(`PAP ${pap.number} excluído. Os seguintes foram renumerados.`);
-      },
-      error: (erro: unknown) => {
-        this.processando.set(false);
-        this.excluindo.set(null);
-        this.aviso.set(null);
-        this.erro.set(mensagemDoServidor(erro, 'Não foi possível excluir o PAP.'));
-      },
+    void this.modal.confirmar({
+      titulo: `Excluir o PAP ${pap.number}`,
+      texto: 'O PAP sai do rascunho, com as fotos, e os seguintes são renumerados para a lista não pular um número.',
+      confirmar: 'Excluir',
+      testid: 'confirmar-exclusao-pap',
+      acao: () =>
+        this.service.removePap(companyId, code, number, pap.id).pipe(
+          tap({
+            next: () => {
+              this.papsChange.emit(
+                this.paps()
+                  .filter((p) => p.id !== pap.id)
+                  .map((p) => (p.number > pap.number ? { ...p, number: p.number - 1 } : p)),
+              );
+              this.aviso.set(`PAP ${pap.number} excluído. Os seguintes foram renumerados.`);
+            },
+            error: (erro: unknown) => {
+              this.aviso.set(null);
+              this.erro.set(mensagemDoServidor(erro, 'Não foi possível excluir o PAP.'));
+            },
+          }),
+        ),
     });
   }
 

@@ -6,6 +6,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { PAP_SECTIONS, emptyPapAnswers, type PapDto } from '@normatiza/shared';
 
 import { API_BASE_URL } from '../../../../../../../../../core/auth/api.config';
+import { hostDeModais } from '../../../../../../../../../core/modal/testing/host-de-modais';
 import { BRF } from '../../../../../../../../../core/auth/testing/sessao';
 import { catalogosDeTeste } from '../../../../../../../../../core/services/testing/catalogos';
 import { PapStepComponent } from './pap-step.component';
@@ -19,6 +20,7 @@ describe('PapStepComponent', () => {
   const API = 'http://api.teste';
   const ANALISE = `${API}/companies/${BRF.id}/equipments/EQ-0001/analyses/1`;
   let http: HttpTestingController;
+  let modais: ReturnType<typeof hostDeModais>;
   let fixture: ComponentFixture<PapStepComponent>;
   let emitidos: PapDto[][];
 
@@ -37,6 +39,7 @@ describe('PapStepComponent', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideNoopAnimations(), { provide: API_BASE_URL, useValue: API }],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
     fixture = TestBed.createComponent(PapStepComponent);
     fixture.componentRef.setInput('alvo', { companyId: BRF.id, code: 'EQ-0001', number: 1 });
     fixture.componentRef.setInput('paps', paps);
@@ -70,6 +73,12 @@ describe('PapStepComponent', () => {
   function salvarEAdicionar() {
     fixture.componentInstance.salvarEAdicionar();
     fixture.detectChanges();
+  }
+  /** O modal sai pelo host, e o `p-dialog` desenha o conteúdo depois: espera. */
+  async function noModal() {
+    modais.detectChanges();
+    await modais.whenStable();
+    modais.detectChanges();
   }
   function digitar(testid: string, valor: string) {
     const campo = el(testid) as HTMLInputElement;
@@ -249,10 +258,11 @@ describe('PapStepComponent', () => {
     expect(texto('foto-activation-erro')).toContain('PNG, JPG ou WebP');
   });
 
-  it('deve renumerar os seguintes ao excluir um PAP', () => {
+  it('deve renumerar os seguintes ao excluir um PAP', async () => {
     abrir([pap(), pap({ id: 'pap-2', number: 2, location: 'Botoeira' }), pap({ id: 'pap-3', number: 3, location: 'Descarga' })]);
 
     clicar('excluir-pap-1');
+    await noModal();
     (document.querySelector('[data-testid="confirmar-exclusao-pap"] button') as HTMLElement).click();
     const req = http.expectOne(`${ANALISE}/paps/pap-1`);
     expect(req.request.method).toBe('DELETE');

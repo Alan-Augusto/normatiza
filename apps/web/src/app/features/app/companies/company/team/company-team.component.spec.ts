@@ -35,6 +35,7 @@ import {
   opcoesDe,
 } from '../../../../../core/testing/prime';
 import { CompanyTeamComponent } from './company-team.component';
+import { hostDeModais, telaComModais } from '../../../../../core/modal/testing/host-de-modais';
 
 /**
  * Equipe da Empresa — Contexto 2.
@@ -46,6 +47,9 @@ import { CompanyTeamComponent } from './company-team.component';
  */
 describe('CompanyTeamComponent', () => {
   let fixture: ComponentFixture<CompanyTeamComponent>;
+  let modais: ReturnType<typeof hostDeModais>;
+  /** A página e o modal por cima dela: o que se abre pelo `ModalService` sai no host. */
+  const tela = telaComModais(() => fixture, () => modais);
   let http: HttpTestingController;
 
   const API = 'http://api.teste';
@@ -62,6 +66,7 @@ describe('CompanyTeamComponent', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
   });
 
   afterEach(() => http.verify());
@@ -76,9 +81,9 @@ describe('CompanyTeamComponent', () => {
     await login;
 
     fixture = TestBed.createComponent(CompanyTeamComponent);
-    fixture.detectChanges();
+    tela.detectChanges();
     http.expectOne(`${API}/companies/${BRF.id}/members`).flush(equipe);
-    fixture.detectChanges();
+    tela.detectChanges();
   }
 
   const comoMarcos = (equipe?: CompanyTeam) => abrirComo([vínculo(BRF.id, ['MANAGER'])], equipe);
@@ -87,14 +92,14 @@ describe('CompanyTeamComponent', () => {
   const comoJosué = (equipe: CompanyTeam = EQUIPE_DA_BRF_PELA_CONSULTORIA) =>
     abrirComo([vínculo(BRF.id, ['LEAD_ENGINEER']), vínculo(SEARA.id, ['LEAD_ENGINEER'])], equipe);
 
-  const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
-  const el = (seletor: string) => elemento(fixture, seletor);
-  const todos = (seletor: string) => elementos(fixture, seletor);
+  const texto = () => document.body.textContent ?? '';
+  const el = (seletor: string) => elemento(tela, seletor);
+  const todos = (seletor: string) => elementos(tela, seletor);
   const linhaDe = (userId: string) => el(`[data-testid="linha"][data-user="${userId}"]`);
 
   function clicar(alvo: HTMLElement | null) {
     alvo!.click();
-    fixture.detectChanges();
+    tela.detectChanges();
   }
 
   /** A ação de uma linha: o `<button>` real mora dentro do `p-button`. */
@@ -248,12 +253,12 @@ describe('CompanyTeamComponent', () => {
       await comoMarcos();
 
       clicar(acao(terceiroNaBrf.id, 'remover'));
-      clicarNo(fixture, '[data-testid="confirmar-remocao"] button');
+      clicarNo(tela, '[data-testid="confirmar-remocao"] button');
 
       const req = http.expectOne(`${API}/memberships/${terceiroNaBrf.membershipId}`);
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
-      fixture.detectChanges();
+      tela.detectChanges();
 
       http.expectOne(`${API}/companies/${BRF.id}/members`).flush(EQUIPE_DA_BRF);
     });
@@ -273,7 +278,7 @@ describe('CompanyTeamComponent', () => {
     it('não deve perguntar em qual empresa — já se sabe qual', async () => {
       await comoMarcos();
 
-      clicarNo(fixture, '[data-testid="convidar"] button');
+      clicarNo(tela, '[data-testid="convidar"] button');
 
       expect(el('[data-testid="convite-papel"]')).not.toBeNull();
       expect(el('[data-testid="empresa-oferecida"]')).toBeNull();
@@ -282,15 +287,15 @@ describe('CompanyTeamComponent', () => {
     it('deve convidar para esta empresa, sem que ninguém escolha', async () => {
       await comoMarcos();
 
-      clicarNo(fixture, '[data-testid="convidar"] button');
+      clicarNo(tela, '[data-testid="convidar"] button');
       preencher('novo@brf.com', 'Novo');
-      escolher(fixture, 'convite-papel', 'Executor');
-      clicarNo(fixture, '[data-testid="enviar-convite"]');
+      escolher(tela, 'convite-papel', 'Executor');
+      clicarNo(tela, '[data-testid="enviar-convite"]');
 
       const req = http.expectOne(`${API}/invitations`);
       expect(req.request.body.companyIds).toEqual([BRF.id]);
       req.flush({ id: 'inv-novo' });
-      fixture.detectChanges();
+      tela.detectChanges();
 
       http.expectOne(`${API}/companies/${BRF.id}/members`).flush(EQUIPE_DA_BRF);
     });
@@ -298,9 +303,9 @@ describe('CompanyTeamComponent', () => {
     it('deve oferecer ao Gestor apenas os papéis que ele concede', async () => {
       await comoMarcos();
 
-      clicarNo(fixture, '[data-testid="convidar"] button');
+      clicarNo(tela, '[data-testid="convidar"] button');
 
-      expect(opcoesDe(fixture, 'convite-papel').sort()).toEqual([
+      expect(opcoesDe(tela, 'convite-papel').sort()).toEqual([
         'Diretor',
         'Engenheiro do Cliente',
         'Executor',
@@ -335,16 +340,16 @@ describe('CompanyTeamComponent', () => {
       // continua podendo alocar gente da consultoria nela.
       await comoJosué();
 
-      clicarNo(fixture, '[data-testid="convidar"] button');
+      clicarNo(tela, '[data-testid="convidar"] button');
 
-      const oferecidos = opcoesDe(fixture, 'convite-papel');
+      const oferecidos = opcoesDe(tela, 'convite-papel');
       expect(oferecidos).toContain('Técnico');
       expect(oferecidos).toContain('Gestor');
     });
   });
 
   function preencher(email: string, nome: string) {
-    digitarEm(fixture, '[data-testid="convite-email"]', email);
-    digitarEm(fixture, '[data-testid="convite-nome"]', nome);
+    digitarEm(tela, '[data-testid="convite-email"]', email);
+    digitarEm(tela, '[data-testid="convite-nome"]', nome);
   }
 });

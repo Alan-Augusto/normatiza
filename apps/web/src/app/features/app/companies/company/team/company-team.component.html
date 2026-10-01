@@ -86,7 +86,7 @@
         <app-role-guide />
 
         @if (podeConvidar()) {
-          <p-button data-testid="convidar" size="small" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+          <p-button data-testid="convidar" size="small" label="Convidar pessoa" (onClick)="convidar()" />
         }
       </div>
     </ng-template>
@@ -175,7 +175,7 @@
                 <app-row-action data-testid="acao-reenviar" icon="lucideSend" label="Reenviar convite" (acionar)="reenviar(membro)" />
               }
               @if (membro.actions.changeRoles) {
-                <app-row-action data-testid="acao-trocar-papel" icon="lucideUserCog" label="Trocar papel" (acionar)="editando.set(membro)" />
+                <app-row-action data-testid="acao-trocar-papel" icon="lucideUserCog" label="Trocar papel" (acionar)="trocarPapel(membro)" />
               }
               <!--
               "Remover da empresa", e nunca "Excluir": o Gestor encerra o acesso
@@ -188,7 +188,7 @@
                   icon="lucideUserMinus"
                   label="Remover da empresa"
                   severity="danger"
-                  (acionar)="removendo.set(membro)"
+                  (acionar)="remover(membro)"
                 />
               }
             </div>
@@ -202,75 +202,9 @@
         <p-button
           data-testid="convidar-vazio"
           label="Convidar a primeira pessoa"
-          (onClick)="convidando.set(true)"
+          (onClick)="convidar()"
         />
       </ng-template>
     }
   </app-data-table>
 </div>
-
-<p-dialog
-  [header]="'Convidar para ' + nomeDaEmpresa()"
-  [visible]="convidando()"
-  (visibleChange)="convidando.set($event)"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [style]="{ width: '38rem' }"
->
-  <!--
-    Sem seletor de empresas: aqui já se sabe qual. Oferecer a escolha seria
-    encenar uma pergunta cuja resposta a rota já deu.
-  -->
-  <app-invite-form
-    [roles]="papeisQuePossoConceder()"
-    [fixedCompanyId]="companyId()"
-    (created)="concluir()"
-  />
-</p-dialog>
-
-@if (editando(); as membro) {
-  <p-dialog
-    [header]="'Papéis de ' + membro.name"
-    [visible]="true"
-    (visibleChange)="editando.set(null)"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '34rem' }"
-  >
-    <app-role-editor
-      [memberName]="membro.name"
-      [vinculos]="vinculoDoEditando()"
-      (saved)="concluir()"
-    />
-  </p-dialog>
-}
-
-@if (removendo(); as membro) {
-  <p-dialog
-    [header]="'Remover ' + membro.name + ' da empresa'"
-    [visible]="true"
-    (visibleChange)="removendo.set(null)"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '32rem' }"
-  >
-    <div class="space-y-4">
-      <p class="text-sm text-surface-900 dark:text-surface-0">
-        {{ membro.name }} perde o acesso a {{ nomeDaEmpresa() }}. O cadastro continua existindo, e o
-        histórico do que essa pessoa fez aqui não muda.
-      </p>
-
-      <div class="flex justify-end">
-        <p-button
-          data-testid="confirmar-remocao"
-          label="Remover da empresa"
-          severity="danger"
-          (onClick)="remover()"
-        />
-      </div>
-    </div>
-  </p-dialog>
-}

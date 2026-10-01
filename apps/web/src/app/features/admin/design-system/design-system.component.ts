@@ -44,11 +44,13 @@ import {
   LinhaDaTabela,
   TituloDeGrupo,
 } from '../../../shared/components/data-table/data-table.directives';
-import { Dialog } from 'primeng/dialog';
-import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Tooltip } from 'primeng/tooltip';
 import { Toast } from 'primeng/toast';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
+import { delay, of, tap } from 'rxjs';
+
+import { ModalService } from '../../../core/modal/modal.service';
+import { ModalDeExemploComponent } from './modal-de-exemplo.component';
 
 @Component({
   selector: 'app-design-system',
@@ -70,8 +72,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     LinhaDaTabela,
     AcaoVazia,
     TituloDeGrupo,
-    Dialog,
-    ConfirmDialog,
     Tooltip,
     Toast,
     CampoComponent,
@@ -84,7 +84,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     MultiSelect,
   ],
   providers: [
-    ConfirmationService,
     MessageService,
     provideIcons({
       lucidePalette,
@@ -106,7 +105,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
   styleUrl: './design-system.component.css',
 })
 export class DesignSystemComponent {
-  private readonly confirmationService = inject(ConfirmationService);
+  private readonly modal = inject(ModalService);
   private readonly messageService = inject(MessageService);
 
   // Controle de Abas
@@ -154,7 +153,6 @@ export class DesignSystemComponent {
   }
 
   // Controle de Modais
-  displayNormalModal = signal<boolean>(false);
 
   // Dados Mockados para a Tabela e Lista
   usersList = [
@@ -189,33 +187,25 @@ export class DesignSystemComponent {
     { title: 'Tentativa de login bloqueada', user: 'Sistema', time: 'Ontem' },
   ];
 
-  // Disparar Confirmação
-  confirmAction() {
-    this.confirmationService.confirm({
-      message: 'Tem certeza que deseja prosseguir com a exclusão deste item permanente?',
-      header: 'Confirmar Exclusão',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Excluir',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
-      rejectButtonStyleClass: 'p-button-text',
-      accept: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Excluído',
-          detail: 'Item removido com sucesso.',
-        });
-      },
-    });
+  /** Modal com formulário: o componente se fecha com o resultado, pelo `ModalRef`. */
+  async abrirModalNormal() {
+    const ref = this.modal.abrir<boolean>(ModalDeExemploComponent, { titulo: 'Criar Novo Usuário', largura: '25rem' });
+    if (await ref.fechado) {
+      this.messageService.add({ severity: 'success', summary: 'Salvo', detail: 'Os dados do formulário foram salvos!' });
+    }
   }
 
-  // Enviar Formulário Mock
-  saveModalForm() {
-    this.displayNormalModal.set(false);
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Salvo',
-      detail: 'Os dados do formulário foram salvos!',
+  /** Confirmação: o botão carrega enquanto a ação roda, e o modal fecha ao terminar. */
+  confirmAction() {
+    void this.modal.confirmar({
+      titulo: 'Confirmar Exclusão',
+      texto: 'Tem certeza que deseja prosseguir com a exclusão deste **item permanente**?',
+      confirmar: 'Excluir',
+      acao: () =>
+        of(null).pipe(
+          delay(600),
+          tap(() => this.messageService.add({ severity: 'success', summary: 'Excluído', detail: 'Item removido com sucesso.' })),
+        ),
     });
   }
 }

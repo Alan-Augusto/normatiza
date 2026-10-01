@@ -6,13 +6,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideCircleAlert, lucideClipboardList, lucideOctagonX, lucidePower, lucideTriangleAlert } from '@ng-icons/lucide';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Step, StepList, Stepper } from 'primeng/stepper';
-import { Observable, catchError, finalize, map, of, timeout } from 'rxjs';
+import { Observable, catchError, finalize, map, of, tap, timeout } from 'rxjs';
 
 import {
   ANALYSIS_STATUS_LABEL,
@@ -35,6 +34,7 @@ import { FormularioComAlteracoes } from '@core/guards/unsaved-changes.guard';
 import { mensagemDoServidor } from '@core/http/mensagem-de-erro';
 import { empresaDaRota } from '@core/routing/empresa-da-rota';
 import { ROTAS } from '@core/routing/rotas';
+import { ModalService } from '@core/modal/modal.service';
 import { AnalysisService } from '@core/services/analysis.service';
 
 import { CampoComponent } from '../../../../../../../../shared/components/form/campo.component';
@@ -93,7 +93,6 @@ const SIM_OU_NÃO = [
     Button,
     ButtonDirective,
     ButtonLabel,
-    Dialog,
     InputText,
     Message,
     Select,
@@ -115,6 +114,7 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly service = inject(AnalysisService);
+  private readonly modal = inject(ModalService);
   private readonly contexto = inject(EquipmentContext);
   private readonly empresa = empresaDaRota();
 
@@ -137,8 +137,6 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
   /** A vista cuja foto está subindo, para o botão dela mostrar que está ocupado. */
   readonly enviando = signal<RecognitionView | null>(null);
   readonly erroDaFoto = signal<string | null>(null);
-  readonly descartando = signal(false);
-  readonly confirmandoDescarte = signal(false);
 
   private readonly numero = toSignal(this.route.paramMap.pipe(map((p) => Number(p.get('numero')))), {
     initialValue: Number(this.route.snapshot?.paramMap.get('numero')),
@@ -382,22 +380,24 @@ export class AnalysisWizardComponent implements FormularioComAlteracoes {
     });
   }
 
-  confirmarDescarte(): void {
+  descartar(): void {
     const alvo = this.alvo();
-    if (!alvo || this.descartando()) return;
-    this.descartando.set(true);
-    this.service.discard(alvo.companyId, alvo.code, alvo.number).subscribe({
-      next: () => {
-        this.descartando.set(false);
-        this.confirmandoDescarte.set(false);
-        this.form.markAsPristine();
-        void this.router.navigateByUrl(this.rotas()!.analise);
-      },
-      error: (erro: unknown) => {
-        this.descartando.set(false);
-        this.confirmandoDescarte.set(false);
-        this.erro.set(mensagemDoServidor(erro, 'Não foi possível descartar o rascunho.'));
-      },
+    if (!alvo) return;
+    void this.modal.confirmar({
+      titulo: `Descartar a Análise ${alvo.number}`,
+      texto: 'O rascunho é apagado de vez, com os pontos de risco, os PAP, os PE e as fotos. Isso não tem volta. Descartar é para a análise aberta por engano ou abandonada; a máquina fica livre para uma análise nova.',
+      confirmar: 'Descartar',
+      testid: 'confirmar-descarte',
+      acao: () =>
+        this.service.discard(alvo.companyId, alvo.code, alvo.number).pipe(
+          tap({
+            next: () => {
+              this.form.markAsPristine();
+              void this.router.navigateByUrl(this.rotas()!.analise);
+            },
+            error: (erro: unknown) => this.erro.set(mensagemDoServidor(erro, 'Não foi possível descartar o rascunho.')),
+          }),
+        ),
     });
   }
 

@@ -1,17 +1,10 @@
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
+import { tap } from 'rxjs';
 
-import type {
-  AmbiguousGrantResponse,
-  PlatformAdmin,
-  PlatformAdminCandidate,
-} from '@normatiza/shared';
+import type { PlatformAdmin } from '@normatiza/shared';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { PlatformAdminService } from './services/platform-admin.service';
@@ -22,6 +15,8 @@ import {
   LinhaDaTabela,
 } from '../../../shared/components/data-table/data-table.directives';
 import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
+import { ConcederAdminComponent } from './components/conceder-admin.component';
+import { ModalService } from '@core/modal/modal.service';
 
 /**
  * Admins da Plataforma — Contexto 0.
@@ -46,10 +41,7 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
   imports: [
     RowActionComponent,
     DatePipe,
-    FormsModule,
     Button,
-    Dialog,
-    InputText,
     Message,
     DataTable,
     CabecalhoDaTabela,
@@ -60,6 +52,7 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
 })
 export class AdminsComponent {
   private readonly platformAdmins = inject(PlatformAdminService);
+  private readonly modal = inject(ModalService);
   private readonly auth = inject(AuthService);
 
   readonly admins = signal<PlatformAdmin[]>([]);
@@ -68,56 +61,13 @@ export class AdminsComponent {
 
   readonly euMesmo = computed(() => this.auth.session()?.user.id);
 
-  readonly concedendo = signal(false);
-  readonly email = signal('');
-  readonly concedendoEmAndamento = signal(false);
-  readonly erroDaConcessao = signal<string | null>(null);
-
-  /**
-   * Os candidatos do desempate. Vazio na primeira tentativa; preenchido quando
-   * o servidor respondeu 409 porque o e-mail alcança mais de uma pessoa.
-   */
-  readonly candidatos = signal<PlatformAdminCandidate[]>([]);
-
   constructor() {
     this.carregar();
   }
 
-  abrirConcessao(): void {
-    this.email.set('');
-    this.candidatos.set([]);
-    this.erroDaConcessao.set(null);
-    this.concedendo.set(true);
-  }
-
-  conceder(userId?: string): void {
-    const email = this.email().trim();
-    if (!email) return;
-
-    this.erroDaConcessao.set(null);
-    this.concedendoEmAndamento.set(true);
-
-    this.platformAdmins.grant({ email, ...(userId ? { userId } : {}) }).subscribe({
-      next: () => {
-        this.concedendoEmAndamento.set(false);
-        this.concedendo.set(false);
-        this.carregar();
-      },
-      error: (falha: unknown) => {
-        this.concedendoEmAndamento.set(false);
-
-        // 409 não é falha: é o servidor perguntando qual das pessoas é.
-        if (falha instanceof HttpErrorResponse && falha.status === 409) {
-          const corpo = falha.error as AmbiguousGrantResponse | null;
-          this.candidatos.set(corpo?.candidates ?? []);
-          return;
-        }
-
-        this.erroDaConcessao.set(
-          mensagemDoServidor(falha, 'Não foi possível conceder o acesso agora.'),
-        );
-      },
-    });
+  async abrirConcessao(): Promise<void> {
+    const ref = this.modal.abrir<boolean>(ConcederAdminComponent, { titulo: 'Conceder acesso de admin' });
+    if (await ref.fechado) this.carregar();
   }
 
   carregar(): void {
@@ -145,11 +95,20 @@ export class AdminsComponent {
     return !admin.revokedAt && admin.userId !== this.euMesmo();
   }
 
+  /** Ação destrutiva: confirma antes (docs/web/design_system.md §6). */
   revogar(admin: PlatformAdmin): void {
-    this.platformAdmins.revoke(admin.userId).subscribe({
-      next: () => this.carregar(),
-      error: (falha: unknown) =>
-        this.erro.set(mensagemDoServidor(falha, 'Não foi possível revogar o acesso.')),
+    void this.modal.confirmar({
+      titulo: 'Revogar acesso de admin',
+      texto: `**${admin.name}** deixa de enxergar o backoffice da plataforma. O login e os vínculos com a consultoria continuam como estão.`,
+      confirmar: 'Revogar acesso',
+      testid: 'confirmar-revogacao',
+      acao: () =>
+        this.platformAdmins.revoke(admin.userId).pipe(
+          tap({
+            next: () => this.carregar(),
+            error: (falha: unknown) => this.erro.set(mensagemDoServidor(falha, 'Não foi possível revogar o acesso.')),
+          }),
+        ),
     });
   }
 }

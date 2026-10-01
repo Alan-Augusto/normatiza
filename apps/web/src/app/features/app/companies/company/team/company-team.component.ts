@@ -1,8 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
+import { tap } from 'rxjs';
 
 import {
   ROLE_LABEL,
@@ -40,6 +40,7 @@ import {
   type VinculoEditavel,
 } from '../../../../../shared/components/team/role-editor.component';
 import { RowActionComponent } from '../../../../../shared/components/row-action/row-action.component';
+import { ModalService } from '@core/modal/modal.service';
 
 /**
  * Equipe da Empresa — Contexto 2.
@@ -69,7 +70,6 @@ import { RowActionComponent } from '../../../../../shared/components/row-action/
     RowActionComponent,
     DatePipe,
     Button,
-    Dialog,
     Message,
     DataTable,
     CabecalhoDaTabela,
@@ -83,9 +83,7 @@ import { RowActionComponent } from '../../../../../shared/components/row-action/
     FilterChip,
     FilterMenuComponent,
     QuickFilter,
-    InviteFormComponent,
     RoleGuideComponent,
-    RoleEditorComponent,
   ],
   providers: [provideIcons({ lucideMail })],
   templateUrl: './company-team.component.html',
@@ -93,6 +91,7 @@ import { RowActionComponent } from '../../../../../shared/components/row-action/
 })
 export class CompanyTeamComponent {
   private readonly team = inject(TeamService);
+  private readonly modal = inject(ModalService);
   private readonly auth = inject(AuthService);
 
   private readonly empresa = empresaDaRota();
@@ -107,9 +106,6 @@ export class CompanyTeamComponent {
   readonly erro = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
 
-  readonly convidando = signal(false);
-  readonly editando = signal<CompanyMember | null>(null);
-  readonly removendo = signal<CompanyMember | null>(null);
 
   readonly termo = signal('');
   readonly filtroPapel = signal<Role | null>(null);
@@ -305,22 +301,6 @@ export class CompanyTeamComponent {
     this.membros().some((membro) => Object.values(membro.actions).some(Boolean)),
   );
 
-  /**
-   * Um vínculo só — o desta empresa. Os outros a pessoa até pode ter, mas esta
-   * tela não os recebe, e é justamente esse o ponto do D15.
-   */
-  readonly vinculoDoEditando = computed<VinculoEditavel[]>(() => {
-    const membro = this.editando();
-    if (!membro) return [];
-    return [
-      {
-        membershipId: membro.membershipId,
-        companyId: this.companyId(),
-        companyName: this.nomeDaEmpresa(),
-        roles: membro.roles,
-      },
-    ];
-  });
 
   constructor() {
     this.carregar();
@@ -368,23 +348,50 @@ export class CompanyTeamComponent {
     });
   }
 
-  remover(): void {
-    const membro = this.removendo();
-    if (!membro) return;
-
-    this.team.removeFromCompany(membro.membershipId).subscribe({
-      next: () => this.concluir(),
-      error: (falha: unknown) => {
-        this.removendo.set(null);
-        this.erro.set(mensagemDoServidor(falha, 'Não foi possível remover da empresa.'));
-      },
+  /** Sem seletor de empresas: aqui já se sabe qual, e a rota deu a resposta. */
+  convidar(): void {
+    const ref = this.modal.abrir(InviteFormComponent, {
+      titulo: `Convidar para ${this.nomeDaEmpresa()}`,
+      largura: '38rem',
+      entradas: { roles: this.papeisQuePossoConceder(), fixedCompanyId: this.companyId() },
+      saidas: { created: () => this.concluir(ref) },
     });
   }
 
-  concluir(): void {
-    this.convidando.set(false);
-    this.editando.set(null);
-    this.removendo.set(null);
+  /**
+   * Um vínculo só — o desta empresa. Os outros a pessoa até pode ter, mas esta
+   * tela não os recebe, e é justamente esse o ponto do D15.
+   */
+  trocarPapel(membro: CompanyMember): void {
+    const vinculos: VinculoEditavel[] = [
+      { membershipId: membro.membershipId, companyId: this.companyId(), companyName: this.nomeDaEmpresa(), roles: membro.roles },
+    ];
+    const ref = this.modal.abrir(RoleEditorComponent, {
+      titulo: `Papéis de ${membro.name}`,
+      largura: '34rem',
+      entradas: { memberName: membro.name, vinculos },
+      saidas: { saved: () => this.concluir(ref) },
+    });
+  }
+
+  remover(membro: CompanyMember): void {
+    void this.modal.confirmar({
+      titulo: `Remover ${membro.name} da empresa`,
+      texto: `${membro.name} perde o acesso a ${this.nomeDaEmpresa()}. O cadastro continua existindo, e o histórico do que essa pessoa fez aqui não muda.`,
+      confirmar: 'Remover da empresa',
+      testid: 'confirmar-remocao',
+      acao: () =>
+        this.team.removeFromCompany(membro.membershipId).pipe(
+          tap({
+            next: () => this.carregar(),
+            error: (falha: unknown) => this.erro.set(mensagemDoServidor(falha, 'Não foi possível remover da empresa.')),
+          }),
+        ),
+    });
+  }
+
+  private concluir(ref: { fechar(): void }): void {
+    ref.fechar();
     this.carregar();
   }
 }

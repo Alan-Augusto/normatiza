@@ -11,6 +11,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { BRF, respostaDeLogin, sessão, vínculo } from '../../../core/auth/testing/sessao';
 import { clicar, digitar, elemento, elementos } from '../../../core/testing/prime';
 import { AdminsComponent } from './admins.component';
+import { hostDeModais, telaComModais } from '../../../core/modal/testing/host-de-modais';
 
 /**
  * Admins da Plataforma — Contexto 0.
@@ -27,6 +28,9 @@ import { AdminsComponent } from './admins.component';
  */
 describe('AdminsComponent', () => {
   let fixture: ComponentFixture<AdminsComponent>;
+  let modais: ReturnType<typeof hostDeModais>;
+  /** A página e o modal por cima dela: o que se abre pelo `ModalService` sai no host. */
+  const tela = telaComModais(() => fixture, () => modais);
   let http: HttpTestingController;
 
   const API = 'http://api.teste';
@@ -60,6 +64,7 @@ describe('AdminsComponent', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
   });
 
   afterEach(() => http.verify());
@@ -78,9 +83,9 @@ describe('AdminsComponent', () => {
     fixture.detectChanges();
   }
 
-  const el = (seletor: string) => elemento(fixture, seletor);
-  const todos = (seletor: string) => elementos(fixture, seletor);
-  const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+  const el = (seletor: string) => elemento(tela, seletor);
+  const todos = (seletor: string) => elementos(tela, seletor);
+  const texto = () => document.body.textContent ?? '';
   const linhaDe = (userId: string) => el(`[data-testid="linha"][data-user="${userId}"]`);
 
   describe('a lista', () => {
@@ -111,21 +116,22 @@ describe('AdminsComponent', () => {
 
   describe('a concessão', () => {
     function abrirFormulario() {
-      clicar(fixture, '[data-testid="conceder"] button');
+      clicar(tela, '[data-testid="conceder"] button');
     }
 
     it('deve conceder pelo e-mail exato', async () => {
       await abrir();
       abrirFormulario();
-      digitar(fixture, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
-      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+      digitar(tela, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
+      clicar(tela, '[data-testid="confirmar-concessao"] button');
 
       const req = http.expectOne(`${API}/platform/admins`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ email: 'beatriz@normatiza.com' });
 
       req.flush(null);
-      fixture.detectChanges();
+      // O modal fecha, e a lista recarrega quando a promessa dele resolve.
+      await fixture.whenStable();
 
       http.expectOne(`${API}/platform/admins`).flush([euMesmo, outro]);
     });
@@ -135,13 +141,13 @@ describe('AdminsComponent', () => {
       // consultorias. Quem promove alguém já sabe o e-mail dessa pessoa.
       await abrir();
       abrirFormulario();
-      digitar(fixture, '[data-testid="email-do-admin"]', 'bea');
-      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+      digitar(tela, '[data-testid="email-do-admin"]', 'bea');
+      clicar(tela, '[data-testid="confirmar-concessao"] button');
 
       const req = http.expectOne(`${API}/platform/admins`);
       expect(req.request.body).toEqual({ email: 'bea' });
       req.flush(null, { status: 404, statusText: 'Not Found' });
-      fixture.detectChanges();
+      tela.detectChanges();
 
       // E o 404 aparece como a notícia que é, não como falha genérica.
       expect(el('[data-testid="erro-da-concessao"]')).not.toBeNull();
@@ -150,13 +156,13 @@ describe('AdminsComponent', () => {
     it('deve dizer quando não há ninguém com aquele e-mail', async () => {
       await abrir();
       abrirFormulario();
-      digitar(fixture, '[data-testid="email-do-admin"]', 'ninguem@lugar.com');
-      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+      digitar(tela, '[data-testid="email-do-admin"]', 'ninguem@lugar.com');
+      clicar(tela, '[data-testid="confirmar-concessao"] button');
 
       http
         .expectOne(`${API}/platform/admins`)
         .flush({ message: 'Nenhum usuário com esse e-mail.' }, { status: 404, statusText: 'NF' });
-      fixture.detectChanges();
+      tela.detectChanges();
 
       expect(texto()).toContain('Nenhum usuário com esse e-mail.');
     });
@@ -167,8 +173,8 @@ describe('AdminsComponent', () => {
       // total à pessoa errada, em silêncio.
       await abrir();
       abrirFormulario();
-      digitar(fixture, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
-      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+      digitar(tela, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
+      clicar(tela, '[data-testid="confirmar-concessao"] button');
 
       http.expectOne(`${API}/platform/admins`).flush(
         {
@@ -180,7 +186,7 @@ describe('AdminsComponent', () => {
         },
         { status: 409, statusText: 'Conflict' },
       );
-      fixture.detectChanges();
+      tela.detectChanges();
 
       expect(todos('[data-testid="candidato"]').length).toBe(2);
       // O nome não distingue as duas — a conta é a única coisa que distingue.
@@ -192,8 +198,8 @@ describe('AdminsComponent', () => {
     it('deve conceder à pessoa escolhida no desempate', async () => {
       await abrir();
       abrirFormulario();
-      digitar(fixture, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
-      clicar(fixture, '[data-testid="confirmar-concessao"] button');
+      digitar(tela, '[data-testid="email-do-admin"]', 'beatriz@normatiza.com');
+      clicar(tela, '[data-testid="confirmar-concessao"] button');
 
       http.expectOne(`${API}/platform/admins`).flush(
         {
@@ -205,14 +211,15 @@ describe('AdminsComponent', () => {
         },
         { status: 409, statusText: 'Conflict' },
       );
-      fixture.detectChanges();
+      tela.detectChanges();
 
-      clicar(fixture, '[data-testid="candidato"][data-user="u-b"]');
+      clicar(tela, '[data-testid="candidato"][data-user="u-b"]');
 
       const req = http.expectOne(`${API}/platform/admins`);
       expect(req.request.body).toEqual({ email: 'beatriz@normatiza.com', userId: 'u-b' });
       req.flush(null);
-      fixture.detectChanges();
+      // O modal fecha, e a lista recarrega quando a promessa dele resolve.
+      await fixture.whenStable();
 
       http.expectOne(`${API}/platform/admins`).flush([euMesmo, outro]);
     });
@@ -223,12 +230,14 @@ describe('AdminsComponent', () => {
       await abrir();
 
       (linhaDe(outro.userId)!.querySelector('[data-testid="acao-revogar"] button') as HTMLElement).click();
-      fixture.detectChanges();
+      tela.detectChanges();
+      http.expectNone(`${API}/platform/admins/${outro.userId}`);
+      clicar(tela, '[data-testid="confirmar-revogacao"] button');
 
       const req = http.expectOne(`${API}/platform/admins/${outro.userId}`);
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
-      fixture.detectChanges();
+      tela.detectChanges();
 
       http.expectOne(`${API}/platform/admins`).flush([euMesmo]);
     });

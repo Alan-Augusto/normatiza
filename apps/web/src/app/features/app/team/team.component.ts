@@ -2,7 +2,6 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
 import { provideIcons } from '@ng-icons/core';
 import { lucideMail, lucideUserX } from '@ng-icons/lucide';
@@ -40,6 +39,7 @@ import {
 } from '../../../shared/components/team/role-editor.component';
 import { DisableDialogComponent } from './components/disable-dialog.component';
 import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
+import { ModalService } from '@core/modal/modal.service';
 
 /**
  * Equipe — Contexto 1.
@@ -60,7 +60,6 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
     DatePipe,
     FormsModule,
     Button,
-    Dialog,
     Message,
     DataTable,
     CabecalhoDaTabela,
@@ -73,10 +72,7 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
     FilterChip,
     FilterMenuComponent,
     QuickFilter,
-    InviteFormComponent,
     RoleGuideComponent,
-    RoleEditorComponent,
-    DisableDialogComponent,
   ],
   providers: [provideIcons({ lucideMail, lucideUserX })],
   templateUrl: './team.component.html',
@@ -84,6 +80,7 @@ import { RowActionComponent } from '../../../shared/components/row-action/row-ac
 })
 export class TeamComponent implements OnInit {
   private readonly team = inject(TeamService);
+  private readonly modal = inject(ModalService);
   private readonly auth = inject(AuthService);
 
   readonly membros = signal<TeamMember[]>([]);
@@ -93,9 +90,6 @@ export class TeamComponent implements OnInit {
 
   readonly filtros = signal<TeamListQuery>({});
 
-  readonly convidando = signal(false);
-  readonly editando = signal<TeamMember | null>(null);
-  readonly desligando = signal<TeamMember | null>(null);
 
   /** Rótulo por método — o template não indexa mapa, e um papel novo quebra aqui. */
   rotuloDoPapel(papel: Role): string {
@@ -306,19 +300,41 @@ export class TeamComponent implements OnInit {
     return membro.memberships.map((vinculo) => vinculo.company.tradeName).join(' · ');
   }
 
-  /**
-   * `computed`, e não um método chamado do template: um método devolveria um
-   * array novo a cada ciclo de detecção, o editor entenderia isso como "outra
-   * pessoa" e desfaria as marcações no meio da edição.
-   */
-  readonly vinculosDoEditando = computed<VinculoEditavel[]>(() =>
-    (this.editando()?.memberships ?? []).map((vinculo) => ({
+  private vinculosDe(membro: TeamMember): VinculoEditavel[] {
+    return membro.memberships.map((vinculo) => ({
       membershipId: vinculo.id,
       companyId: vinculo.companyId,
       companyName: vinculo.company.tradeName,
       roles: vinculo.roles,
-    })),
-  );
+    }));
+  }
+
+  convidar(): void {
+    const ref = this.modal.abrir(InviteFormComponent, {
+      titulo: 'Convidar pessoa',
+      largura: '38rem',
+      entradas: { roles: this.papeisQuePossoConceder(), companies: this.minhasEmpresas() },
+      saidas: { created: () => this.concluir(ref) },
+    });
+  }
+
+  trocarPapel(membro: TeamMember): void {
+    const ref = this.modal.abrir(RoleEditorComponent, {
+      titulo: `Papéis de ${membro.name}`,
+      largura: '34rem',
+      entradas: { memberName: membro.name, vinculos: this.vinculosDe(membro), allowRemoval: membro.actions.removeFromCompany },
+      saidas: { saved: () => this.concluir(ref), removed: () => this.concluir(ref) },
+    });
+  }
+
+  desligar(membro: TeamMember): void {
+    const ref = this.modal.abrir(DisableDialogComponent, {
+      titulo: `Desligar ${membro.name} da conta`,
+      largura: '34rem',
+      entradas: { member: membro },
+      saidas: { disabled: () => this.concluir(ref) },
+    });
+  }
 
   /**
    * "Expirado" **não é status**: é `expiresAt` no passado. Guardar os dois no
@@ -358,10 +374,8 @@ export class TeamComponent implements OnInit {
     });
   }
 
-  concluir(): void {
-    this.convidando.set(false);
-    this.editando.set(null);
-    this.desligando.set(null);
+  private concluir(ref: { fechar(): void }): void {
+    ref.fechar();
     this.carregar();
   }
 }

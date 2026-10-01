@@ -1,22 +1,19 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { Select } from 'primeng/select';
-import { Textarea } from 'primeng/textarea';
+import { tap } from 'rxjs';
 
-import { canEditInventory, type CompanyMember, type SectorListItem } from '@normatiza/shared';
+import { canEditInventory, type SectorListItem } from '@normatiza/shared';
 
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { mensagemDoServidor } from '../../../../../core/http/mensagem-de-erro';
+import { ModalService } from '../../../../../core/modal/modal.service';
 import { empresaDaRota } from '../../../../../core/routing/empresa-da-rota';
 import { ROTAS } from '../../../../../core/routing/rotas';
 import { InventoryService } from '../../../../../core/services/inventory.service';
-import { TeamService } from '../../../../../core/services/team.service';
 import { DataTable } from '../../../../../shared/components/data-table/data-table.component';
 import {
   AcaoPrimaria,
@@ -25,13 +22,8 @@ import {
   LinhaDaTabela,
 } from '../../../../../shared/components/data-table/data-table.directives';
 import { RowActionComponent } from '../../../../../shared/components/row-action/row-action.component';
-
-interface Edicao {
-  setor: SectorListItem;
-  nome: string;
-  descricao: string;
-  responsavel: string | null;
-}
+import { SetorEdicaoComponent } from './setor-edicao.component';
+import { SetorMesclaComponent } from './setor-mescla.component';
 
 /**
  * Setores da planta — Contexto 2 (docs/produto/03 §4.3).
@@ -48,11 +40,8 @@ interface Edicao {
     FormsModule,
     RouterLink,
     Button,
-    Dialog,
     InputText,
     Message,
-    Select,
-    Textarea,
     DataTable,
     CabecalhoDaTabela,
     LinhaDaTabela,
@@ -65,7 +54,7 @@ interface Edicao {
 })
 export class SectorsComponent implements OnInit {
   private readonly inventory = inject(InventoryService);
-  private readonly team = inject(TeamService);
+  private readonly modal = inject(ModalService);
   private readonly auth = inject(AuthService);
 
   private readonly empresa = empresaDaRota();
@@ -90,29 +79,11 @@ export class SectorsComponent implements OnInit {
     );
   });
 
-  readonly editando = signal<Edicao | null>(null);
-  readonly erroDoNome = signal<string | null>(null);
-  readonly membros = signal<CompanyMember[]>([]);
-
-  readonly mesclando = signal<SectorListItem | null>(null);
-  readonly destinoDaMescla = signal<string | null>(null);
-
-  readonly excluindo = signal<SectorListItem | null>(null);
-  readonly processando = signal(false);
 
   readonly podeCriar = computed(() => {
     const empresa = this.empresa();
     return !!empresa && canEditInventory(this.auth.rolesInCompany(empresa.id), empresa.status === 'INACTIVE');
   });
-
-  readonly opcoesDeResponsavel = computed(() =>
-    this.membros()
-      .filter((m) => m.status === 'ACTIVE')
-      .map((m) => ({ label: m.name, value: m.id })),
-  );
-
-  /** Os setores que podem receber a mescla: todos menos o que sai. */
-  readonly destinos = computed(() => this.setores().filter((s) => s.id !== this.mesclando()?.id));
 
   ngOnInit(): void {
     this.carregar();
@@ -169,99 +140,41 @@ export class SectorsComponent implements OnInit {
     });
   }
 
-  abrirEdicao(setor: SectorListItem): void {
-    this.erroDoNome.set(null);
-    this.editando.set({
-      setor,
-      nome: setor.name,
-      descricao: setor.description ?? '',
-      responsavel: setor.responsible?.id ?? null,
+  async abrirEdicao(setor: SectorListItem): Promise<void> {
+    const empresa = this.empresa();
+    if (!empresa) return;
+    const ref = this.modal.abrir<boolean>(SetorEdicaoComponent, {
+      titulo: `Editar ${setor.name}`,
+      entradas: { companyId: empresa.id, setor },
     });
+    if (await ref.fechado) this.carregar();
+  }
 
-    // O responsável é alguém com acesso à empresa. Sem a lista, o campo some,
-    // e o resto da edição continua.
+  async abrirMescla(setor: SectorListItem): Promise<void> {
     const empresa = this.empresa();
-    if (empresa && this.membros().length === 0) {
-      this.team.listCompanyMembers(empresa.id).subscribe({
-        next: (equipe) => this.membros.set(equipe.members),
-        error: () => this.membros.set([]),
-      });
-    }
+    if (!empresa) return;
+    const ref = this.modal.abrir<boolean>(SetorMesclaComponent, {
+      titulo: `Mesclar ${setor.name}`,
+      entradas: { companyId: empresa.id, origem: setor, setores: this.setores() },
+    });
+    if (await ref.fechado) this.carregar();
   }
 
-  alterarEdicao(mudança: Partial<Edicao>): void {
-    const atual = this.editando();
-    if (atual) this.editando.set({ ...atual, ...mudança });
-  }
-
-  salvarEdicao(): void {
-    const edicao = this.editando();
+  excluir(setor: SectorListItem): void {
     const empresa = this.empresa();
-    if (!edicao || !empresa) return;
-
-    this.processando.set(true);
-    this.erroDoNome.set(null);
-    this.inventory
-      .updateSector(empresa.id, edicao.setor.id, {
-        name: edicao.nome,
-        description: edicao.descricao,
-        responsibleUserId: edicao.responsavel,
-      })
-      .subscribe({
-        next: () => {
-          this.processando.set(false);
-          this.editando.set(null);
-          this.carregar();
-        },
-        error: (erro) => {
-          this.processando.set(false);
-          const campo = erro instanceof HttpErrorResponse ? (erro.error as { field?: string })?.field : undefined;
-          const mensagem = mensagemDoServidor(erro, 'Não foi possível salvar o setor.');
-          if (campo === 'name') this.erroDoNome.set(mensagem);
-          else this.erro.set(mensagem);
-        },
-      });
-  }
-
-  abrirMescla(setor: SectorListItem): void {
-    this.destinoDaMescla.set(null);
-    this.mesclando.set(setor);
-  }
-
-  confirmarMescla(): void {
-    const origem = this.mesclando();
-    const destino = this.destinoDaMescla();
-    const empresa = this.empresa();
-    if (!origem || !destino || !empresa) return;
-
-    this.executar(() => this.inventory.mergeSector(empresa.id, origem.id, destino), this.mesclando, 'mesclar');
-  }
-
-  confirmarExclusao(): void {
-    const setor = this.excluindo();
-    const empresa = this.empresa();
-    if (!setor || !empresa) return;
-
-    this.executar(() => this.inventory.removeSector(empresa.id, setor.id), this.excluindo, 'excluir');
-  }
-
-  private executar(
-    operação: () => ReturnType<InventoryService['removeSector']>,
-    alvo: typeof this.excluindo,
-    verbo: string,
-  ): void {
-    this.processando.set(true);
-    operação().subscribe({
-      next: () => {
-        this.processando.set(false);
-        alvo.set(null);
-        this.carregar();
-      },
-      error: (erro) => {
-        this.processando.set(false);
-        alvo.set(null);
-        this.erro.set(mensagemDoServidor(erro, `Não foi possível ${verbo} o setor.`));
-      },
+    if (!empresa) return;
+    void this.modal.confirmar({
+      titulo: `Excluir ${setor.name}`,
+      texto: `O setor **${setor.name}** não tem equipamentos e será excluído.`,
+      confirmar: 'Excluir setor',
+      testid: 'confirmar-excluir',
+      acao: () =>
+        this.inventory.removeSector(empresa.id, setor.id).pipe(
+          tap({
+            next: () => this.carregar(),
+            error: (erro) => this.erro.set(mensagemDoServidor(erro, 'Não foi possível excluir o setor.')),
+          }),
+        ),
     });
   }
 

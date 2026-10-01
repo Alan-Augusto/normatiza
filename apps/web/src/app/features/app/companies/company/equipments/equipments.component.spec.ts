@@ -13,6 +13,7 @@ import { AuthService } from '../../../../../core/auth/auth.service';
 import { BRF, respostaDeLogin, sessão, vínculo } from '../../../../../core/auth/testing/sessao';
 import { SÓ_LÊ, linhaDeEquipamento } from '../../../../../core/services/testing/equipamentos';
 import { EquipmentsComponent } from './equipments.component';
+import { hostDeModais } from '../../../../../core/modal/testing/host-de-modais';
 
 @Component({ template: '' })
 class Destino {}
@@ -30,6 +31,7 @@ const SETORES: SectorListItem[] = [
  */
 describe('EquipmentsComponent', () => {
   let http: HttpTestingController;
+  let modais: ReturnType<typeof hostDeModais>;
   let harness: RouterTestingHarness;
 
   const API = 'http://api.teste';
@@ -50,6 +52,7 @@ describe('EquipmentsComponent', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
   });
 
   afterEach(() => http.verify());
@@ -211,6 +214,9 @@ describe('EquipmentsComponent', () => {
 
       el('[data-testid="acao-desativar"] button')!.click();
       harness.detectChanges();
+      modais.detectChanges();
+      await modais.whenStable();
+      modais.detectChanges();
       (document.querySelector('[data-testid="confirmar-desativar"] button') as HTMLElement).click();
 
       http.expectOne(`${LISTA}/EQ-0001/deactivate`).flush(null);
@@ -224,6 +230,9 @@ describe('EquipmentsComponent', () => {
       el('[data-testid="acao-excluir"] button')!.click();
       harness.detectChanges();
       expect(document.body.textContent).toContain('não tem volta');
+      modais.detectChanges();
+      await modais.whenStable();
+      modais.detectChanges();
       (document.querySelector('[data-testid="confirmar-excluir"] button') as HTMLElement).click();
 
       const req = http.expectOne(`${LISTA}/EQ-0001`);

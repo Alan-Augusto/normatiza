@@ -3,10 +3,9 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
+import { ButtonDirective, ButtonLabel } from 'primeng/button';
 import { Message } from 'primeng/message';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, tap } from 'rxjs';
 
 import {
   COMPANY_ADMIN_ROLES,
@@ -43,6 +42,7 @@ import { QuickFilter } from '../../../shared/components/quick-filter/quick-filte
 import { RowActionComponent } from '../../../shared/components/row-action/row-action.component';
 import { InviteFormComponent } from '../../../shared/components/team/invite-form.component';
 import { ROTAS } from '../../../core/routing/rotas';
+import { ModalService } from '@core/modal/modal.service';
 
 /**
  * Empresas — Contexto 1 (docs/produto/03 §3.2).
@@ -61,8 +61,6 @@ import { ROTAS } from '../../../core/routing/rotas';
   imports: [
     CompanyLogoComponent,
     RowActionComponent,
-    CompanyInfoComponent,
-    InviteFormComponent,
     QuickFilter,
     FilterChip,
     FilterMenuComponent,
@@ -70,10 +68,8 @@ import { ROTAS } from '../../../core/routing/rotas';
     DecimalPipe,
     FormsModule,
     RouterLink,
-    Button,
     ButtonDirective,
     ButtonLabel,
-    Dialog,
     Message,
     DataTable,
     CabecalhoDaTabela,
@@ -91,6 +87,7 @@ export class CompaniesComponent implements OnInit {
   protected readonly rotas = ROTAS;
 
   private readonly companies = inject(CompaniesService);
+  private readonly modal = inject(ModalService);
   private readonly team = inject(TeamService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
@@ -106,8 +103,6 @@ export class CompaniesComponent implements OnInit {
   /** O texto no campo — separado do filtro aplicado, que espera a pessoa parar de digitar. */
   readonly termo = signal('');
 
-  readonly desativando = signal<CompanyListItem | null>(null);
-  readonly processando = signal(false);
 
   private readonly digitado = new Subject<string>();
 
@@ -161,11 +156,9 @@ export class CompaniesComponent implements OnInit {
   });
 
   /** A empresa cujo Gestor está sendo convidado — o diálogo de convite. */
-  readonly convidandoGestor = signal<CompanyListItem | null>(null);
   readonly papelDoGestor: readonly Role[] = ['MANAGER'];
 
   /** A prévia aberta pelo olho — o mesmo diálogo que o nome da empresa abre na sidebar. */
-  readonly vendo = signal<CompanyListItem | null>(null);
 
   readonly contagemAguardando = computed(
     () => this.empresas().filter((e) => e.status === 'AWAITING_MANAGER').length,
@@ -285,10 +278,29 @@ export class CompaniesComponent implements OnInit {
     return empresa.managers.find((gestor) => gestor.invitation);
   }
 
-  aoConvidarGestor(convite: InvitationSummary): void {
-    this.convidandoGestor.set(null);
-    this.aviso.set(`Convite de Gestor enviado para ${convite.email}.`);
-    this.carregar();
+  ver(empresa: CompanyListItem): void {
+    this.modal.abrir(CompanyInfoComponent, {
+      titulo: 'Dados da empresa',
+      largura: '40rem',
+      fecharClicandoFora: true,
+      entradas: { companyId: empresa.id },
+    });
+  }
+
+  /** O convite do Gestor sem sair da lista: papel e empresa já decididos, sobra quem é a pessoa. */
+  convidarGestor(empresa: CompanyListItem): void {
+    const ref = this.modal.abrir(InviteFormComponent, {
+      titulo: `Convidar o Gestor da ${empresa.tradeName}`,
+      largura: '40rem',
+      entradas: { roles: this.papelDoGestor, fixedCompanyId: empresa.id },
+      saidas: {
+        created: (convite) => {
+          ref.fechar();
+          this.aviso.set(`Convite de Gestor enviado para ${(convite as InvitationSummary).email}.`);
+          this.carregar();
+        },
+      },
+    });
   }
 
   reenviarConvite(gestor: CompanyManagerRef): void {
@@ -303,21 +315,19 @@ export class CompaniesComponent implements OnInit {
     });
   }
 
-  confirmarDesativar(): void {
-    const empresa = this.desativando();
-    if (!empresa) return;
-
-    this.processando.set(true);
-    this.companies.deactivate(empresa.id).subscribe({
-      next: () => {
-        this.processando.set(false);
-        this.desativando.set(null);
-        this.carregar();
-      },
-      error: (erro) => {
-        this.processando.set(false);
-        this.erro.set(mensagemDoServidor(erro, 'Não foi possível desativar a empresa.'));
-      },
+  desativar(empresa: CompanyListItem): void {
+    void this.modal.confirmar({
+      titulo: `Desativar ${empresa.tradeName}`,
+      texto: `A ${empresa.tradeName} fica em **modo leitura**: ninguém perde o acesso e os laudos continuam disponíveis, mas nada mais é alterado nela — cadastro, convites, análises e plano de ação. Dá para reativar depois.`,
+      confirmar: 'Desativar empresa',
+      testid: 'confirmar-desativar',
+      acao: () =>
+        this.companies.deactivate(empresa.id).pipe(
+          tap({
+            next: () => this.carregar(),
+            error: (erro) => this.erro.set(mensagemDoServidor(erro, 'Não foi possível desativar a empresa.')),
+          }),
+        ),
     });
   }
 

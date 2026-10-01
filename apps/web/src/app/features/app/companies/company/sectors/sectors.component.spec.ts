@@ -12,6 +12,7 @@ import { API_BASE_URL } from '../../../../../core/auth/api.config';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { BRF, respostaDeLogin, sessão, vínculo } from '../../../../../core/auth/testing/sessao';
 import { SectorsComponent } from './sectors.component';
+import { hostDeModais } from '../../../../../core/modal/testing/host-de-modais';
 
 @Component({ template: '' })
 class Destino {}
@@ -31,6 +32,7 @@ function setor(over: Partial<SectorListItem> = {}): SectorListItem {
  */
 describe('SectorsComponent', () => {
   let http: HttpTestingController;
+  let modais: ReturnType<typeof hostDeModais>;
   let harness: RouterTestingHarness;
 
   const API = 'http://api.teste';
@@ -49,6 +51,7 @@ describe('SectorsComponent', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
   });
 
   afterEach(() => http.verify());
@@ -69,9 +72,16 @@ describe('SectorsComponent', () => {
   const raiz = () => harness.routeNativeElement as HTMLElement;
   const el = (seletor: string) => raiz().querySelector<HTMLElement>(seletor);
   const noDialogo = (seletor: string) => document.querySelector<HTMLElement>(seletor);
-  const clicar = (alvo: HTMLElement | null) => {
-    ((alvo?.querySelector('button') as HTMLElement | null) ?? alvo)!.click();
+  /** A tela e o modal (que sai pelo host, e o `p-dialog` desenha depois). */
+  const atualizar = async () => {
     harness.detectChanges();
+    modais.detectChanges();
+    await modais.whenStable();
+    modais.detectChanges();
+  };
+  const clicar = async (alvo: HTMLElement | null) => {
+    ((alvo?.querySelector('button') as HTMLElement | null) ?? alvo)!.click();
+    await atualizar();
   };
   function digitar(entrada: HTMLInputElement, valor: string) {
     entrada.value = valor;
@@ -93,7 +103,7 @@ describe('SectorsComponent', () => {
     await abrir([]);
 
     digitar(el('[data-testid="novo-setor"]') as HTMLInputElement, 'Caldeiraria');
-    clicar(el('[data-testid="adicionar-setor"]'));
+    await clicar(el('[data-testid="adicionar-setor"]'));
 
     const req = http.expectOne(SETORES);
     expect(req.request.method).toBe('POST');
@@ -110,7 +120,7 @@ describe('SectorsComponent', () => {
     await abrir([setor()]);
 
     digitar(el('[data-testid="novo-setor"]') as HTMLInputElement, 'usinágem');
-    clicar(el('[data-testid="adicionar-setor"]'));
+    await clicar(el('[data-testid="adicionar-setor"]'));
     http.expectOne(SETORES).flush({ ...setor(), existing: true });
     http.expectOne(SETORES).flush([setor()]);
     harness.detectChanges();
@@ -132,17 +142,17 @@ describe('SectorsComponent', () => {
     await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
     await abrir([setor(), setor({ id: 'sec-cal', name: 'Caldeiraria', equipmentsCount: 0 })]);
 
-    clicar(el('[data-testid="acao-editar"]'));
+    await clicar(el('[data-testid="acao-editar"]'));
     http.expectOne(`${API}/companies/${BRF.id}/members`).flush({ accountName: 'Normatiza', technicalResponsibles: [], members: [] });
-    harness.detectChanges();
+    await atualizar();
     digitar(noDialogo('[data-testid="campo-nome"]') as HTMLInputElement, 'caldeiraria');
-    clicar(noDialogo('[data-testid="salvar-setor"]'));
+    await clicar(noDialogo('[data-testid="salvar-setor"]'));
 
     http.expectOne(`${SETORES}/sec-usinagem`).flush(
       { statusCode: 409, field: 'name', message: 'Já existe o setor "Caldeiraria". Para juntar os dois, use Mesclar.' },
       { status: 409, statusText: 'Conflict' },
     );
-    harness.detectChanges();
+    await atualizar();
 
     expect(noDialogo('[data-testid="erro-nome"]')?.textContent).toContain('use Mesclar');
   });
@@ -151,14 +161,15 @@ describe('SectorsComponent', () => {
     await entrarComo([vínculo(BRF.id, ['MANAGER'])]);
     await abrir([setor({ id: 'sec-errado', name: 'Usinagen' }), setor()]);
 
-    clicar(el('[data-sector="sec-errado"] [data-testid="acao-mesclar"]'));
+    await clicar(el('[data-sector="sec-errado"] [data-testid="acao-mesclar"]'));
     expect(document.body.textContent).toContain('3 equipamentos');
-    clicar(noDialogo('[data-testid="destino-da-mescla"] [data-opcao="Usinagem"] input'));
-    clicar(noDialogo('[data-testid="confirmar-mescla"]'));
+    await clicar(noDialogo('[data-testid="destino-da-mescla"] [data-opcao="Usinagem"] input'));
+    await clicar(noDialogo('[data-testid="confirmar-mescla"]'));
 
     const req = http.expectOne(`${SETORES}/sec-errado/merge`);
     expect(req.request.body).toEqual({ intoSectorId: 'sec-usinagem' });
     req.flush(null);
+    await atualizar();
     http.expectOne(SETORES).flush([setor({ equipmentsCount: 6 })]);
   });
 
@@ -167,8 +178,8 @@ describe('SectorsComponent', () => {
     await abrir([setor(), setor({ id: 'sec-vazio', name: 'Vazio', equipmentsCount: 0, actions: EDITA })]);
 
     expect(el('[data-sector="sec-usinagem"] [data-testid="acao-excluir"]')).toBeNull();
-    clicar(el('[data-sector="sec-vazio"] [data-testid="acao-excluir"]'));
-    clicar(noDialogo('[data-testid="confirmar-excluir"]'));
+    await clicar(el('[data-sector="sec-vazio"] [data-testid="acao-excluir"]'));
+    await clicar(noDialogo('[data-testid="confirmar-excluir"]'));
 
     const req = http.expectOne(`${SETORES}/sec-vazio`);
     expect(req.request.method).toBe('DELETE');

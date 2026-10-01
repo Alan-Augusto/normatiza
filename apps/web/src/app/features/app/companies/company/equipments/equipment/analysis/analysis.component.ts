@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
+import { tap } from 'rxjs';
 
 import { ANALYSIS_EDITOR_ROLES, ANALYSIS_STATUS_LABEL, type AnalysisListItem, type AnalysisStatus } from '@normatiza/shared';
 
@@ -12,6 +12,7 @@ import { AuthService } from '@core/auth/auth.service';
 import { mensagemDoServidor } from '@core/http/mensagem-de-erro';
 import { empresaDaRota } from '@core/routing/empresa-da-rota';
 import { ROTAS } from '@core/routing/rotas';
+import { ModalService } from '@core/modal/modal.service';
 import { AnalysisService } from '@core/services/analysis.service';
 
 import { DataTable } from '../../../../../../../shared/components/data-table/data-table.component';
@@ -44,7 +45,6 @@ import { EquipmentContext } from '../equipment-context';
     AcaoVazia,
     HrnBadgeComponent,
     RowActionComponent,
-    Dialog,
   ],
   templateUrl: './analysis.component.html',
   styleUrl: './analysis.component.css',
@@ -52,6 +52,7 @@ import { EquipmentContext } from '../equipment-context';
 export class EquipmentAnalysisComponent {
   private readonly contexto = inject(EquipmentContext);
   private readonly service = inject(AnalysisService);
+  private readonly modal = inject(ModalService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly empresa = empresaDaRota();
@@ -60,8 +61,6 @@ export class EquipmentAnalysisComponent {
   readonly analises = signal<AnalysisListItem[] | null>(null);
   readonly erro = signal<string | null>(null);
   readonly abrindo = signal(false);
-  readonly descartando = signal<AnalysisListItem | null>(null);
-  readonly processando = signal(false);
 
   /** A consultoria alocada, com a máquina ativa numa empresa ativa. O servidor confere de novo. */
   readonly podeAbrir = computed(() => {
@@ -121,23 +120,22 @@ export class EquipmentAnalysisComponent {
   }
 
   /** Só o rascunho se descarta; a análise concluída é congelada, e se corrige por revisão (D2). */
-  confirmarDescarte(): void {
+  descartar(analise: AnalysisListItem): void {
     const empresa = this.empresa();
     const equipamento = this.equipamento();
-    const analise = this.descartando();
-    if (!empresa || !equipamento || !analise || this.processando()) return;
-    this.processando.set(true);
-    this.service.discard(empresa.id, equipamento.code, analise.number).subscribe({
-      next: () => {
-        this.processando.set(false);
-        this.descartando.set(null);
-        this.analises.update((lista) => lista?.filter((a) => a.id !== analise.id) ?? lista);
-      },
-      error: (erro: unknown) => {
-        this.processando.set(false);
-        this.descartando.set(null);
-        this.erro.set(mensagemDoServidor(erro, 'Não foi possível descartar o rascunho.'));
-      },
+    if (!empresa || !equipamento) return;
+    void this.modal.confirmar({
+      titulo: `Descartar a Análise ${analise.number}`,
+      texto: 'O rascunho é apagado de vez, com os pontos de risco, os PAP, os PE e as fotos. Isso não tem volta. Descartar é para a análise aberta por engano ou abandonada; a máquina fica livre para uma análise nova.',
+      confirmar: 'Descartar',
+      testid: 'confirmar-descarte',
+      acao: () =>
+        this.service.discard(empresa.id, equipamento.code, analise.number).pipe(
+          tap({
+            next: () => this.analises.update((lista) => lista?.filter((a) => a.id !== analise.id) ?? lista),
+            error: (erro: unknown) => this.erro.set(mensagemDoServidor(erro, 'Não foi possível descartar o rascunho.')),
+          }),
+        ),
     });
   }
 

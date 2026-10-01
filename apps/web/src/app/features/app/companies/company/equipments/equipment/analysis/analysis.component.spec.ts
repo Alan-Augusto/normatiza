@@ -15,6 +15,7 @@ import { linhaDeAnalise, detalheDeAnalise, SÓ_LEITURA } from '../../../../../..
 import { detalheDeEquipamento } from '../../../../../../../core/services/testing/equipamentos';
 import { EquipmentContext } from '../equipment-context';
 import { EquipmentAnalysisComponent } from './analysis.component';
+import { hostDeModais } from '../../../../../../../core/modal/testing/host-de-modais';
 
 @Component({ standalone: true, template: '' })
 class Destino {}
@@ -28,6 +29,7 @@ describe('EquipmentAnalysisComponent', () => {
   const ANALISES = `${API}/companies/${BRF.id}/equipments/EQ-0001/analyses`;
   const LISTA = `/app/empresas/${BRF.slug}/equipamentos/eq-0001/analise`;
   let http: HttpTestingController;
+  let modais: ReturnType<typeof hostDeModais>;
   let harness: RouterTestingHarness;
 
   beforeEach(() => {
@@ -44,6 +46,7 @@ describe('EquipmentAnalysisComponent', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
     TestBed.inject(EquipmentContext).atual.set(detalheDeEquipamento());
   });
 
@@ -118,7 +121,10 @@ describe('EquipmentAnalysisComponent', () => {
 
     expect(el('analise-1')!.querySelector('[data-testid="acao-descartar"]')).toBeNull();
     clicar('acao-descartar');
-    (document.querySelector('[data-testid="confirmar-descarte"] button') as HTMLElement).click();
+    modais.detectChanges();
+    await modais.whenStable();
+    modais.detectChanges();
+    (document.querySelector('[data-testid=\"confirmar-descarte\"] button') as HTMLElement).click();
     const req = http.expectOne(`${ANALISES}/2`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);

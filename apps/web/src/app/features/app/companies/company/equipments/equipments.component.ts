@@ -5,10 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideBox, lucideLayoutGrid, lucideList, lucideSearch } from '@ng-icons/lucide';
-import { Button, ButtonDirective, ButtonLabel } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
+import { ButtonDirective, ButtonLabel } from 'primeng/button';
 import { Message } from 'primeng/message';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, tap } from 'rxjs';
 
 import {
   EQUIPMENT_COMPLIANCE_LABEL,
@@ -42,6 +41,7 @@ import { FilterChip } from '../../../../../shared/components/filter-chip/filter-
 import { FilterGroup, FilterMenuComponent } from '../../../../../shared/components/filter-menu/filter-menu.component';
 import { QuickFilter } from '../../../../../shared/components/quick-filter/quick-filter.component';
 import { RowActionComponent } from '../../../../../shared/components/row-action/row-action.component';
+import { ModalService } from '@core/modal/modal.service';
 
 type Vista = 'tabela' | 'cartoes';
 
@@ -65,10 +65,8 @@ type Vista = 'tabela' | 'cartoes';
     FormsModule,
     RouterLink,
     NgIconComponent,
-    Button,
     ButtonDirective,
     ButtonLabel,
-    Dialog,
     Message,
     DataTable,
     CabecalhoDaTabela,
@@ -93,6 +91,7 @@ export class EquipmentsComponent implements OnInit {
   protected readonly rotas = ROTAS;
 
   private readonly inventory = inject(InventoryService);
+  private readonly modal = inject(ModalService);
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -112,9 +111,6 @@ export class EquipmentsComponent implements OnInit {
   /** O código que o formulário acabou de cadastrar, para a confirmação no topo. */
   private readonly cadastrado = signal<string | null>(null);
 
-  readonly desativando = signal<EquipmentListItem | null>(null);
-  readonly excluindo = signal<EquipmentListItem | null>(null);
-  readonly processando = signal(false);
 
   private readonly digitado = new Subject<string>();
 
@@ -321,12 +317,25 @@ export class EquipmentsComponent implements OnInit {
     return EQUIPMENT_COMPLIANCE_LABEL[equipamento.complianceStatus];
   }
 
-  confirmarDesativar(): void {
-    this.executar(this.desativando, (companyId, code) => this.inventory.deactivateEquipment(companyId, code), 'desativar');
+  desativar(equipamento: EquipmentListItem): void {
+    void this.modal.confirmar({
+      titulo: `Desativar ${equipamento.code}`,
+      texto: `**${equipamento.name}** sai do inventário em operação e fica em **modo leitura**. O código, o histórico e as análises continuam — dá para encontrá-lo pelo filtro de situação e reativar depois.`,
+      confirmar: 'Desativar equipamento',
+      perigo: false,
+      testid: 'confirmar-desativar',
+      acao: () => this.executar(equipamento, (companyId, code) => this.inventory.deactivateEquipment(companyId, code), 'desativar'),
+    });
   }
 
-  confirmarExcluir(): void {
-    this.executar(this.excluindo, (companyId, code) => this.inventory.removeEquipment(companyId, code), 'excluir');
+  excluir(equipamento: EquipmentListItem): void {
+    void this.modal.confirmar({
+      titulo: `Excluir ${equipamento.code}`,
+      texto: `**${equipamento.name}** será apagado de vez, com a foto. Isso não tem volta, e o código ${equipamento.code} não será usado de novo. Excluir é para o cadastro feito errado; para tirar uma máquina de operação, desative.`,
+      confirmar: 'Excluir de vez',
+      testid: 'confirmar-excluir',
+      acao: () => this.executar(equipamento, (companyId, code) => this.inventory.removeEquipment(companyId, code), 'excluir'),
+    });
   }
 
   reativar(equipamento: EquipmentListItem): void {
@@ -339,26 +348,16 @@ export class EquipmentsComponent implements OnInit {
   }
 
   private executar(
-    alvo: typeof this.desativando,
+    equipamento: EquipmentListItem,
     operação: (companyId: string, code: string) => ReturnType<InventoryService['deactivateEquipment']>,
     verbo: string,
-  ): void {
-    const equipamento = alvo();
-    const empresa = this.empresa();
-    if (!equipamento || !empresa) return;
-
-    this.processando.set(true);
-    operação(empresa.id, equipamento.code).subscribe({
-      next: () => {
-        this.processando.set(false);
-        alvo.set(null);
-        this.carregar();
-      },
-      error: (erro) => {
-        this.processando.set(false);
-        alvo.set(null);
-        this.erro.set(mensagemDoServidor(erro, `Não foi possível ${verbo} o equipamento.`));
-      },
-    });
+  ) {
+    const empresa = this.empresa()!;
+    return operação(empresa.id, equipamento.code).pipe(
+      tap({
+        next: () => this.carregar(),
+        error: (erro) => this.erro.set(mensagemDoServidor(erro, `Não foi possível ${verbo} o equipamento.`)),
+      }),
+    );
   }
 }

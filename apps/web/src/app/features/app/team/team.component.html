@@ -72,7 +72,7 @@
         <app-role-guide />
 
         @if (podeConvidar()) {
-          <p-button data-testid="convidar" size="small" label="Convidar pessoa" (onClick)="convidando.set(true)" />
+          <p-button data-testid="convidar" size="small" label="Convidar pessoa" (onClick)="convidar()" />
         }
       </div>
     </ng-template>
@@ -173,7 +173,7 @@
                 <app-row-action data-testid="acao-reenviar" icon="lucideSend" label="Reenviar convite" (acionar)="reenviar(membro)" />
               }
               @if (membro.actions.changeRoles) {
-                <app-row-action data-testid="acao-trocar-papel" icon="lucideUserCog" label="Trocar papel" (acionar)="editando.set(membro)" />
+                <app-row-action data-testid="acao-trocar-papel" icon="lucideUserCog" label="Trocar papel" (acionar)="trocarPapel(membro)" />
               }
               @if (membro.actions.revokeInvitation) {
                 <app-row-action
@@ -190,7 +190,7 @@
                   icon="lucideUserX"
                   label="Desligar da conta"
                   severity="danger"
-                  (acionar)="desligando.set(membro)"
+                  (acionar)="desligar(membro)"
                 />
               }
             </div>
@@ -208,59 +208,9 @@
         <p-button
           data-testid="convidar-vazio"
           label="Convidar a primeira pessoa"
-          (onClick)="convidando.set(true)"
+          (onClick)="convidar()"
         />
       </ng-template>
     }
   </app-data-table>
 </div>
-
-<p-dialog
-  header="Convidar pessoa"
-  [visible]="convidando()"
-  (visibleChange)="convidando.set($event)"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [style]="{ width: '38rem' }"
->
-  <app-invite-form
-    [roles]="papeisQuePossoConceder()"
-    [companies]="minhasEmpresas()"
-    (created)="concluir()"
-  />
-</p-dialog>
-
-@if (editando(); as membro) {
-  <p-dialog
-    [header]="'Papéis de ' + membro.name"
-    [visible]="true"
-    (visibleChange)="editando.set(null)"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '34rem' }"
-  >
-    <app-role-editor
-      [memberName]="membro.name"
-      [vinculos]="vinculosDoEditando()"
-      [allowRemoval]="membro.actions.removeFromCompany"
-      (saved)="concluir()"
-      (removed)="concluir()"
-    />
-  </p-dialog>
-}
-
-@if (desligando(); as membro) {
-  <p-dialog
-    [header]="'Desligar ' + membro.name + ' da conta'"
-    [visible]="true"
-    (visibleChange)="desligando.set(null)"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '34rem' }"
-  >
-    <app-disable-dialog [member]="membro" (disabled)="concluir()" />
-  </p-dialog>
-}

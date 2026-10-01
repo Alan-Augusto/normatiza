@@ -6,6 +6,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import type { RiskPointDto } from '@normatiza/shared';
 
 import { API_BASE_URL } from '../../../../../../../../../core/auth/api.config';
+import { hostDeModais } from '../../../../../../../../../core/modal/testing/host-de-modais';
 import { catalogosDeTeste } from '../../../../../../../../../core/services/testing/catalogos';
 import { BRF } from '../../../../../../../../../core/auth/testing/sessao';
 import { RiskPointsStepComponent } from './risk-points-step.component';
@@ -18,6 +19,7 @@ describe('RiskPointsStepComponent', () => {
   const API = 'http://api.teste';
   const ANALISE = `${API}/companies/${BRF.id}/equipments/EQ-0001/analyses/1`;
   let http: HttpTestingController;
+  let modais: ReturnType<typeof hostDeModais>;
   let fixture: ComponentFixture<RiskPointsStepComponent>;
   let emitidos: RiskPointDto[][];
 
@@ -37,6 +39,7 @@ describe('RiskPointsStepComponent', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideNoopAnimations(), { provide: API_BASE_URL, useValue: API }],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
     fixture = TestBed.createComponent(RiskPointsStepComponent);
     fixture.componentRef.setInput('alvo', { companyId: BRF.id, code: 'EQ-0001', number: 1 });
     fixture.componentRef.setInput('pontos', pontos);
@@ -69,6 +72,12 @@ describe('RiskPointsStepComponent', () => {
   function salvarEAdicionar() {
     fixture.componentInstance.salvarEAdicionar();
     fixture.detectChanges();
+  }
+  /** O modal sai pelo host, e o `p-dialog` desenha o conteúdo depois: espera. */
+  async function noModal() {
+    modais.detectChanges();
+    await modais.whenStable();
+    modais.detectChanges();
   }
   function digitar(testid: string, valor: string) {
     const campo = el(testid) as HTMLInputElement;
@@ -191,7 +200,7 @@ describe('RiskPointsStepComponent', () => {
 
     escolher({ normas: ['std-1'] });
 
-    expect(texto('normas-escolhidas')).toBe('12.5.1 as zonas de perigo devem possuir sistemas de segurança.');
+    expect(texto('normas-escolhidos')).toBe('12.5.1 as zonas de perigo devem possuir sistemas de segurança.');
   });
 
   it('deve gravar o ponto novo antes de enviar a foto dele', () => {
@@ -210,6 +219,23 @@ describe('RiskPointsStepComponent', () => {
     fixture.detectChanges();
 
     expect(el('foto-ponto')?.getAttribute('src')).toBe('http://arq/p-thumb');
+  });
+
+  it('deve escolher as consequências num modal, e mostrá-las no campo', async () => {
+    abrir();
+    clicar('primeiro-ponto');
+
+    clicar('escolher-consequencias');
+    await noModal();
+    (document.querySelector('[data-testid="item-hc-esmagamento"] input') as HTMLInputElement).click();
+    await noModal();
+    (document.querySelector('[data-testid="confirmar-escolha"] button') as HTMLElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form.controls.consequencias.value).toEqual(['hc-esmagamento']);
+    expect(texto('consequencias-escolhidos')).toContain('Esmagamento');
+    expect(fixture.componentInstance.form.dirty).toBe(true);
   });
 
   it('deve duplicar um ponto com tudo menos a foto, como no legado', () => {
@@ -257,10 +283,11 @@ describe('RiskPointsStepComponent', () => {
     expect(el('editor')?.textContent).toContain('Novo ponto de risco');
   });
 
-  it('deve renumerar os seguintes ao excluir um ponto', () => {
+  it('deve renumerar os seguintes ao excluir um ponto', async () => {
     abrir([ponto(), ponto({ id: 'p-2', number: 2, location: 'Painel' }), ponto({ id: 'p-3', number: 3, location: 'Descarga' })]);
 
     clicar('excluir-ponto-1');
+    await noModal();
     (document.querySelector('[data-testid="confirmar-exclusao-ponto"] button') as HTMLElement).click();
     const req = http.expectOne(`${ANALISE}/risk-points/p-1`);
     expect(req.request.method).toBe('DELETE');

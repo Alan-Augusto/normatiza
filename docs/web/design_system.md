@@ -403,3 +403,64 @@ Nome, e-mail, CNPJ, CPF e telefone ficam **sem ícone**.
 | Data | `p-datepicker` | `dateFormat="dd/mm/yy"`, com ícone |
 
 A página **Design System** (`/admin/design-system`) mostra cada um em uso, com os estados vazio, preenchido, com erro e desabilitado.
+
+---
+
+## 🪟 10. Modais: sempre pelo `ModalService`
+
+Nenhuma tela desenha `p-dialog`. Há um só, no `<app-modal-host>` do `app.html`
+([`core/modal`](../../apps/web/src/app/core/modal/modal.service.ts)), e a tela
+pede o componente que ele mostra:
+
+```ts
+// Um componente qualquer, com as entradas e as saídas dele
+const ref = this.modal.abrir(InviteFormComponent, {
+  titulo: 'Convidar pessoa',
+  largura: '38rem',
+  entradas: { roles, companies },
+  saidas: { created: () => { ref.fechar(); this.carregar(); } },
+});
+
+// Ou o componente se fecha sozinho, injetando o ModalRef: ref.fechar(resultado)
+if (await ref.fechado) this.carregar();
+
+// Confirmação: o botão carrega enquanto a ação roda; fecha no fim, com sucesso ou erro
+await this.modal.confirmar({
+  titulo: `Excluir o PE ${pe.number}`,
+  texto: 'O PE sai do rascunho, com a foto. **Não tem volta.**',
+  confirmar: 'Excluir',
+  acao: () => this.service.removePe(…).pipe(tap({ next: …, error: … })),
+});
+```
+
+As regras:
+
+1. **Nenhum `visible` controlado por signal na tela.** O `@if (excluindo())` +
+   `p-dialog` de cada tela era a mesma moldura copiada 23 vezes, cada uma com
+   um detalhe diferente (largura, `breakpoints`, quem fecha).
+2. **Fechar pelo X, pelo ESC ou trocando de página devolve `undefined`.**
+   Quem abriu trata como "desistiu".
+3. **Clicar fora só fecha o que é leitura** (`fecharClicandoFora`): dados da
+   empresa, guia de papéis. Formulário não fecha assim — perderia o que se digitou.
+4. **O erro da ação aparece na tela de quem chamou**, no `tap`/`catchError`
+   da própria ação: a confirmação fecha também no erro.
+5. **Texto da confirmação sem HTML:** `**trecho**` sai em negrito.
+6. **No teste**, `hostDeModais()` (`core/modal/testing`) pendura o host na
+   página, e `telaComModais()` dá aos ajudantes de `core/testing/prime.ts` a
+   página e o modal juntos.
+
+### Escolha múltipla de texto longo: `app-escolha-multipla`
+
+Itens de norma chegam a três mil caracteres; um `p-multiselect` de uma linha
+os cortava, e escolher o item certo pede leitura. O campo mostra o que foi
+escolhido, por inteiro, e **Escolher…** abre o modal:
+
+- busca pelo código ou pelo texto, sem acento;
+- os grupos do catálogo (seção da norma, tipo de perigo); num catálogo grande,
+  fechados, abrindo no clique, na busca e quando já têm escolha;
+- em cada linha, a caixa, o **código** em destaque e o texto justificado;
+- no rodapé, quantos estão escolhidos, Cancelar e Confirmar — o resultado volta
+  na ordem do catálogo, que é a do laudo.
+
+`[compacto]="true"` mostra os escolhidos em selos, para textos curtos (origens,
+consequências, proteções).

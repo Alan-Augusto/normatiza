@@ -14,6 +14,7 @@ import { BRF, SEARA, respostaDeLogin, sessão, vínculo } from '../../../core/au
 import { CARTEIRA, NADA, linhaDeEmpresa, perfilDaBrf } from '../../../core/services/testing/empresas';
 import { escolher } from '../../../core/testing/prime';
 import { CompaniesComponent } from './companies.component';
+import { hostDeModais } from '../../../core/modal/testing/host-de-modais';
 
 @Component({ template: '' })
 class Destino {}
@@ -27,6 +28,7 @@ class Destino {}
  */
 describe('CompaniesComponent', () => {
   let http: HttpTestingController;
+  let modais: ReturnType<typeof hostDeModais>;
   let harness: RouterTestingHarness;
 
   const API = 'http://api.teste';
@@ -46,9 +48,18 @@ describe('CompaniesComponent', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
   });
 
   afterEach(() => http.verify());
+
+  /** O modal sai pelo host, e o `p-dialog` desenha depois: espera. */
+  async function noModal() {
+    harness.detectChanges();
+    modais.detectChanges();
+    await modais.whenStable();
+    modais.detectChanges();
+  }
 
   async function entrarComo(memberships: MembershipWithCompany[], éDono = false) {
     const auth = TestBed.inject(AuthService);
@@ -205,10 +216,10 @@ describe('CompaniesComponent', () => {
       await abrir('/app/empresas', [linhaDeEmpresa({ actions: NADA })]);
 
       el(`[data-company="${BRF.id}"] [data-testid="acao-ver"] button`)!.click();
-      harness.detectChanges();
+      await noModal();
 
       http.expectOne(`${API}/companies/${BRF.id}`).flush(perfilDaBrf());
-      harness.detectChanges();
+      await noModal();
       expect(document.body.textContent).toContain('Rua Senador Atílio Fontana, 86');
       expect(TestBed.inject(Router).url).toBe('/app/empresas');
     });
@@ -226,7 +237,7 @@ describe('CompaniesComponent', () => {
       await abrir();
 
       el(`[data-company="${BRF.id}"] [data-testid="acao-desativar"] button`)!.click();
-      harness.detectChanges();
+      await noModal();
 
       expect(document.body.textContent).toContain('modo leitura');
       http.expectNone(`${API}/companies/${BRF.id}/deactivate`);
@@ -285,13 +296,14 @@ describe('CompaniesComponent', () => {
       await abrir('/app/empresas', [seara()]);
 
       el('[data-testid="acao-convidar-gestor"] button')!.click();
-      harness.detectChanges();
+      await noModal();
 
       expect(document.querySelector('[data-testid="papel-unico"]')?.textContent).toContain('Gestor');
       expect(document.querySelector('[data-testid="empresa-oferecida"]')).toBeNull();
 
       digitarNoConvite('convite-nome', 'Helena Souza');
       digitarNoConvite('convite-email', 'helena@seara.com');
+      await noModal();
       (document.querySelector('[data-testid="enviar-convite"]') as HTMLElement).click();
 
       const req = http.expectOne(`${API}/invitations`);

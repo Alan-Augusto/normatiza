@@ -32,6 +32,7 @@ import {
   opcoesDe,
 } from '../../../core/testing/prime';
 import { TeamComponent } from './team.component';
+import { hostDeModais, telaComModais } from '../../../core/modal/testing/host-de-modais';
 
 /**
  * Equipe — Contexto 1.
@@ -44,6 +45,9 @@ import { TeamComponent } from './team.component';
  */
 describe('TeamComponent', () => {
   let fixture: ComponentFixture<TeamComponent>;
+  let modais: ReturnType<typeof hostDeModais>;
+  /** A página e o modal por cima dela: o que se abre pelo `ModalService` sai no host. */
+  const tela = telaComModais(() => fixture, () => modais);
   let http: HttpTestingController;
 
   const API = 'http://api.teste';
@@ -59,6 +63,7 @@ describe('TeamComponent', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
   });
 
   afterEach(() => http.verify());
@@ -74,9 +79,9 @@ describe('TeamComponent', () => {
     await login;
 
     fixture = TestBed.createComponent(TeamComponent);
-    fixture.detectChanges();
+    tela.detectChanges();
     http.expectOne((r) => r.url === `${API}/users`).flush(equipe);
-    fixture.detectChanges();
+    tela.detectChanges();
   }
 
   const comoJosué = (equipe?: TeamMember[]) =>
@@ -88,16 +93,16 @@ describe('TeamComponent', () => {
   const comoTécnico = (equipe?: TeamMember[]) =>
     abrirComo([vínculo(BRF.id, ['TECHNICIAN'])], equipe);
 
-  const texto = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
-  const el = (seletor: string) => elemento(fixture, seletor);
-  const todos = (seletor: string) => elementos(fixture, seletor);
+  const texto = () => document.body.textContent ?? '';
+  const el = (seletor: string) => elemento(tela, seletor);
+  const todos = (seletor: string) => elementos(tela, seletor);
 
   /** A linha de uma pessoa, pelo id — a tabela é lida como quem olha a lê. */
   const linhaDe = (userId: string) => el(`[data-testid="linha"][data-user="${userId}"]`);
 
   function clicar(alvo: HTMLElement | null) {
     alvo!.click();
-    fixture.detectChanges();
+    tela.detectChanges();
   }
 
   /** A ação de uma linha — os botões do PrimeNG são marcados no elemento externo. */
@@ -174,12 +179,12 @@ describe('TeamComponent', () => {
     it('deve pedir ao servidor a lista filtrada por papel', async () => {
       await comoJosué();
 
-      escolher(fixture, 'filtro-papel', 'Gestor');
+      escolher(tela, 'filtro-papel', 'Gestor');
 
       const req = http.expectOne((r) => r.url === `${API}/users`);
       expect(req.request.params.get('role')).toBe('MANAGER');
       req.flush([marcos]);
-      fixture.detectChanges();
+      tela.detectChanges();
 
       expect(todos('[data-testid="linha"]').length).toBe(1);
     });
@@ -232,17 +237,17 @@ describe('TeamComponent', () => {
       // "Gestor" numa lista que o servidor vai recusar é convidar ao erro.
       await comoCarla();
 
-      clicarNo(fixture, '[data-testid="convidar"] button');
+      clicarNo(tela, '[data-testid="convidar"] button');
 
-      expect(opcoesDe(fixture, 'convite-papel')).toEqual(['Técnico']);
+      expect(opcoesDe(tela, 'convite-papel')).toEqual(['Técnico']);
     });
 
     it('deve oferecer ao Engenheiro Responsável a lista inteira que ele alcança', async () => {
       await comoJosué();
 
-      clicarNo(fixture, '[data-testid="convidar"] button');
+      clicarNo(tela, '[data-testid="convidar"] button');
 
-      const oferecidos = opcoesDe(fixture, 'convite-papel');
+      const oferecidos = opcoesDe(tela, 'convite-papel');
       expect(oferecidos).toContain('Gestor');
       expect(oferecidos).toContain('Executor');
       expect(oferecidos).not.toContain('Engenheiro Responsável');
@@ -253,7 +258,7 @@ describe('TeamComponent', () => {
       // numa empresa que ela mesma não atende.
       await comoCarla();
 
-      clicarNo(fixture, '[data-testid="convidar"] button');
+      clicarNo(tela, '[data-testid="convidar"] button');
 
       const empresas = todos('[data-testid="empresa-oferecida"]').map((caixa) =>
         caixa.parentElement?.textContent?.trim(),
@@ -286,12 +291,12 @@ describe('TeamComponent', () => {
 
       clicar(acao(marcos.id, 'trocar-papel'));
       marcar('DIRECTOR');
-      clicarNo(fixture, '[data-testid="salvar-papeis"] button');
+      clicarNo(tela, '[data-testid="salvar-papeis"] button');
 
       const req = http.expectOne(`${API}/memberships/${marcos.memberships[0].id}`);
       expect(req.request.body.roles).toEqual(expect.arrayContaining(['MANAGER', 'DIRECTOR']));
       req.flush(null);
-      fixture.detectChanges();
+      tela.detectChanges();
 
       http.expectOne((r) => r.url === `${API}/users`).flush(EQUIPE);
     });
@@ -305,12 +310,12 @@ describe('TeamComponent', () => {
 
       clicar(acao(fernando.id, 'trocar-papel'));
       marcar('MANAGER');
-      fixture.detectChanges();
+      tela.detectChanges();
 
       const aviso = el('[data-testid="conflito-de-papel"]');
       expect(aviso).not.toBeNull();
       expect(aviso!.textContent).toContain('Seara');
-      expect(estaDesabilitado(fixture, '[data-testid="salvar-papeis"]')).toBe(true);
+      expect(estaDesabilitado(tela, '[data-testid="salvar-papeis"]')).toBe(true);
 
       http.expectNone((r) => r.method === 'PATCH');
     });
@@ -322,10 +327,10 @@ describe('TeamComponent', () => {
 
       clicar(acao(marcos.id, 'trocar-papel'));
       marcar('DIRECTOR');
-      fixture.detectChanges();
+      tela.detectChanges();
 
       expect(el('[data-testid="conflito-de-papel"]')).toBeNull();
-      expect(estaDesabilitado(fixture, '[data-testid="salvar-papeis"]')).toBe(false);
+      expect(estaDesabilitado(tela, '[data-testid="salvar-papeis"]')).toBe(false);
     });
   });
 
@@ -336,7 +341,7 @@ describe('TeamComponent', () => {
       clicar(acao(carla.id, 'desligar'));
 
       http.expectOne(`${API}/users/${carla.id}/disable-preview`).flush(prévia());
-      fixture.detectChanges();
+      tela.detectChanges();
 
       expect(el('[data-testid="escolher-sucessor"]')).toBeNull();
       expect(el('[data-testid="confirmar-desligamento"]')).not.toBeNull();
@@ -354,13 +359,13 @@ describe('TeamComponent', () => {
           eligibleSuccessors: [{ id: fernando.id, name: 'Fernando' }],
         }),
       );
-      fixture.detectChanges();
+      tela.detectChanges();
 
       // O motivo aparece escrito: quem decide precisa saber o que está herdando
       // para quem, e não só que "falta um campo".
       expect(texto()).toContain('Único Gestor da BRF.');
       expect(el('[data-testid="escolher-sucessor"]')).not.toBeNull();
-      expect(estaDesabilitado(fixture, '[data-testid="confirmar-desligamento"]')).toBe(true);
+      expect(estaDesabilitado(tela, '[data-testid="confirmar-desligamento"]')).toBe(true);
     });
 
     it('deve enviar o sucessor escolhido junto do desligamento', async () => {
@@ -374,15 +379,15 @@ describe('TeamComponent', () => {
           eligibleSuccessors: [{ id: fernando.id, name: 'Fernando' }],
         }),
       );
-      fixture.detectChanges();
+      tela.detectChanges();
 
-      escolher(fixture, 'escolher-sucessor', 'Fernando');
-      clicarNo(fixture, '[data-testid="confirmar-desligamento"] button');
+      escolher(tela, 'escolher-sucessor', 'Fernando');
+      clicarNo(tela, '[data-testid="confirmar-desligamento"] button');
 
       const req = http.expectOne(`${API}/users/${marcos.id}/disable`);
       expect(req.request.body.successorUserId).toBe(fernando.id);
       req.flush(null);
-      fixture.detectChanges();
+      tela.detectChanges();
 
       http.expectOne((r) => r.url === `${API}/users`).flush(EQUIPE);
     });
@@ -397,7 +402,7 @@ describe('TeamComponent', () => {
         .flush(
           prévia({ allowed: false, blockedReason: 'Só o lado consultoria desliga da conta.' }),
         );
-      fixture.detectChanges();
+      tela.detectChanges();
 
       expect(texto()).toContain('Só o lado consultoria desliga da conta.');
       expect(el('[data-testid="confirmar-desligamento"]')).toBeNull();
@@ -466,7 +471,7 @@ describe('TeamComponent', () => {
     it('deve explicar os sete papéis, com o que cada um não faz', async () => {
       await comoJosué();
 
-      clicarNo(fixture, '[data-testid="abrir-guia-de-papeis"] button');
+      clicarNo(tela, '[data-testid="abrir-guia-de-papeis"] button');
 
       expect(todos('[data-testid="papel-no-guia"]').length).toBe(7);
       expect(el('[data-testid="guia-de-papeis"]')!.textContent).toContain('Não vê a análise');
@@ -478,6 +483,6 @@ describe('TeamComponent', () => {
 
   /** Marca um papel na caixa de troca de papéis. */
   function marcar(papel: string) {
-    marcarCaixa(fixture, `papel-${papel}`);
+    marcarCaixa(tela, `papel-${papel}`);
   }
 });

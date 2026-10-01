@@ -6,6 +6,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { emptyPeAnswers, type PeDto } from '@normatiza/shared';
 
 import { API_BASE_URL } from '../../../../../../../../../core/auth/api.config';
+import { hostDeModais } from '../../../../../../../../../core/modal/testing/host-de-modais';
 import { BRF } from '../../../../../../../../../core/auth/testing/sessao';
 import { catalogosDeTeste } from '../../../../../../../../../core/services/testing/catalogos';
 import { PeStepComponent } from './pe-step.component';
@@ -19,6 +20,7 @@ describe('PeStepComponent', () => {
   const ANALISE = `${API}/companies/${BRF.id}/equipments/EQ-0001/analyses/1`;
   const FOTO = { url: 'http://arq/f', thumbnailUrl: 'http://arq/f-thumb' };
   let http: HttpTestingController;
+  let modais: ReturnType<typeof hostDeModais>;
   let fixture: ComponentFixture<PeStepComponent>;
   let emitidos: PeDto[][];
 
@@ -36,6 +38,7 @@ describe('PeStepComponent', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideNoopAnimations(), { provide: API_BASE_URL, useValue: API }],
     });
     http = TestBed.inject(HttpTestingController);
+    modais = hostDeModais();
     fixture = TestBed.createComponent(PeStepComponent);
     fixture.componentRef.setInput('alvo', { companyId: BRF.id, code: 'EQ-0001', number: 1 });
     fixture.componentRef.setInput('pes', pes);
@@ -69,6 +72,12 @@ describe('PeStepComponent', () => {
   function salvarEAdicionar() {
     fixture.componentInstance.salvarEAdicionar();
     fixture.detectChanges();
+  }
+  /** O modal sai pelo host, e o `p-dialog` desenha o conteúdo depois: espera. */
+  async function noModal() {
+    modais.detectChanges();
+    await modais.whenStable();
+    modais.detectChanges();
   }
   function digitar(testid: string, valor: string) {
     const campo = el(testid) as HTMLInputElement;
@@ -200,10 +209,11 @@ describe('PeStepComponent', () => {
     expect(fixture.componentInstance.secoesDeNorma().map((s) => s.name)).toEqual(['12.6 Dispositivos de parada de emergência']);
   });
 
-  it('deve renumerar os seguintes ao excluir um PE', () => {
+  it('deve renumerar os seguintes ao excluir um PE', async () => {
     abrir([pe(), pe({ id: 'pe-2', number: 2, location: 'Cabo' }), pe({ id: 'pe-3', number: 3, location: 'Pedal' })]);
 
     clicar('excluir-pe-1');
+    await noModal();
     (document.querySelector('[data-testid="confirmar-exclusao-pe"] button') as HTMLElement).click();
     const req = http.expectOne(`${ANALISE}/pes/pe-1`);
     expect(req.request.method).toBe('DELETE');

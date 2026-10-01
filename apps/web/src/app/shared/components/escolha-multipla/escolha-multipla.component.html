@@ -1,0 +1,52 @@
+<div class="escolha" [attr.data-testid]="'campo-' + testid()">
+  @if (escolhidos().length) {
+    @if (compacto()) {
+      <ul class="selos" [attr.data-testid]="testid() + '-escolhidos'">
+        @for (i of escolhidos(); track i.id) {
+          <li class="selo">
+            <span>{{ i.texto }}</span>
+            @if (!desabilitado()) {
+              <button type="button" class="tirar" [attr.aria-label]="'Tirar ' + i.texto" (click)="tirar(i.id)">
+                <ng-icon name="lucideX" size="0.875rem" />
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <ul class="itens" [attr.data-testid]="testid() + '-escolhidos'">
+        @for (i of escolhidos(); track i.id) {
+          <li class="item">
+            @if (i.codigo) {
+              <span class="codigo">{{ i.codigo }}</span>&ngsp;
+            }
+            <span class="texto">{{ i.texto }}</span>
+            @if (!desabilitado()) {
+              <button type="button" class="tirar" [attr.aria-label]="'Tirar ' + (i.codigo ?? i.texto)" (click)="tirar(i.id)">
+                <ng-icon name="lucideX" size="0.875rem" />
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <p class="vazio">{{ vazio() }}</p>
+  }
+
+  @if (!desabilitado()) {
+    <button
+      pButton
+      type="button"
+      [attr.data-testid]="'escolher-' + testid()"
+      [id]="inputId()"
+      severity="secondary"
+      [outlined]="true"
+      size="small"
+      (click)="abrir()"
+    >
+      <i pButtonIcon class="pi pi-list-check"></i>
+      <span pButtonLabel>{{ escolhidos().length ? 'Alterar a escolha (' + escolhidos().length + ')' : 'Escolher…' }}</span>
+    </button>
+  }
+</div>

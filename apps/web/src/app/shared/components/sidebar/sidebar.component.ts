@@ -12,7 +12,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideSidebarClose, lucideSidebarOpen } from '@ng-icons/lucide';
-import { Dialog } from 'primeng/dialog';
 import { Tooltip } from 'primeng/tooltip';
 import { ThemeService } from '../../services/theme.service';
 import { MenuContextService } from '@core/services/menu-context.service';
@@ -25,17 +24,19 @@ import { AuthService } from '@core/auth/auth.service';
 import { rotaDaConsultoria } from '@core/auth/entry-route';
 import { CompanyInfoComponent } from '../company-info/company-info.component';
 import { ROTAS } from '../../../core/routing/rotas';
+import { ModalService } from '@core/modal/modal.service';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NgIconComponent, Tooltip, MenuModule, Dialog, CompanyInfoComponent],
+  imports: [RouterLink, RouterLinkActive, NgIconComponent, Tooltip, MenuModule],
   providers: [provideIcons({ lucideSidebarClose, lucideSidebarOpen })],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.css',
 })
 export class SidebarComponent {
   private readonly router = inject(Router);
+  private readonly modal = inject(ModalService);
   private readonly themeService = inject(ThemeService);
   private readonly menuContext = inject(MenuContextService);
   private readonly pageMeta = inject(PageMetaService);
@@ -147,7 +148,12 @@ export class SidebarComponent {
   protected readonly activeCompanyId = computed(() => this.activeContext.company()?.id ?? null);
 
   /** O diálogo de dados da empresa em contexto — aberto pelo nome dela. */
-  protected readonly dadosDaEmpresaAbertos = signal(false);
+  /** Os dados da empresa em leitura, sem sair de onde se está. */
+  protected verDadosDaEmpresa(): void {
+    const companyId = this.activeCompanyId();
+    if (!companyId) return;
+    this.modal.abrir(CompanyInfoComponent, { titulo: 'Dados da empresa', largura: '40rem', fecharClicandoFora: true, entradas: { companyId } });
+  }
   protected readonly contextEquipment = computed(
     () => this.activeContext.equipment()?.name ?? null,
   );

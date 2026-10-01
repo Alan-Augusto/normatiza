@@ -1,16 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 
-import {
-  ROLE_LABEL,
-  ROLE_LIMIT,
-  ROLE_ORDER,
-  ROLE_SIDE_LABEL,
-  ROLE_SUMMARY,
-  rolesBySide,
-  type Role,
-} from '@normatiza/shared';
+import { ModalService } from '../../../core/modal/modal.service';
+import { RoleGuideContentComponent } from './role-guide-content.component';
 
 /**
  * "O que cada papel faz" — o diálogo que responde à queixa que originou a
@@ -33,31 +25,13 @@ import {
 @Component({
   selector: 'app-role-guide',
   standalone: true,
-  imports: [Button, Dialog],
+  imports: [Button],
   templateUrl: './role-guide.component.html',
 })
 export class RoleGuideComponent {
-  protected readonly aberto = signal(false);
-
-  /** Todos os papéis, por lado, na ordem de alçada — nunca alfabética. */
-  protected readonly grupos = rolesBySide(ROLE_ORDER).map((grupo) => ({
-    ...grupo,
-    titulo: ROLE_SIDE_LABEL[grupo.side],
-  }));
-
-  protected rotulo(papel: Role): string {
-    return ROLE_LABEL[papel];
-  }
-
-  protected resumo(papel: Role): string {
-    return ROLE_SUMMARY[papel];
-  }
-
-  protected limite(papel: Role): string {
-    return ROLE_LIMIT[papel];
-  }
+  private readonly modal = inject(ModalService);
 
   protected abrir(): void {
-    this.aberto.set(true);
+    this.modal.abrir(RoleGuideContentComponent, { titulo: 'O que cada papel faz', largura: '40rem', fecharClicandoFora: true });
   }
 }

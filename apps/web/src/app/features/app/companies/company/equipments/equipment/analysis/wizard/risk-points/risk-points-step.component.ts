@@ -4,14 +4,12 @@ import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angul
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideCamera, lucideGauge, lucideMapPin, lucidePlus, lucideTriangleAlert, lucideWrench } from '@ng-icons/lucide';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
-import { MultiSelect } from 'primeng/multiselect';
 import { SelectButton } from 'primeng/selectbutton';
 import { Textarea } from 'primeng/textarea';
 import { ToggleSwitch } from 'primeng/toggleswitch';
-import { Observable, catchError, map, of, startWith, switchMap, timeout } from 'rxjs';
+import { Observable, catchError, map, of, startWith, switchMap, tap, timeout } from 'rxjs';
 
 import {
   SAFETY_CATEGORY_OPTIONS,
@@ -25,6 +23,7 @@ import {
 } from '@normatiza/shared';
 
 import { mensagemDoServidor } from '@core/http/mensagem-de-erro';
+import { ModalService } from '@core/modal/modal.service';
 import { AnalysisService } from '@core/services/analysis.service';
 import { CatalogsService } from '@core/services/catalogs.service';
 
@@ -32,7 +31,9 @@ import { CampoComponent } from '../../../../../../../../../shared/components/for
 import { RowActionComponent } from '../../../../../../../../../shared/components/row-action/row-action.component';
 import { HrnBadgeComponent } from '../../../../../../../../../shared/components/hrn-badge/hrn-badge.component';
 import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
-import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
+import { EscolhaMultiplaComponent } from '../../../../../../../../../shared/components/escolha-multipla/escolha-multipla.component';
+import type { GrupoDeEscolha } from '../../../../../../../../../shared/components/escolha-multipla/escolha';
+import { gruposDeNorma } from '../normas/normas';
 import { HRN_VAZIO, HrnCalculatorComponent, type HrnEscolha } from '../../../../../../../../../shared/components/hrn-calculator/hrn-calculator.component';
 
 const FOTO_MAX_BYTES = 10 * 1024 * 1024;
@@ -46,10 +47,6 @@ export interface AlvoDaAnalise {
   number: number;
 }
 
-interface Grupo {
-  label: string;
-  items: { label: string; value: string }[];
-}
 
 /**
  * Etapa 2 do assistente — os pontos de risco (docs/produto/03 §5.2).
@@ -67,10 +64,8 @@ interface Grupo {
     FormsModule,
     ReactiveFormsModule,
     Button,
-    Dialog,
     InputText,
     Message,
-    MultiSelect,
     NgIconComponent,
     SelectButton,
     Textarea,
@@ -79,7 +74,7 @@ interface Grupo {
     HrnBadgeComponent,
     HrnCalculatorComponent,
     RowActionComponent,
-    NormasDescumpridasComponent,
+    EscolhaMultiplaComponent,
   ],
   providers: [provideIcons({ lucideTriangleAlert, lucidePlus, lucideMapPin, lucideGauge, lucideWrench, lucideCamera })],
   templateUrl: './risk-points-step.component.html',
@@ -87,6 +82,7 @@ interface Grupo {
 })
 export class RiskPointsStepComponent implements EtapaComEditor {
   private readonly service = inject(AnalysisService);
+  private readonly modal = inject(ModalService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -121,8 +117,6 @@ export class RiskPointsStepComponent implements EtapaComEditor {
   readonly aviso = signal<string | null>(null);
   readonly erroDaFoto = signal<string | null>(null);
   readonly enviandoFoto = signal(false);
-  readonly excluindo = signal<RiskPointDto | null>(null);
-  readonly processando = signal(false);
 
   readonly form = this.fb.group({
     local: '',
@@ -144,23 +138,25 @@ export class RiskPointsStepComponent implements EtapaComEditor {
 
   // ── Opções dos catálogos ─────────────────────────────────────────────────
 
-  readonly gruposDeOrigem = computed<Grupo[]>(() =>
+  readonly gruposDeOrigem = computed<GrupoDeEscolha[]>(() =>
     (this.catalogos().pacote?.hazardTypes ?? [])
       .filter((t) => t.origins.length)
-      .map((t) => ({ label: t.name, items: t.origins.map((o) => ({ label: o.name, value: o.id })) })),
+      .map((t) => ({ titulo: t.name, itens: t.origins.map((o) => ({ id: o.id, texto: o.name })) })),
   );
 
-  readonly gruposDeConsequencia = computed<Grupo[]>(() =>
+  readonly gruposDeConsequencia = computed<GrupoDeEscolha[]>(() =>
     (this.catalogos().pacote?.hazardTypes ?? [])
       .filter((t) => t.consequences.length)
-      .map((t) => ({ label: t.name, items: t.consequences.map((c) => ({ label: c.name, value: c.id })) })),
+      .map((t) => ({ titulo: t.name, itens: t.consequences.map((o) => ({ id: o.id, texto: o.name })) })),
   );
 
-  readonly gruposDeProtecao = computed<Grupo[]>(() =>
+  readonly gruposDeProtecao = computed<GrupoDeEscolha[]>(() =>
     (this.catalogos().pacote?.protectionTypes ?? [])
       .filter((t) => t.protections.length)
-      .map((t) => ({ label: t.name, items: t.protections.map((p) => ({ label: p.name, value: p.id })) })),
+      .map((t) => ({ titulo: t.name, itens: t.protections.map((p) => ({ id: p.id, texto: p.name })) })),
   );
+
+  readonly gruposDeNorma = computed(() => gruposDeNorma(this.catalogos().pacote?.standardSections ?? []));
 
   private readonly nomePorId = computed(() => {
     const mapa = new Map<string, string>();
@@ -348,29 +344,31 @@ export class RiskPointsStepComponent implements EtapaComEditor {
     });
   }
 
-  confirmarExclusao(): void {
-    const ponto = this.excluindo();
-    if (!ponto || this.processando()) return;
+  /** Pergunta antes; os seguintes sobem um, como no servidor (D11). */
+  excluir(ponto: RiskPointDto): void {
     const { companyId, code, number } = this.alvo();
-    this.processando.set(true);
-    this.service.removeRiskPoint(companyId, code, number, ponto.id).subscribe({
-      next: () => {
-        this.processando.set(false);
-        this.excluindo.set(null);
-        // A mesma renumeração do servidor: os seguintes sobem um (D11).
-        this.pontosChange.emit(
-          this.pontos()
-            .filter((p) => p.id !== ponto.id)
-            .map((p) => (p.number > ponto.number ? { ...p, number: p.number - 1 } : p)),
-        );
-        this.aviso.set(`Ponto ${ponto.number} excluído. Os seguintes foram renumerados.`);
-      },
-      error: (erro: unknown) => {
-        this.processando.set(false);
-        this.excluindo.set(null);
-        this.aviso.set(null);
-        this.erro.set(mensagemDoServidor(erro, 'Não foi possível excluir o ponto.'));
-      },
+    void this.modal.confirmar({
+      titulo: `Excluir o Ponto ${ponto.number}`,
+      texto: 'O ponto sai do rascunho, com a foto, e os seguintes são renumerados para a lista não pular um número.',
+      confirmar: 'Excluir',
+      testid: 'confirmar-exclusao-ponto',
+      acao: () =>
+        this.service.removeRiskPoint(companyId, code, number, ponto.id).pipe(
+          tap({
+            next: () => {
+              this.pontosChange.emit(
+                this.pontos()
+                  .filter((p) => p.id !== ponto.id)
+                  .map((p) => (p.number > ponto.number ? { ...p, number: p.number - 1 } : p)),
+              );
+              this.aviso.set(`Ponto ${ponto.number} excluído. Os seguintes foram renumerados.`);
+            },
+            error: (erro: unknown) => {
+              this.aviso.set(null);
+              this.erro.set(mensagemDoServidor(erro, 'Não foi possível excluir o ponto.'));
+            },
+          }),
+        ),
     });
   }
 

@@ -4,12 +4,11 @@ import { FormControl, FormGroup, FormsModule, NonNullableFormBuilder, ReactiveFo
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import { lucideCamera, lucideListChecks, lucideOctagonX, lucidePlus, lucideScale } from '@ng-icons/lucide';
 import { Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { SelectButton } from 'primeng/selectbutton';
 import { Textarea } from 'primeng/textarea';
-import { Observable, catchError, map, of, startWith, switchMap, timeout } from 'rxjs';
+import { Observable, catchError, map, of, startWith, switchMap, tap, timeout } from 'rxjs';
 
 import {
   PE_CRITERIA,
@@ -24,13 +23,15 @@ import {
 } from '@normatiza/shared';
 
 import { mensagemDoServidor } from '@core/http/mensagem-de-erro';
+import { ModalService } from '@core/modal/modal.service';
 import { AnalysisService } from '@core/services/analysis.service';
 import { CatalogsService } from '@core/services/catalogs.service';
 
 import { CampoComponent } from '../../../../../../../../../shared/components/form/campo.component';
 import { RowActionComponent } from '../../../../../../../../../shared/components/row-action/row-action.component';
 import { FotoDoItemComponent } from '../foto/foto-do-item.component';
-import { NormasDescumpridasComponent } from '../normas/normas-descumpridas.component';
+import { EscolhaMultiplaComponent } from '../../../../../../../../../shared/components/escolha-multipla/escolha-multipla.component';
+import { gruposDeNorma } from '../normas/normas';
 import type { EtapaComEditor, ResultadoDoSalvar } from '../etapa-com-editor';
 import type { AlvoDaAnalise } from '../risk-points/risk-points-step.component';
 
@@ -52,7 +53,6 @@ type Resposta = FormGroup<{ physicalState: FormControl<boolean>; nr12Compliant: 
     FormsModule,
     ReactiveFormsModule,
     Button,
-    Dialog,
     InputText,
     Message,
     NgIconComponent,
@@ -61,7 +61,7 @@ type Resposta = FormGroup<{ physicalState: FormControl<boolean>; nr12Compliant: 
     CampoComponent,
     FotoDoItemComponent,
     RowActionComponent,
-    NormasDescumpridasComponent,
+    EscolhaMultiplaComponent,
   ],
   providers: [provideIcons({ lucideOctagonX, lucidePlus, lucideListChecks, lucideScale, lucideCamera })],
   templateUrl: './pe-step.component.html',
@@ -69,6 +69,7 @@ type Resposta = FormGroup<{ physicalState: FormControl<boolean>; nr12Compliant: 
 })
 export class PeStepComponent implements EtapaComEditor {
   private readonly service = inject(AnalysisService);
+  private readonly modal = inject(ModalService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -103,6 +104,8 @@ export class PeStepComponent implements EtapaComEditor {
     (this.catalogos().pacote?.standardSections ?? []).filter((s) => s.name.startsWith(`${PE_STANDARD_SECTION} `)),
   );
 
+  readonly gruposDeNorma = computed(() => gruposDeNorma(this.secoesDeNorma()));
+
   /** O PE aberto no editor: um que existe, ou um novo — em branco ou cópia de outro. */
   readonly editando = signal<{ id: string; existente: PeDto | null; copiaDe?: number } | null>(null);
   readonly salvando = signal(false);
@@ -110,8 +113,6 @@ export class PeStepComponent implements EtapaComEditor {
   readonly aviso = signal<string | null>(null);
   readonly enviandoFoto = signal(false);
   readonly erroDaFoto = signal<string | null>(null);
-  readonly excluindo = signal<PeDto | null>(null);
-  readonly processando = signal(false);
 
   readonly form = this.fb.group({
     local: '',
@@ -236,28 +237,31 @@ export class PeStepComponent implements EtapaComEditor {
     });
   }
 
-  confirmarExclusao(): void {
-    const pe = this.excluindo();
-    if (!pe || this.processando()) return;
+  /** Pergunta antes; os seguintes sobem um, como no servidor (D11). */
+  excluir(pe: PeDto): void {
     const { companyId, code, number } = this.alvo();
-    this.processando.set(true);
-    this.service.removePe(companyId, code, number, pe.id).subscribe({
-      next: () => {
-        this.processando.set(false);
-        this.excluindo.set(null);
-        this.pesChange.emit(
-          this.pes()
-            .filter((p) => p.id !== pe.id)
-            .map((p) => (p.number > pe.number ? { ...p, number: p.number - 1 } : p)),
-        );
-        this.aviso.set(`PE ${pe.number} excluído. Os seguintes foram renumerados.`);
-      },
-      error: (erro: unknown) => {
-        this.processando.set(false);
-        this.excluindo.set(null);
-        this.aviso.set(null);
-        this.erro.set(mensagemDoServidor(erro, 'Não foi possível excluir o PE.'));
-      },
+    void this.modal.confirmar({
+      titulo: `Excluir o PE ${pe.number}`,
+      texto: 'O PE sai do rascunho, com a foto, e os seguintes são renumerados para a lista não pular um número.',
+      confirmar: 'Excluir',
+      testid: 'confirmar-exclusao-pe',
+      acao: () =>
+        this.service.removePe(companyId, code, number, pe.id).pipe(
+          tap({
+            next: () => {
+              this.pesChange.emit(
+                this.pes()
+                  .filter((p) => p.id !== pe.id)
+                  .map((p) => (p.number > pe.number ? { ...p, number: p.number - 1 } : p)),
+              );
+              this.aviso.set(`PE ${pe.number} excluído. Os seguintes foram renumerados.`);
+            },
+            error: (erro: unknown) => {
+              this.aviso.set(null);
+              this.erro.set(mensagemDoServidor(erro, 'Não foi possível excluir o PE.'));
+            },
+          }),
+        ),
     });
   }
 
